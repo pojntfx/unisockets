@@ -1,3 +1,3 @@
-int get_num_from_runtime();
+#include <stdlib.h>
 
-int transfer_num_pointer_to_runtime(void *);
+int transfer_to_runtime(int, int *, size_t);
