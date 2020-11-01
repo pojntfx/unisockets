@@ -30,10 +30,14 @@ clean-client_wasm:
 # Run
 run: \
 	run-memaccess \
-	run-interpreter
+	run-client_wasm-interpreter \
+	run-memaccess-interpreter
 
 run-memaccess:
 	@wasmtime run memaccess.wasm
 
-run-interpreter:
-	@node --experimental-wasi-unstable-preview1 main.js
+run-client_wasm-interpreter:
+	@node --experimental-wasi-unstable-preview1 client_wasm.js
+
+run-memaccess-interpreter:
+	@node --experimental-wasi-unstable-preview1 memaccess.js
