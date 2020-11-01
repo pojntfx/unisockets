@@ -17,8 +17,10 @@ int main() {
   int server_sock;
   struct sockaddr_in server_addr;
 
-  char input[SENT_MESSAGE_MAX_LENGTH];
-  char output[RECEIVED_MESSAGE_MAX_LENGTH];
+  ssize_t sent_message_length;
+  char sent_message[SENT_MESSAGE_MAX_LENGTH];
+  size_t received_message_length;
+  char received_message[RECEIVED_MESSAGE_MAX_LENGTH];
 
   socklen_t server_socket_length = sizeof(struct sockaddr_in);
 
@@ -43,6 +45,23 @@ int main() {
     perror("connect");
 
     exit(-1);
+  }
+
+  while (1) {
+    memset(&received_message, 0, RECEIVED_MESSAGE_MAX_LENGTH);
+    memset(&sent_message, 0, SENT_MESSAGE_MAX_LENGTH);
+
+    fgets(sent_message, SENT_MESSAGE_MAX_LENGTH, stdin);
+
+    // Send
+    sent_message_length =
+        send(server_sock, sent_message, strlen(sent_message), 0);
+
+    // Receive
+    received_message_length =
+        recv(server_sock, &received_message, RECEIVED_MESSAGE_MAX_LENGTH, 0);
+
+    printf("%s", received_message);
   }
 
   return 0;
