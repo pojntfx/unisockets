@@ -10,6 +10,13 @@ const importObject = { wasi_snapshot_preview1: wasi.wasiImport };
     ...importObject,
     env: {
       get_num_from_runtime: () => 5,
+      transfer_num_pointer_to_runtime: (pointer) => {
+        const memory = new Uint8Array(instance.exports.memory.buffer);
+
+        console.log(pointer, "->", memory[pointer]);
+
+        return 0;
+      },
     },
   });
 
