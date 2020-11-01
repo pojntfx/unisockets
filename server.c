@@ -1,5 +1,4 @@
 #include <arpa/inet.h>
-#include <errno.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +24,7 @@ int main() {
   struct sockaddr_in server_addr;
   struct sockaddr_in client_addr;
 
-  socklen_t socket_length = sizeof(struct sockaddr_in);
+  socklen_t server_socket_length = sizeof(struct sockaddr_in);
 
   size_t received_message_length;
   char received_message[RECEIVED_MESSAGE_MAX_LENGTH];
@@ -36,29 +35,28 @@ int main() {
   memset(&server_addr, 0, sizeof(server_addr));
   memset(&client_addr, 0, sizeof(client_addr));
 
-  // Configuration
+  // Create address to bind to
   server_addr.sin_family = AF_INET;
   server_addr.sin_port = htons(LISTEN_PORT);
-  if (inet_pton(AF_INET, LISTEN_ADDR, &server_addr.sin_addr) == -1) {
-    perror("inet_pton");
+  server_addr.sin_addr.s_addr = inet_addr(LISTEN_ADDR);
+  memset(&server_addr.sin_zero, 0, 8);
 
-    exit(-1);
-  }
-
-  // Bind and listen
+  // Create socket
   if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
     perror("socket");
 
     exit(-1);
   }
 
-  if ((bind(server_sock, (struct sockaddr *)&server_addr, socket_length)) ==
-      -1) {
+  // Bind
+  if ((bind(server_sock, (struct sockaddr *)&server_addr,
+            server_socket_length)) == -1) {
     perror("bind");
 
     exit(-1);
   }
 
+  // Listen
   if ((listen(server_sock, LISTEN_MAX_CLIENTS)) == -1) {
     perror("listen");
 
@@ -67,10 +65,10 @@ int main() {
 
   printf("Listening on %s:%d\n", LISTEN_ADDR, LISTEN_PORT);
 
-  // Accept, receive and send
   while (1) {
+    // Accept
     if ((client_sock = accept(server_sock, (struct sockaddr *)&client_addr,
-                              &socket_length)) == -1) {
+                              &server_socket_length)) == -1) {
       perror("accept");
 
       exit(-1);
@@ -86,11 +84,13 @@ int main() {
       memset(&received_message, 0, RECEIVED_MESSAGE_MAX_LENGTH);
       memset(&sent_message, 0, SENT_MESSAGE_MAX_LENGTH);
 
+      // Receive
       if ((received_message_length = recv(client_sock, &received_message,
                                           RECEIVED_MESSAGE_MAX_LENGTH, 0))) {
         sprintf((char *)&sent_message, "%s%s", SENT_MESSAGE_PREFIX,
                 received_message);
 
+        // Send
         sent_message_length =
             send(client_sock, sent_message, SENT_MESSAGE_MAX_LENGTH, 0);
         sent_message[SENT_MESSAGE_MAX_LENGTH - 1] = '\0';
