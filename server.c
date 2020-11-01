@@ -11,7 +11,11 @@
 #define LISTEN_ADDR "0.0.0.0"
 #define LISTEN_PORT 6912
 #define LISTEN_MAX_CLIENTS 5
-#define MESSAGE "Hello, client!\n"
+
+#define RECEIVED_MESSAGE_MAX_LENGTH 1024
+#define SENT_MESSAGE_PREFIX "You've sent: "
+#define SENT_MESSAGE_MAX_LENGTH                                                \
+  RECEIVED_MESSAGE_MAX_LENGTH + sizeof(SENT_MESSAGE_PREFIX)
 
 int main() {
   // Variables
@@ -22,10 +26,15 @@ int main() {
   struct sockaddr_in client_addr;
 
   socklen_t socket_length = sizeof(struct sockaddr_in);
-  ssize_t sent_bytes;
 
-  memset(&server_addr, 0, sizeof server_addr);
-  memset(&client_addr, 0, sizeof client_addr);
+  size_t received_message_length;
+  char received_message[RECEIVED_MESSAGE_MAX_LENGTH];
+  ssize_t sent_message_length;
+  char sent_message[SENT_MESSAGE_MAX_LENGTH];
+  char client_addr_log[sizeof(client_addr.sin_addr) + client_addr.sin_port];
+
+  memset(&server_addr, 0, sizeof(server_addr));
+  memset(&client_addr, 0, sizeof(client_addr));
 
   // Configuration
   server_addr.sin_family = AF_INET;
@@ -58,7 +67,7 @@ int main() {
 
   printf("Listening on %s:%d\n", LISTEN_ADDR, LISTEN_PORT);
 
-  // Accept and send
+  // Accept, receive and send
   while (1) {
     if ((client_sock = accept(server_sock, (struct sockaddr *)&client_addr,
                               &socket_length)) == -1) {
@@ -67,10 +76,30 @@ int main() {
       exit(-1);
     }
 
-    sent_bytes = send(client_sock, &MESSAGE, sizeof(MESSAGE), 0);
+    sprintf(client_addr_log, "%s:%d", inet_ntoa(client_addr.sin_addr),
+            client_addr.sin_port);
 
-    printf("Sent %zd bytes to %s:%d\n", sent_bytes,
-           inet_ntoa(client_addr.sin_addr), client_addr.sin_port);
+    printf("Client %s connected\n", client_addr_log);
+
+    received_message_length = 1;
+    while (received_message_length) {
+      memset(&received_message, 0, RECEIVED_MESSAGE_MAX_LENGTH);
+      memset(&sent_message, 0, SENT_MESSAGE_MAX_LENGTH);
+
+      if ((received_message_length = recv(client_sock, &received_message,
+                                          RECEIVED_MESSAGE_MAX_LENGTH, 0))) {
+        sprintf((char *)&sent_message, "%s%s", SENT_MESSAGE_PREFIX,
+                received_message);
+
+        sent_message_length =
+            send(client_sock, sent_message, SENT_MESSAGE_MAX_LENGTH, 0);
+        sent_message[SENT_MESSAGE_MAX_LENGTH - 1] = '\0';
+
+        printf("Set %zd bytes to %s\n", sent_message_length, client_addr_log);
+      }
+    }
+
+    printf("Client %s disconnected\n", client_addr_log);
 
     shutdown(client_sock, SHUT_RDWR);
   }
