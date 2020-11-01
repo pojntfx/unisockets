@@ -1,0 +1,1 @@
+int get_num_from_runtime();
