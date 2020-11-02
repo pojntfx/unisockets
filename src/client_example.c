@@ -1,4 +1,14 @@
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// If we're on WASM, use the custom implementation, else stick to the
+// default includes
+#ifdef IS_WASM
 #include "berkeley_sockets.h"
+#endif
 
 #define REMOTE_ADDR "127.0.0.1"
 #define REMOTE_PORT 6912
@@ -7,11 +17,6 @@
 #define RECEIVED_MESSAGE_PREFIX "You've sent: "
 #define RECEIVED_MESSAGE_MAX_LENGTH                                            \
   SENT_MESSAGE_MAX_LENGTH + sizeof(RECEIVED_MESSAGE_PREFIX)
-
-#define socket berkeley_sockets_socket
-#define connect berkeley_sockets_connect
-#define send berkeley_sockets_send
-#define recv berkeley_sockets_recv
 
 int main() {
   // Variables
