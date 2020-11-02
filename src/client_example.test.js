@@ -62,7 +62,13 @@ import { BerkeleySockets } from "./berkeley_sockets.js";
 
         const message = socket.recv(option);
 
-        // TODO: Write message into memory at messagePointer
+        const memory = new Uint8Array(instance.exports.memory.buffer);
+        message.forEach((messagePart, index) => {
+          // Don't write over the boundary
+          if (index <= messagePointerLength) {
+            memory[messagePointer + index] = messagePart;
+          }
+        });
 
         return message.length;
       },
