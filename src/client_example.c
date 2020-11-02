@@ -8,6 +8,11 @@
 #define RECEIVED_MESSAGE_MAX_LENGTH                                            \
   SENT_MESSAGE_MAX_LENGTH + sizeof(RECEIVED_MESSAGE_PREFIX)
 
+#define socket berkeley_sockets_socket
+#define connect berkeley_sockets_connect
+#define send berkeley_sockets_send
+#define recv berkeley_sockets_recv
+
 int main() {
   // Variables
   int remote_sock;
@@ -32,15 +37,15 @@ int main() {
   }
 
   // Create socket
-  if ((remote_sock = berkeley_sockets_socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+  if ((remote_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
     perror("socket");
 
     exit(-1);
   }
 
   // Connect
-  if ((berkeley_sockets_connect(remote_sock, (struct sockaddr *)&remote_addr,
-                                remote_addr_length)) == -1) {
+  if ((connect(remote_sock, (struct sockaddr *)&remote_addr,
+               remote_addr_length)) == -1) {
     perror("connect");
 
     exit(-1);
@@ -53,12 +58,12 @@ int main() {
     fgets(sent_message, SENT_MESSAGE_MAX_LENGTH, stdin);
 
     // Send
-    sent_message_length = berkeley_sockets_send(remote_sock, sent_message,
-                                                strlen(sent_message), 0);
+    sent_message_length =
+        send(remote_sock, sent_message, strlen(sent_message), 0);
 
     // Receive
-    received_message_length = berkeley_sockets_recv(
-        remote_sock, &received_message, RECEIVED_MESSAGE_MAX_LENGTH, 0);
+    received_message_length =
+        recv(remote_sock, &received_message, RECEIVED_MESSAGE_MAX_LENGTH, 0);
 
     printf("%s", received_message);
   }
