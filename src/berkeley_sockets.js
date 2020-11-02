@@ -8,14 +8,11 @@ export class BerkeleySockets {
       family,
       stream,
       option,
-      (args) => this.handleSend(fd, ...args),
+      (message, option) => this.handleSend(fd, message, option),
       (option) => this.handleRecv(fd, option)
     );
 
-    this.#sockets.push([
-      newSocket,
-      [new TextEncoder().encode("test message to self")], // TODO: Remove this example message
-    ]);
+    this.#sockets.push([newSocket, []]);
 
     return fd;
   }
@@ -29,10 +26,14 @@ export class BerkeleySockets {
   }
 
   handleSend(fd, message, option) {
+    // TODO: Connect remote API
     console.log(`sending with fd=${fd} message=${message} option=${option}`);
+
+    this.#sockets[fd][1] = [...this.#sockets[fd][1], message];
   }
 
   handleRecv(fd, option) {
+    // TODO: Connect remote API
     const message = new Uint8Array(this.#sockets[fd][1][0]); // Create a copy of the first message
 
     this.#sockets[fd][1].shift();
