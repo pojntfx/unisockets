@@ -50,7 +50,7 @@ import { BerkeleySockets } from "./berkeley_sockets.js";
 
         socket.send(message, option);
 
-        return 0;
+        return message.length;
       },
       berkeley_sockets_recv: (
         fd,
@@ -58,7 +58,13 @@ import { BerkeleySockets } from "./berkeley_sockets.js";
         messagePointerLength,
         option
       ) => {
-        return -1;
+        const socket = berkeleySockets.getSocketByFileDescriptor(fd);
+
+        const message = socket.recv(option);
+
+        // TODO: Write message into memory at messagePointer
+
+        return message.length;
       },
     },
   });
