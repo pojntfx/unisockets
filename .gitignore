@@ -1,4 +1,2 @@
-server
-client
 node_modules
 *.wasm
