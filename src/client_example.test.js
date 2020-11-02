@@ -29,7 +29,7 @@ import { BerkeleySockets } from "./berkeley_sockets.js";
         const port = berkeleySockets.htons(new Uint16Array(sin_port)[0]);
         const addr = sin_addr.join(".");
 
-        const socket = berkeleySockets.getSocket(fd);
+        const socket = berkeleySockets.getSocketByFileDescriptor(fd);
 
         socket.connect(family, port, addr);
 
@@ -41,7 +41,16 @@ import { BerkeleySockets } from "./berkeley_sockets.js";
         messagePointerLength,
         option
       ) => {
-        return -1;
+        const message = new Uint8Array(instance.exports.memory.buffer).slice(
+          messagePointer,
+          messagePointer + messagePointerLength
+        );
+
+        const socket = berkeleySockets.getSocketByFileDescriptor(fd);
+
+        socket.send(message, option);
+
+        return 0;
       },
       berkeley_sockets_recv: (
         fd,
