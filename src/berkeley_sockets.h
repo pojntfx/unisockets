@@ -10,7 +10,7 @@ ssize_t berkeley_sockets_recv(int, void *, size_t, int);
 
 #define socket berkeley_sockets_socket
 #define connect berkeley_sockets_connect
-#define send berkeley_sockets_send
+// #define send berkeley_sockets_send
 #define recv berkeley_sockets_recv
 
 #endif /* BERKELEY_SOCKETS_H */
