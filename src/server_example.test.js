@@ -6,7 +6,7 @@ import { BerkeleySockets } from "./berkeley_sockets.js";
   const wasi = new WASI();
 
   const wasm = await WebAssembly.compile(
-    fs.readFileSync("./src/client_example.wasm")
+    fs.readFileSync("./src/server_example.wasm")
   );
 
   const berkeleySockets = new BerkeleySockets();
@@ -16,24 +16,25 @@ import { BerkeleySockets } from "./berkeley_sockets.js";
     env: {
       berkeley_sockets_socket: (family, stream, option) =>
         berkeleySockets.socket(family, stream, option),
-      berkeley_sockets_connect: (fd, addressPointer, addressLength) => {
-        const sockaddrInMemory = new Uint8Array(
-          instance.exports.memory.buffer
-        ).slice(addressPointer, addressPointer + addressLength);
+      berkeley_sockets_bind: (fd, addressPointer, addressLength) => {
+        console.log("berkeley_sockets_bind", fd, addressPointer, addressLength);
 
-        const sin_family = sockaddrInMemory.slice(0, 2);
-        const sin_port = sockaddrInMemory.slice(2, 4);
-        const sin_addr = sockaddrInMemory.slice(4, 8);
+        return -1;
+      },
+      berkeley_sockets_listen: (fd, maxClients) => {
+        console.log("berkeley_sockets_listen", fd, maxClients);
 
-        const family = new Int32Array(sin_family)[0];
-        const port = berkeleySockets.htons(new Uint16Array(sin_port)[0]);
-        const addr = sin_addr.join(".");
+        return -1;
+      },
+      berkeley_sockets_accept: (fd, addressPointer, addressLengthPointer) => {
+        console.log(
+          "berkeley_sockets_accept",
+          fd,
+          addressPointer,
+          addressLengthPointer
+        );
 
-        const socket = berkeleySockets.getSocketByFileDescriptor(fd);
-
-        socket.connect(family, port, addr);
-
-        return 0;
+        return -1;
       },
       berkeley_sockets_send: (
         fd,
