@@ -4,7 +4,8 @@
   "description": "Berkeley sockets implementation for WebAssembly using WebRTC.",
   "main": "index.js",
   "scripts": {
-    "test:client_example": "node --experimental-wasi-unstable-preview1 src/client_example.test.js"
+    "test:client_example": "node --experimental-wasi-unstable-preview1 src/client_example.test.js",
+    "test:server_example": "node --experimental-wasi-unstable-preview1 src/server_example.test.js"
   },
   "repository": {
     "type": "git",
