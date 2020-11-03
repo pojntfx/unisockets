@@ -1,16 +1,8 @@
 export class BerkeleySockets {
   #sockets = [];
 
-  toExternalFd(internalFd) {
-    return internalFd + 65535;
-  }
-
-  toInternalFd(externalFd) {
-    return externalFd - 65535;
-  }
-
   socket(family, stream, option) {
-    const fd = this.toExternalFd(this.#sockets.length);
+    const fd = this.#sockets.length;
 
     const newSocket = new Socket(
       family,
@@ -26,9 +18,7 @@ export class BerkeleySockets {
   }
 
   getSocketByFileDescriptor(fd) {
-    const socket = this.#sockets[this.toInternalFd(fd)];
-
-    return socket ? socket[0] : undefined;
+    return this.#sockets[fd][0];
   }
 
   htons(val) {
@@ -37,28 +27,19 @@ export class BerkeleySockets {
 
   handleSend(fd, message, option) {
     // TODO: Connect remote API
-    console.log(
-      `sending with fd=${this.toInternalFd(
-        fd
-      )} message=${message} option=${option}`
-    );
+    console.log(`sending with fd=${fd} message=${message} option=${option}`);
 
-    this.#sockets[this.toInternalFd(fd)][1] = [
-      ...this.#sockets[this.toInternalFd(fd)][1],
-      message,
-    ];
+    this.#sockets[fd][1] = [...this.#sockets[fd][1], message];
   }
 
   handleRecv(fd, option) {
     // TODO: Connect remote API
-    const message = new Uint8Array(this.#sockets[this.toInternalFd(fd)][1][0]); // Create a copy of the first message
+    const message = new Uint8Array(this.#sockets[fd][1][0]); // Create a copy of the first message
 
-    this.#sockets[this.toInternalFd(fd)][1].shift();
+    this.#sockets[fd][1].shift();
 
     console.log(
-      `receiving with fd=${this.toInternalFd(fd)} length=${
-        message.length
-      } option=${option}`
+      `receiving with fd=${fd} length=${message.length} option=${option}`
     );
 
     return message;

@@ -62,8 +62,6 @@ int main() {
 
     fgets(sent_message, SENT_MESSAGE_MAX_LENGTH, stdin);
 
-    printf("%lu\n", strlen(sent_message));
-
     // Send
     sent_message_length =
         send(remote_sock, sent_message, strlen(sent_message), 0);
