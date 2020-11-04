@@ -57,9 +57,11 @@ export class BerkeleySockets {
 
   handleListen(fd, maxClients) {
     // TODO: Connect remote API
+    this.#sockets[fd][1].push(new TextEncoder().encode("test message to self"));
   }
 
   handleAccept(fd) {
+    // TODO: Connect remote API
     return {
       family: 1,
       port: 1234,
