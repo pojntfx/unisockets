@@ -32,9 +32,7 @@ export class BerkeleySockets {
 
     new Int32Array(sinVal)[0] = val;
 
-    const outVal = Array.from(new Uint8Array(sinVal)).reverse();
-
-    return [outVal[2], outVal[3]];
+    return Array.from(new Uint8Array(sinVal));
   }
 
   handleSend(fd, message, option) {
@@ -92,6 +90,14 @@ export class Socket {
     this.#onRecv = onRecv;
     this.#onListen = onListen;
     this.#onAccept = onAccept;
+  }
+
+  connect(family, port, addr) {
+    console.log(`connecting with family=${family} port=${port} addr=${addr}`);
+
+    this.#family = family;
+    this.#port = port;
+    this.#addr = addr;
   }
 
   bind(family, port, addr) {

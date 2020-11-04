@@ -65,19 +65,14 @@ import { BerkeleySockets } from "./berkeley_sockets.js";
         for (let i = 0; i < addressLength; i++) {
           const index = addressPointer + i;
 
-          if (i >= 0 && i <= 2) {
+          if (i >= 0 && i < 2) {
             memory[index] = sin_family[i];
-          } else if (i > 2 && i <= 4) {
-            memory[index - 1] = sin_port[i - 3];
-          } else if (i > 5 && i <= 8) {
-            // memory[index] = sin_addr[i - 5];
+          } else if (i >= 2 && i < 4) {
+            memory[index] = sin_port[i - 2];
+          } else if (i >= 4 && i < 8) {
+            memory[index] = sin_addr[i - 4];
           }
         }
-
-        const mem2 = memory.slice(
-          addressPointer,
-          addressPointer + addressLength
-        );
 
         return 0;
       },
