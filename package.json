@@ -6,7 +6,8 @@
   "scripts": {
     "test:client_example": "node --experimental-wasi-unstable-preview1 src/client_example.test.js",
     "test:server_example": "node --experimental-wasi-unstable-preview1 src/server_example.test.js",
-    "test:signaling_server": "node src/signaling_server.js"
+    "test:signaling_server": "node src/signaling_server.js",
+    "test:signaling_client": "node src/signaling_client.js"
   },
   "repository": {
     "type": "git",
