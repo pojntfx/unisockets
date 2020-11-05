@@ -7,7 +7,7 @@ const wss = new WebSocket.Server({
 });
 
 wss.on("connection", (ws) => {
-  console.log("New client connected");
+  console.log("Client connected");
 
   ws.on("message", (msg) => {
     console.log("received", msg);
