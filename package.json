@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test:client_example": "node --experimental-wasi-unstable-preview1 src/client_example.test.js",
-    "test:server_example": "node --experimental-wasi-unstable-preview1 src/server_example.test.js"
+    "test:server_example": "node --experimental-wasi-unstable-preview1 src/server_example.test.js",
+    "test:signaling_server": "node src/signaling_server.js"
   },
   "repository": {
     "type": "git",
@@ -17,5 +18,8 @@
     "url": "https://github.com/pojntfx/webassembly-berkeley-sockets-webrtc/issues"
   },
   "homepage": "https://github.com/pojntfx/webassembly-berkeley-sockets-webrtc#readme",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "ws": "^7.3.1"
+  }
 }
