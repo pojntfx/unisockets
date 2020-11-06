@@ -2,8 +2,9 @@ import EventEmitter from "events";
 import WebSocket from "ws";
 
 const PORT = 6999;
-const ANSWER = "answer";
-const OFFER = "offer";
+
+const OFFER_OPCODE = "offer";
+const ANSWER_OPCODE = "answer";
 
 const broadcaster = new EventEmitter();
 const server = new WebSocket.Server({
@@ -13,24 +14,29 @@ const server = new WebSocket.Server({
 server.on("connection", (connection) => {
   console.log("Client connected");
 
-  broadcaster.on("offer", (sid) => {
-    console.log("Sending offer");
+  broadcaster.on("offer", (sids) => {
+    console.log("Broadcasting offer");
 
     connection.send(
       JSON.stringify({
-        opcode: OFFER,
-        sid: sid,
+        opcode: OFFER_OPCODE,
+        sids: {
+          offer: sids.offer,
+        },
       })
     );
   });
 
-  broadcaster.on("answer", (sid) => {
-    console.log("Sending answer");
+  broadcaster.on("answer", (sids) => {
+    console.log("Broadcasting answer");
 
     connection.send(
       JSON.stringify({
-        opcode: ANSWER,
-        sid: sid,
+        opcode: ANSWER_OPCODE,
+        sids: {
+          offer: sids.offer,
+          answer: sids.answer,
+        },
       })
     );
   });
@@ -39,17 +45,22 @@ server.on("connection", (connection) => {
     const req = JSON.parse(msg);
 
     switch (req.opcode) {
-      case OFFER: {
+      case OFFER_OPCODE: {
         console.log("Received offer");
 
-        broadcaster.emit("offer", req.sid);
+        broadcaster.emit("offer", {
+          offer: req.sids.offer,
+        });
 
         break;
       }
-      case ANSWER: {
+      case ANSWER_OPCODE: {
         console.log("Received answer");
 
-        broadcaster.emit("answer", req.sid);
+        broadcaster.emit("answer", {
+          offer: req.sids.offer,
+          answer: req.sids.answer,
+        });
 
         break;
       }
