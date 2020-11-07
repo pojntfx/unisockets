@@ -1,10 +1,9 @@
-import DiscoveryClient from "../lib/discovery.js";
+import DiscoveryClient from "../lib/discovery_client.js";
 
 const ADDRESS = "ws://localhost:6999";
-
 const LOCAL_SID = Math.floor(Math.random() * 100000).toString();
 
-const discovery = new DiscoveryClient.Builder()
+const discoveryClient = new DiscoveryClient.Builder()
   .setAddress(ADDRESS)
   .setGetOffer(() => LOCAL_SID)
   .setGetAnswer((offer) => {
@@ -15,4 +14,6 @@ const discovery = new DiscoveryClient.Builder()
   .setOnAnswer((answer) => console.log(`Got answer ${answer}`))
   .build();
 
-discovery.connect();
+console.log(`Connecting to ${ADDRESS}`);
+
+discoveryClient.connect();
