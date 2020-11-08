@@ -23,7 +23,11 @@ const mockConnection = new EventEmitter();
 
       mockConnection.on(`${addr}:${port}`, async (message) =>
         setTimeout(
-          async () => await receiverBroadcaster.emit("message", message),
+          async () =>
+            await receiverBroadcaster.emit("message", [
+              ...new TextEncoder().encode("You've sent: "),
+              ...message,
+            ]),
           100
         )
       );
