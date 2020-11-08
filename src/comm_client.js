@@ -29,12 +29,12 @@ const discoveryClient = new DiscoveryClient.Builder()
 
     const offer = await connection.getOffer();
 
-    console.log(`Offering ${offer.sdp}`);
+    console.log(`Offering ${offer}`);
 
     return offer;
   })
   .setGetAnswer(async (offer) => {
-    console.log(`Answering ${offer.sdp}`);
+    console.log(`Answering ${offer}`);
 
     const connectionId = networkInterface.createConnection();
 
@@ -42,9 +42,9 @@ const discoveryClient = new DiscoveryClient.Builder()
 
     const answer = await connection.getAnswer(offer);
 
-    return answer.sdp;
+    return answer;
   })
-  .setOnAnswer((answer) => console.log(`Got answer ${answers.sdp}`))
+  .setOnAnswer((answer) => console.log(`Got answer ${answer}`))
   .build();
 
 console.log(`Connecting to ${ADDRESS}`);
