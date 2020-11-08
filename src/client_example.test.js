@@ -5,20 +5,28 @@ import EventEmitter from "events";
 
 const BINARY_PATH = "./src/client_example.wasm";
 
+const mockConnection = new EventEmitter();
+
 (async () => {
   const wasi = new WASI();
   const berkeleySocketManager = new BerkeleySocketManager.Builder()
     .setGetConnection((family, port, addr) => {
       console.log(`Getting connection for ${family} ${addr}:${port}`);
 
-      // TODO: Return connection here
+      return {
+        send: (message) => {
+          mockConnection.emit(`${addr}:${port}`, message);
+        },
+      };
     })
     .setGetReceiver((family, port, addr) => {
       console.log(`Getting receiver for ${family} ${addr}:${port}`);
 
       const receiverBroadcaster = new EventEmitter();
 
-      // TODO: Connect to or return connection receiver
+      mockConnection.on(`${addr}:${port}`, (message) =>
+        receiverBroadcaster.emit("message", message)
+      );
 
       return receiverBroadcaster;
     })
