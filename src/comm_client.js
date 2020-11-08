@@ -27,6 +27,11 @@ const networkInterface = new NetworkInterface.Builder()
   .setOnDisconnect((id, e) => {
     console.log(id, "disconnected", e);
   })
+  .setOnCandidate((id, e) => {
+    // TODO: Transfer candidate via discovery client and call `acceptCandidate` for connection with ID
+
+    console.log(id, "candidate", e);
+  })
   .build();
 
 const discoveryClient = new DiscoveryClient.Builder()
@@ -42,8 +47,10 @@ const discoveryClient = new DiscoveryClient.Builder()
 
     return { offer, offerConnectionId };
   })
-  .setGetAnswer(async (offer) => {
-    const answerConnectionId = networkInterface.createConnection();
+  .setGetAnswer(async ({ offer, offerConnectionId }) => {
+    const answerConnectionId = networkInterface.createConnection(
+      offerConnectionId
+    );
     const answerConnection = networkInterface.getConnectionById(
       answerConnectionId
     );
@@ -51,7 +58,7 @@ const discoveryClient = new DiscoveryClient.Builder()
 
     console.log(`Answering ${answer}`);
 
-    return { answer, answerConnectionId };
+    return answer;
   })
   .setOnAnswer(({ offerConnectionId, answer }) => {
     console.log(`Got answer ${answer}`);
