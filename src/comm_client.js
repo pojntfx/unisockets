@@ -14,8 +14,16 @@ const networkInterface = new NetworkInterface.Builder()
   })
   .setOnConnect((id, e) => {
     console.log(id, "connected", e);
+
+    const connection = networkInterface.getConnectionById(id);
+
+    connection.send("Hello!");
   })
-  .setOnReceive((id, e) => console.log(id, "received", e))
+  .setOnReceive((id, e) => {
+    // TODO: Fix `ondatachannel` not being called
+
+    console.log(id, "received", e);
+  })
   .setOnDisconnect((id, e) => {
     console.log(id, "disconnected", e);
   })
