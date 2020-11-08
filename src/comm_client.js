@@ -2,7 +2,6 @@ import DiscoveryClient from "../lib/discovery_client.js";
 import NetworkInterface from "../lib/network_interface.js";
 
 const ADDRESS = "ws://localhost:6999";
-const LOCAL_SID = Math.floor(Math.random() * 100000).toString();
 
 const networkInterface = new NetworkInterface.Builder()
   .setConfig({
@@ -18,33 +17,31 @@ const networkInterface = new NetworkInterface.Builder()
   .setOnDisconnect((id, e) => console.log(id, "disconnected", e))
   .build();
 
-// TODO: Add connection addressing system (create ID with offer and transfer ID through signaling server)
-
 const discoveryClient = new DiscoveryClient.Builder()
   .setAddress(ADDRESS)
   .setGetOffer(async () => {
-    const connectionId = networkInterface.createConnection();
-
-    const connection = networkInterface.getConnectionById(connectionId);
-
-    const offer = await connection.getOffer();
+    const offerConnectionId = networkInterface.createConnection();
+    const offerConnection = networkInterface.getConnectionById(
+      offerConnectionId
+    );
+    const offer = await offerConnection.getOffer();
 
     console.log(`Offering ${offer}`);
 
-    return offer;
+    return { offer, offerConnectionId };
   })
   .setGetAnswer(async (offer) => {
-    console.log(`Answering ${offer}`);
+    const answerConnectionId = networkInterface.createConnection();
+    const answerConnection = networkInterface.getConnectionById(
+      answerConnectionId
+    );
+    const answer = await answerConnection.getAnswer(offer);
 
-    const connectionId = networkInterface.createConnection();
+    console.log(`Answering ${answer}`);
 
-    const connection = networkInterface.getConnectionById(connectionId);
-
-    const answer = await connection.getAnswer(offer);
-
-    return answer;
+    return { answer, answerConnectionId };
   })
-  .setOnAnswer((answer) => console.log(`Got answer ${answer}`))
+  .setOnAnswer((answer) => console.log(`Got answer`, answer))
   .build();
 
 console.log(`Connecting to ${ADDRESS}`);
