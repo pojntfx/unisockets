@@ -10,18 +10,14 @@ const mockConnection = new EventEmitter();
 (async () => {
   const wasi = new WASI();
   const berkeleySocketManager = new BerkeleySocketManager.Builder()
-    .setGetConnection((family, port, addr) => {
-      console.log(`Getting connection for ${family} ${addr}:${port}`);
-
+    .setGetConnection((_, port, addr) => {
       return {
         send: (message) => {
           mockConnection.emit(`${addr}:${port}`, message);
         },
       };
     })
-    .setGetReceiver((family, port, addr) => {
-      console.log(`Getting receiver for ${family} ${addr}:${port}`);
-
+    .setGetReceiver((_, port, addr) => {
       const receiverBroadcaster = new EventEmitter();
 
       mockConnection.on(`${addr}:${port}`, (message) =>
