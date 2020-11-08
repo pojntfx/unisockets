@@ -70,7 +70,7 @@ int main() {
     received_message_length =
         recv(remote_sock, &received_message, RECEIVED_MESSAGE_MAX_LENGTH, 0);
 
-    printf("%s", received_message);
+    printf("%s\n", received_message); // TODO: Remove \n once transfer works
   }
 
   return 0;
