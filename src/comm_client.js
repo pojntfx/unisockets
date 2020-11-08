@@ -12,9 +12,13 @@ const networkInterface = new NetworkInterface.Builder()
       },
     ],
   })
-  .setOnConnect((id, e) => console.log(id, "connected", e))
+  .setOnConnect((id, e) => {
+    console.log(id, "connected", e);
+  })
   .setOnReceive((id, e) => console.log(id, "received", e))
-  .setOnDisconnect((id, e) => console.log(id, "disconnected", e))
+  .setOnDisconnect((id, e) => {
+    console.log(id, "disconnected", e);
+  })
   .build();
 
 const discoveryClient = new DiscoveryClient.Builder()
