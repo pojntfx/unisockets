@@ -2,6 +2,7 @@ import fs from "fs";
 import { WASI } from "wasi";
 import BerkeleySocketManager from "../lib/berkeley_socket_manager.js";
 import EventEmitter from "events";
+import Asyncify from "asyncify-wasm";
 
 const BINARY_PATH = "./src/client_example.wasm";
 
@@ -10,25 +11,28 @@ const mockConnection = new EventEmitter();
 (async () => {
   const wasi = new WASI();
   const berkeleySocketManager = new BerkeleySocketManager.Builder()
-    .setGetConnection((_, port, addr) => {
+    .setGetConnection(async (_, port, addr) => {
       return {
-        send: (message) => {
-          mockConnection.emit(`${addr}:${port}`, message);
+        send: async (message) => {
+          await mockConnection.emit(`${addr}:${port}`, message);
         },
       };
     })
-    .setGetReceiver((_, port, addr) => {
+    .setGetReceiver(async (_, port, addr) => {
       const receiverBroadcaster = new EventEmitter();
 
-      mockConnection.on(`${addr}:${port}`, (message) =>
-        receiverBroadcaster.emit("message", message)
+      mockConnection.on(`${addr}:${port}`, async (message) =>
+        setTimeout(
+          async () => await receiverBroadcaster.emit("message", message),
+          100
+        )
       );
 
       return receiverBroadcaster;
     })
     .build();
 
-  const instance = await WebAssembly.instantiate(
+  const instance = await Asyncify.instantiate(
     await WebAssembly.compile(fs.readFileSync(BINARY_PATH)),
     {
       wasi_snapshot_preview1: wasi.wasiImport,
