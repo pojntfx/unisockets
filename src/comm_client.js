@@ -1,11 +1,11 @@
 import DiscoveryClient from "../lib/discovery_client.js";
 import NetworkInterface from "../lib/network_interface.js";
-import EventEmitter from "events";
+import { v4 } from "uuid";
 
 const ADDRESS = "ws://localhost:6999";
+const MESSAGE = `Hello peer! My message seed: ${v4()}`;
 
-const candidateBus = new EventEmitter();
-candidateBus.setMaxListeners(10000);
+console.log("Sending the following message to peers:", MESSAGE);
 
 const networkInterface = new NetworkInterface.Builder()
   .setConfig({
@@ -21,7 +21,7 @@ const networkInterface = new NetworkInterface.Builder()
 
     const connection = networkInterface.getConnectionById(id);
 
-    connection.send("Hello!");
+    connection.send(MESSAGE);
   })
   .setOnReceive((id, e) => {
     console.log(id, "received", e);
@@ -29,20 +29,12 @@ const networkInterface = new NetworkInterface.Builder()
   .setOnDisconnect((id, e) => {
     console.log(id, "disconnected", e);
   })
-  .setOnCandidate((connectionId, candidate) => {
-    candidateBus.emit("candidate", {
-      connectionId,
-      candidate,
-    });
-
-    console.log(connectionId, "candidate", candidate);
-  })
   .build();
 
 const discoveryClient = new DiscoveryClient.Builder()
   .setAddress(ADDRESS)
-  .setGetOffer(async () => {
-    const offerConnectionId = networkInterface.createConnection();
+  .setGetOffer(async (handler) => {
+    const offerConnectionId = networkInterface.createConnection(null, handler);
     const offerConnection = networkInterface.getConnectionById(
       offerConnectionId
     );
@@ -52,9 +44,10 @@ const discoveryClient = new DiscoveryClient.Builder()
 
     return { offer, offerConnectionId };
   })
-  .setGetAnswer(async ({ offer, offerConnectionId }) => {
+  .setGetAnswer(async ({ offer, offerConnectionId, handler }) => {
     const answerConnectionId = networkInterface.createConnection(
-      offerConnectionId
+      offerConnectionId,
+      handler
     );
     const answerConnection = networkInterface.getConnectionById(
       answerConnectionId
@@ -82,13 +75,6 @@ const discoveryClient = new DiscoveryClient.Builder()
     connection && connection.acceptCandidate(candidate);
   })
   .build();
-
-candidateBus.on("candidate", (candidate) => {
-  discoveryClient.sendCandidate({
-    connectionId: candidate.connectionId,
-    candidate: candidate.candidate,
-  });
-});
 
 console.log(`Connecting to ${ADDRESS}`);
 
