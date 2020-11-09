@@ -45,6 +45,7 @@ test: \
 	test-client_example-native \
 	test-server_example-wasm \
 	test-server_example-native \
+	test-client_server_example-wasm \
 	test-signaling_server \
 	test-signaling_client \
 	test-comm_client
@@ -58,6 +59,9 @@ test-server_example-wasm:
 	yarn test:server_example
 test-server_example-native:
 	./src/server_example
+
+test-client_server_example-wasm:
+	yarn test:client_server_example
 
 test-signaling_server:
 	yarn test:signaling_server
