@@ -28,7 +28,7 @@ const mockConnection = new EventEmitter();
               ...new TextEncoder().encode("You've sent: "),
               ...message,
             ]),
-          100
+          500
         )
       );
 

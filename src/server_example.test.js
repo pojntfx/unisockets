@@ -12,18 +12,29 @@ const mockConnection = new EventEmitter();
   const wasi = new WASI();
   const berkeleySocketManager = new BerkeleySocketManager.Builder()
     .setGetConnection(async (_, port, addr) => {
+      setInterval(
+        () =>
+          mockConnection.emit(
+            `${addr}:${port}`,
+            new TextEncoder().encode("Hey, server!")
+          ),
+        1000
+      );
+
       return {
         send: async (message) => {
-          await mockConnection.emit(`${addr}:${port}`, message);
+          // await mockConnection.emit(`${addr}:${port}`, message); // This would cause a feedback loop with the mocked connection
         },
       };
     })
     .setGetReceiver(async (_, port, addr) => {
       const receiverBroadcaster = new EventEmitter();
 
-      mockConnection.on(
-        `${addr}:${port}`,
-        async (message) => await receiverBroadcaster.emit("message", message)
+      mockConnection.on(`${addr}:${port}`, async (message) =>
+        setTimeout(
+          async () => await receiverBroadcaster.emit("message", message),
+          500
+        )
       );
 
       return receiverBroadcaster;
