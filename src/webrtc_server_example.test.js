@@ -110,7 +110,7 @@ const discoveryClient = new DiscoveryClient.Builder()
 // Discovery client
 (async () => discoveryClient.connect())();
 
-// Client
+// Server
 // TODO: Run in seperate thread
 (async () => {
   const wasi = new WASI();
@@ -135,7 +135,7 @@ const discoveryClient = new DiscoveryClient.Builder()
     .build();
 
   const instance = await Asyncify.instantiate(
-    await WebAssembly.compile(fs.readFileSync("./src/client_example.wasm")),
+    await WebAssembly.compile(fs.readFileSync("./src/server_example.wasm")),
     {
       wasi_snapshot_preview1: wasi.wasiImport,
       env: berkeleySocketManager.getImports(),
