@@ -46,7 +46,7 @@ test: \
 	test-server_example-wasm \
 	test-server_example-native \
 	test-client_server_example-wasm \
-	test-webrtc_client_server_example-wasm \
+	test-webrtc_client_example-wasm \
 	test-signaling_server \
 	test-signaling_client \
 	test-comm_client
@@ -63,8 +63,8 @@ test-server_example-native:
 
 test-client_server_example-wasm:
 	yarn test:client_server_example
-test-webrtc_client_server_example-wasm:
-	yarn test:webrtc_client_server_example
+test-webrtc_client_example-wasm:
+	yarn test:webrtc_client_example
 
 test-signaling_server:
 	yarn test:signaling_server

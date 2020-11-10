@@ -7,7 +7,7 @@
     "test:client_example": "node --experimental-wasi-unstable-preview1 src/client_example.test.js",
     "test:server_example": "node --experimental-wasi-unstable-preview1 src/server_example.test.js",
     "test:client_server_example": "node --experimental-wasi-unstable-preview1 src/client_server_example.test.js",
-    "test:webrtc_client_server_example": "node --experimental-wasi-unstable-preview1 src/webrtc_client_server_example.test.js",
+    "test:webrtc_client_example": "node --experimental-wasi-unstable-preview1 src/webrtc_client_example.test.js",
     "test:signaling_server": "node src/signaling_server.js",
     "test:signaling_client": "node src/signaling_client.js",
     "test:comm_client": "node src/comm_client.js"
