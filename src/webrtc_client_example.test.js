@@ -9,6 +9,7 @@ import NetworkInterface from "../lib/network_interface.js";
 const VIRTUAL_ADDRESS = "127.0.0.1:6912";
 const REMOTE_ADDRESS = "ws://localhost:6999";
 
+const senderConnection = new EventEmitter();
 const receiverConnection = new EventEmitter();
 
 const networkInterface = new NetworkInterface.Builder()
@@ -44,8 +45,16 @@ const networkInterface = new NetworkInterface.Builder()
   .setAddress(VIRTUAL_ADDRESS)
   .setOnConnect((id, e) => {
     console.log(id, "connected", e);
+
+    const connection = networkInterface.getConnectionById(id);
+
+    senderConnection.on(id, async (e) => {
+      connection.send(e);
+    });
   })
   .setOnReceive((id, e) => {
+    console.log(id, "received", e);
+
     receiverConnection.emit(id, e);
   })
   .setOnDisconnect((id, e) => {
@@ -106,22 +115,18 @@ const discoveryClient = new DiscoveryClient.Builder()
   const wasi = new WASI();
   const berkeleySocketManager = new BerkeleySocketManager.Builder()
     .setGetConnection(async (_, port, addr) => {
-      const connection = networkInterface.getConnectionById(`${addr}:${port}`);
-
       return {
         send: async (message) => {
-          await connection.send(message);
+          await senderConnection.emit(`${addr}:${port}`, message);
         },
       };
     })
     .setGetReceiver(async (_, port, addr) => {
       const receiverBroadcaster = new EventEmitter();
 
-      receiverConnection.on(`${addr}:${port}`, async (message) =>
-        setTimeout(
-          async () => await receiverBroadcaster.emit("message", message),
-          500
-        )
+      receiverConnection.on(
+        `${addr}:${port}`,
+        async (message) => await receiverBroadcaster.emit("message", message)
       );
 
       return receiverBroadcaster;
