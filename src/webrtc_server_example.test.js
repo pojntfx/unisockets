@@ -12,6 +12,8 @@ const REMOTE_ADDRESS = "ws://localhost:6999";
 const senderConnection = new EventEmitter();
 const receiverConnection = new EventEmitter();
 
+const ready = new EventEmitter();
+
 const networkInterface = new NetworkInterface.Builder()
   .setConfig({
     iceServers: [
@@ -52,44 +54,7 @@ const networkInterface = new NetworkInterface.Builder()
       connection.send(e);
     });
 
-    (async () => {
-      const wasi = new WASI();
-      const berkeleySocketManager = new BerkeleySocketManager.Builder()
-        .setGetConnection(async (_, port, addr) => {
-          return {
-            send: async (message) => {
-              await senderConnection.emit(`${addr}:${port}`, message);
-            },
-          };
-        })
-        .setGetReceiver(async (_, port, addr) => {
-          const receiverBroadcaster = new EventEmitter();
-
-          receiverConnection.on(
-            `${addr}:${port}`,
-            async (message) =>
-              await receiverBroadcaster.emit(
-                "message",
-                new Uint8Array(message.data)
-              )
-          );
-
-          return receiverBroadcaster;
-        })
-        .build();
-
-      const instance = await Asyncify.instantiate(
-        await WebAssembly.compile(fs.readFileSync("./src/server_example.wasm")),
-        {
-          wasi_snapshot_preview1: wasi.wasiImport,
-          env: berkeleySocketManager.getImports(),
-        }
-      );
-
-      berkeleySocketManager.setMemory(instance.exports.memory);
-
-      wasi.start(instance);
-    })();
+    ready.emit("ready", true);
   })
   .setOnReceive((id, e) => {
     console.log(id, "received", e);
@@ -150,4 +115,41 @@ const discoveryClient = new DiscoveryClient.Builder()
 (async () => discoveryClient.connect())();
 
 // Server
-// TODO: Run in seperate thread
+ready.once("ready", async () => {
+  const wasi = new WASI();
+  const berkeleySocketManager = new BerkeleySocketManager.Builder()
+    .setGetConnection(async (_, port, addr) => {
+      return {
+        send: async (message) => {
+          await senderConnection.emit(`${addr}:${port}`, message);
+        },
+      };
+    })
+    .setGetReceiver(async (_, port, addr) => {
+      const receiverBroadcaster = new EventEmitter();
+
+      receiverConnection.on(
+        `${addr}:${port}`,
+        async (message) =>
+          await receiverBroadcaster.emit(
+            "message",
+            new Uint8Array(message.data)
+          )
+      );
+
+      return receiverBroadcaster;
+    })
+    .build();
+
+  const instance = await Asyncify.instantiate(
+    await WebAssembly.compile(fs.readFileSync("./src/server_example.wasm")),
+    {
+      wasi_snapshot_preview1: wasi.wasiImport,
+      env: berkeleySocketManager.getImports(),
+    }
+  );
+
+  berkeleySocketManager.setMemory(instance.exports.memory);
+
+  wasi.start(instance);
+});
