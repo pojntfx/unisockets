@@ -21,27 +21,6 @@ const networkInterface = new NetworkInterface.Builder()
         url: "stun:global.stun.twilio.com:3478?transport=udp",
         urls: "stun:global.stun.twilio.com:3478?transport=udp",
       },
-      {
-        url: "turn:global.turn.twilio.com:3478?transport=udp",
-        username:
-          "cd4dfc8127082a04b865f5607c031410726df919c4ced0f93619be0ed2b811b3",
-        urls: "turn:global.turn.twilio.com:3478?transport=udp",
-        credential: "h/sD5UftD1H2Tjlux/u6kqdqsIleXtEEZthVgY/BciA=",
-      },
-      {
-        url: "turn:global.turn.twilio.com:3478?transport=tcp",
-        username:
-          "cd4dfc8127082a04b865f5607c031410726df919c4ced0f93619be0ed2b811b3",
-        urls: "turn:global.turn.twilio.com:3478?transport=tcp",
-        credential: "h/sD5UftD1H2Tjlux/u6kqdqsIleXtEEZthVgY/BciA=",
-      },
-      {
-        url: "turn:global.turn.twilio.com:443?transport=tcp",
-        username:
-          "cd4dfc8127082a04b865f5607c031410726df919c4ced0f93619be0ed2b811b3",
-        urls: "turn:global.turn.twilio.com:443?transport=tcp",
-        credential: "h/sD5UftD1H2Tjlux/u6kqdqsIleXtEEZthVgY/BciA=",
-      },
     ],
   })
   .setAddress(VIRTUAL_ADDRESS)
