@@ -6,8 +6,8 @@ import Asyncify from "asyncify-wasm";
 import DiscoveryClient from "../lib/discovery_client.js";
 import NetworkInterface from "../lib/network_interface.js";
 
-const VIRTUAL_ADDRESS = "127.0.0.1:6912";
-const REMOTE_ADDRESS = "ws://localhost:6999";
+const LOCAL_ADDRESS = `127.0.0.1:${Math.floor(Math.random() * 10000)}`;
+const SIGNALING_ADDRESS = "ws://localhost:6999";
 
 const senderConnection = new EventEmitter();
 const receiverConnection = new EventEmitter();
@@ -23,7 +23,7 @@ const networkInterface = new NetworkInterface.Builder()
       },
     ],
   })
-  .setAddress(VIRTUAL_ADDRESS)
+  .setLocalAddress(LOCAL_ADDRESS)
   .setOnConnect((id, e) => {
     console.log(id, "connected", e);
 
@@ -46,7 +46,7 @@ const networkInterface = new NetworkInterface.Builder()
   .build();
 
 const discoveryClient = new DiscoveryClient.Builder()
-  .setAddress(REMOTE_ADDRESS)
+  .setAddress(SIGNALING_ADDRESS)
   .setGetOffer(async (handler) => {
     const offerConnectionId = networkInterface.createConnection(null, handler);
     const offerConnection = networkInterface.getConnectionById(

@@ -13,7 +13,7 @@
 #include "berkeley_sockets.h"
 #endif
 
-#define LISTEN_ADDR "127.0.0.1"
+#define LISTEN_ADDR "10.0.0.2"
 #define LISTEN_PORT 6912
 #define LISTEN_MAX_CLIENTS 5
 
