@@ -24,15 +24,16 @@ const networkInterface = new NetworkInterface.Builder()
     ],
   })
   .setLocalAddress(LOCAL_ADDRESS)
-  .setOnConnect((id, e) => {
-    // TODO: This is the wrong (local) ID; it should return the remote ID!
-    console.log(id, "connected", e);
+  .setOnConnect((id, establishedConnections, e) => {
+    console.log(id, establishedConnections, "connected", e);
 
     const connection = networkInterface.getConnectionById(id);
 
-    senderConnection.on(id, async (e) => {
-      connection.send(e);
-    });
+    establishedConnections.forEach((establishedConnection) =>
+      senderConnection.on(establishedConnection, async (e) => {
+        connection.send(e);
+      })
+    );
 
     ready.emit("ready", true);
   })
@@ -79,6 +80,7 @@ const discoveryClient = new DiscoveryClient.Builder()
     const offerConnection = networkInterface.getConnectionById(
       offerConnectionId
     );
+    networkInterface.establish(offerConnectionId, answerConnectionId);
 
     offerConnection.acceptAnswer(answer);
   })
