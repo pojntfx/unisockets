@@ -25,14 +25,16 @@ const networkInterface = new NetworkInterface.Builder()
     ],
   })
   .setLocalAddress(LOCAL_ADDRESS)
-  .setOnConnect((id, e) => {
-    console.log(id, "connected", e);
+  .setOnConnect((id, establishedConnections, e) => {
+    console.log(id, establishedConnections, "connected", e);
 
     const connection = networkInterface.getConnectionById(id);
 
-    senderConnection.on(id, async (e) => {
-      connection.send(e);
-    });
+    establishedConnections.forEach((establishedConnection) =>
+      senderConnection.on(establishedConnection, async (e) => {
+        connection.send(e);
+      })
+    );
 
     (async () => {
       await once(ready, "isReady");
@@ -85,6 +87,7 @@ const discoveryClient = new DiscoveryClient.Builder()
     const offerConnection = networkInterface.getConnectionById(
       offerConnectionId
     );
+    networkInterface.establish(offerConnectionId, answerConnectionId);
 
     offerConnection.acceptAnswer(answer);
   })
