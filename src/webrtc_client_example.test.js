@@ -71,9 +71,9 @@ const discoveryClient = new DiscoveryClient.Builder()
 
     console.log(`Answering ${answer}`);
 
-    return answer;
+    return { answer, answerConnectionId: LOCAL_ADDRESS };
   })
-  .setOnAnswer(({ offerConnectionId, answer }) => {
+  .setOnAnswer(({ offerConnectionId, answer, answerConnectionId }) => {
     console.log(`Got answer ${answer}`);
 
     const offerConnection = networkInterface.getConnectionById(
