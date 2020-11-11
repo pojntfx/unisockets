@@ -25,6 +25,7 @@ const networkInterface = new NetworkInterface.Builder()
   })
   .setLocalAddress(LOCAL_ADDRESS)
   .setOnConnect((id, e) => {
+    // TODO: This is the wrong (local) ID; it should return the remote ID!
     console.log(id, "connected", e);
 
     const connection = networkInterface.getConnectionById(id);
