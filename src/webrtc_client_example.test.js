@@ -29,7 +29,7 @@ const networkInterface = new NetworkInterface.Builder()
 
     const connection = networkInterface.getConnectionById(id);
 
-    establishedConnections.forEach((establishedConnection) =>
+    [id, ...establishedConnections].forEach((establishedConnection) =>
       senderConnection.on(establishedConnection, async (e) => {
         connection.send(e);
       })
