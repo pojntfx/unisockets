@@ -1,7 +1,7 @@
 import fs from "fs";
 import { WASI } from "wasi";
 import BerkeleySocketManager from "../lib/berkeley_socket_manager.js";
-import EventEmitter from "events";
+import EventEmitter, { once } from "events";
 import Asyncify from "asyncify-wasm";
 import DiscoveryClient from "../lib/discovery_client.js";
 import NetworkInterface from "../lib/network_interface.js";
@@ -13,6 +13,7 @@ const senderConnection = new EventEmitter();
 const receiverConnection = new EventEmitter();
 
 const ready = new EventEmitter();
+const accept = new EventEmitter();
 
 const networkInterface = new NetworkInterface.Builder()
   .setConfig({
@@ -34,6 +35,12 @@ const networkInterface = new NetworkInterface.Builder()
         connection.send(e);
       })
     );
+
+    (async () => {
+      await once(ready, "isReady");
+
+      accept.emit("connected", id);
+    })();
 
     ready.emit("ready", true);
   })
@@ -98,7 +105,7 @@ const discoveryClient = new DiscoveryClient.Builder()
 // Discovery client
 (async () => discoveryClient.connect())();
 
-// Client (running async to that blocking operations like `fgets` work)
+// Client
 ready.once("ready", async () => {
   const wasi = new WASI();
   const berkeleySocketManager = new BerkeleySocketManager.Builder()
@@ -123,6 +130,17 @@ ready.once("ready", async () => {
 
       return receiverBroadcaster;
     })
+    .setGetAccepter(async () => {
+      const accepterBroadcaster = new EventEmitter();
+
+      accept.on(
+        "connected",
+        async (peer) => await accepterBroadcaster.emit("connected", peer)
+      );
+
+      return accepterBroadcaster;
+    })
+    .setGetOnAccepting(() => () => ready.emit("isReady", true))
     .build();
 
   const instance = await Asyncify.instantiate(
