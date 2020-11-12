@@ -1,9 +1,9 @@
 import WebSocket, { Server } from "ws";
 import yargs from "yargs";
 import { v4 } from "uuid";
-import { Logger } from "tslog";
+import { createLogger, transports } from "winston";
 
-const log = new Logger();
+const log = createLogger({ transports: new transports.Console() });
 
 enum ESIGNALING_SERVER_OPCODES {
   ACKNOWLEDGED,
