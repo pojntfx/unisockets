@@ -1,5 +1,1 @@
 node_modules
-*.wasm
-client_example
-server_example
-multiclient_server_example
