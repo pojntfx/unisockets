@@ -4,8 +4,11 @@
   "description": "Berkeley sockets for WebAssembly via WebRTC.",
   "main": "index.js",
   "scripts": {
-    "dev:signaling-server": "ts-node-dev bin/signaling-server.ts",
-    "start:signaling-server": "ts-node bin/signaling-server.ts"
+    "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev bin/signaling-server.ts",
+    "dev:signaling-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev bin/signaling-client.ts",
+    "dev:diagram": "tplant -p tsconfig.json -i './**/*.ts*' --output 'diagram.svg'",
+    "start:signaling-server": "ts-node bin/signaling-server.ts",
+    "start:signaling-client": "ts-node bin/signaling-client.ts"
   },
   "repository": {
     "type": "git",
@@ -21,6 +24,7 @@
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.4.0",
     "@types/yargs": "^15.0.9",
+    "tplant": "^2.3.6",
     "ts-node": "^9.0.0",
     "ts-node-dev": "^1.0.0",
     "tslib": "^2.0.3",
