@@ -1,19 +1,16 @@
 import { v4 } from "uuid";
-import { createLogger } from "winston";
-import { Console } from "winston/lib/winston/transports";
 import WebSocket, { Server } from "ws";
-import {
-  Acknowledgement,
-  Gone,
-  ISignalingOperation,
-} from "./signaling-operations";
+import { Acknowledgement } from "../operations/acknowledgement";
+import { Gone } from "../operations/gone";
+import { ISignalingOperation, TSignalingData } from "../operations/operation";
+import { Service } from "./service";
 
-export class SignalingServer {
-  private logger = createLogger({ transports: new Console() });
-
+export class SignalingServer extends Service {
   private clients = new Map<string, WebSocket>();
 
-  constructor(private host: string, private port: number) {}
+  constructor(private host: string, private port: number) {
+    super();
+  }
 
   async open() {
     const server = new Server({
@@ -24,14 +21,16 @@ export class SignalingServer {
     server.on("connection", async (client) => {
       const id = await this.acknowledge(client);
 
+      client.on(
+        "message",
+        async (operation) =>
+          await this.handleOperation(await this.receive(operation))
+      );
+
       await this.registerGoodbye(id);
     });
 
     this.logger.info("Listening", { host: this.host, port: this.port });
-  }
-
-  private async send(client: WebSocket, operation: ISignalingOperation) {
-    client.send(JSON.stringify(operation));
   }
 
   private async acknowledge(client: WebSocket) {
@@ -41,7 +40,7 @@ export class SignalingServer {
 
     this.clients.set(id, client);
 
-    this.logger.info("Client connected", { id });
+    this.logger.info("Connected", { id });
 
     return id;
   }
@@ -54,7 +53,13 @@ export class SignalingServer {
         async (client) => await this.send(client, new Gone({ id }))
       );
 
-      this.logger.info("Client disconnected", { id });
+      this.logger.info("Disconnected", { id });
     });
+  }
+
+  private async handleOperation(
+    operation: ISignalingOperation<TSignalingData>
+  ) {
+    this.logger.debug("Handling Operation", operation);
   }
 }
