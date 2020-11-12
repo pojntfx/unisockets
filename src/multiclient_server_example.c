@@ -1,13 +1,13 @@
 #include <stdio.h>  
-#include <string.h>   //strlen  
+#include <string.h>  
 #include <stdlib.h>  
 #include <errno.h>  
-#include <unistd.h>   //close  
-#include <arpa/inet.h>    //close  
+#include <unistd.h>   
+#include <arpa/inet.h>  
 #include <sys/types.h>  
 #include <sys/socket.h>  
 #include <netinet/in.h>  
-#include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros  
+#include <sys/time.h>
      
 #define FALSE  0  
 #define PORT 8888  
@@ -121,15 +121,6 @@ int main(int argc , char *argv[])   {
             printf("New connection , socket fd is %d , ip is : %s , port : %d  \n" , new_socket , inet_ntoa(address.sin_addr) , ntohs 
                   (address.sin_port));   
            
-            // //send new connection greeting message  
-            // if( send(new_socket, message, strlen(message), 0) != strlen(message) )   
-            // {   
-            //     perror("send");   
-            // }   
-                 
-            // puts("Welcome message sent successfully");   
-                 
-            //add new socket to array of sockets  
             for (i = 0; i < max_clients; i++)   
             {   
                 //if position is empty  

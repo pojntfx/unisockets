@@ -7,7 +7,8 @@ build: \
 	build-client_example-wasm \
 	build-client_example-native \
 	build-server_example-wasm \
-	build-server_example-native
+	build-server_example-native \
+	build-multiclient_server_example-native
 
 build-container-wasi-sdk:
 	@docker build -t pojntfx/wasi-sdk src
@@ -30,7 +31,8 @@ clean: \
 	clean-client_example-wasm \
 	clean-client_example-native \
 	clean-server_example-wasm \
-	clean-server_example-native
+	clean-server_example-native \
+	clean-multiclient_server_example-native
 
 clean-client_example-wasm:
 	@rm -f src/client_example.wasm
@@ -41,6 +43,9 @@ clean-server_example-wasm:
 	@rm -f src/server_example.wasm
 clean-server_example-native:
 	@rm -f src/server_example
+
+clean-multiclient_server_example-native:
+	@rm -f src/multiclient_server_example
 
 # Test
 test: \
@@ -53,7 +58,8 @@ test: \
 	test-webrtc_server_example-wasm \
 	test-signaling_server \
 	test-signaling_client \
-	test-comm_client
+	test-comm_client \
+	test-multiclient_server_example-native
 
 test-multiclient_server_example-native:
 	./src/multiclient_server_example
