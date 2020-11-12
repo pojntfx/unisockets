@@ -44,10 +44,12 @@ const networkInterface = new NetworkInterface.Builder()
 
     ready.emit("ready", true);
   })
-  .setOnReceive((id, e) => {
-    console.log(id, "received", e);
+  .setOnReceive((id, establishedConnections, e) => {
+    console.log(id, establishedConnections, "received", e);
 
-    receiverConnection.emit(id, e);
+    [id, ...establishedConnections].forEach((establishedConnection) =>
+      receiverConnection.emit(establishedConnection, e)
+    );
   })
   .setOnDisconnect((id, e) => {
     console.log(id, "disconnected", e);
