@@ -1,5 +1,23 @@
-import { Server } from "ws";
+import WebSocket, { Server } from "ws";
 import yargs from "yargs";
+import { v4 } from "uuid";
+import { Logger } from "tslog";
+
+const log = new Logger();
+
+enum ESIGNALING_SERVER_OPCODES {
+  ACKNOWLEDGED,
+}
+
+interface IOperation {
+  opcode: ESIGNALING_SERVER_OPCODES;
+}
+
+interface IOperationAcknowledgement extends IOperation {
+  data: {
+    id: string;
+  };
+}
 
 const { laddr } = yargs(process.argv.slice(2)).options({
   laddr: {
@@ -12,10 +30,28 @@ const server = new Server({
   port: parseInt(laddr.split(":")[1]),
 });
 
-server.on("connection", (connection) => {
-  connection.send("Welcome, client!");
+const clients = new Map<string, WebSocket>();
 
-  connection.on("message", (message) => {
-    connection.send(`You've sent: ${message}`);
+server.on("connection", (client) => {
+  const id = v4();
+  clients.set(id, client);
+
+  const acknowledgement: IOperationAcknowledgement = {
+    opcode: ESIGNALING_SERVER_OPCODES.ACKNOWLEDGED,
+    data: {
+      id,
+    },
+  };
+  client.send(JSON.stringify(acknowledgement));
+  log.info("Client connected", { id });
+
+  client.on("message", (message) => {
+    client.send(`You've sent: ${message}`);
+  });
+
+  client.on("close", () => {
+    clients.delete(id);
+
+    log.info("Client disconnected", { id });
   });
 });
