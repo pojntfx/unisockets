@@ -7,7 +7,8 @@ build: \
 	build-client_example-wasm \
 	build-client_example-native \
 	build-server_example-wasm \
-	build-server_example-native
+	build-server_example-native \
+	build-multiclient_server_example-native
 
 build-container-wasi-sdk:
 	@docker build -t pojntfx/wasi-sdk src
@@ -16,6 +17,9 @@ build-client_example-wasm: build-container-wasi-sdk
 	@docker run -v ${PWD}/src:/src:Z pojntfx/wasi-sdk sh -c 'cd /src && clang -Wl,--allow-undefined -DIS_WASM --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot client_example.c -o client_example_original.wasm && wasm-opt --asyncify -O client_example_original.wasm -o client_example.wasm'
 build-client_example-native:
 	@docker run -v ${PWD}/src:/src:Z silkeh/clang sh -c 'cd /src && clang client_example.c -o client_example'
+
+build-multiclient_server_example-native: 
+	@docker run -v ${PWD}/src:/src:Z silkeh/clang sh -c 'cd /src && clang multiclient_server_example.c -o multiclient_server_example'
 
 build-server_example-wasm: build-container-wasi-sdk
 	@docker run -v ${PWD}/src:/src:Z pojntfx/wasi-sdk sh -c 'cd /src && clang -Wl,--allow-undefined -DIS_WASM --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot server_example.c -o server_example_original.wasm && wasm-opt --asyncify -O server_example_original.wasm -o server_example.wasm'
@@ -27,7 +31,8 @@ clean: \
 	clean-client_example-wasm \
 	clean-client_example-native \
 	clean-server_example-wasm \
-	clean-server_example-native
+	clean-server_example-native \
+	clean-multiclient_server_example-native
 
 clean-client_example-wasm:
 	@rm -f src/client_example.wasm
@@ -38,6 +43,9 @@ clean-server_example-wasm:
 	@rm -f src/server_example.wasm
 clean-server_example-native:
 	@rm -f src/server_example
+
+clean-multiclient_server_example-native:
+	@rm -f src/multiclient_server_example
 
 # Test
 test: \
@@ -50,7 +58,11 @@ test: \
 	test-webrtc_server_example-wasm \
 	test-signaling_server \
 	test-signaling_client \
-	test-comm_client
+	test-comm_client \
+	test-multiclient_server_example-native
+
+test-multiclient_server_example-native:
+	./src/multiclient_server_example
 
 test-client_example-wasm:
 	yarn test:client_example
