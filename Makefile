@@ -17,6 +17,9 @@ build-client_example-wasm: build-container-wasi-sdk
 build-client_example-native:
 	@docker run -v ${PWD}/src:/src:Z silkeh/clang sh -c 'cd /src && clang client_example.c -o client_example'
 
+build-multiclient_server_example-native: 
+	@docker run -v ${PWD}/src:/src:Z silkeh/clang sh -c 'cd /src && clang multiclient_server_example.c -o multiclient_server_example'
+
 build-server_example-wasm: build-container-wasi-sdk
 	@docker run -v ${PWD}/src:/src:Z pojntfx/wasi-sdk sh -c 'cd /src && clang -Wl,--allow-undefined -DIS_WASM --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot server_example.c -o server_example_original.wasm && wasm-opt --asyncify -O server_example_original.wasm -o server_example.wasm'
 build-server_example-native:
@@ -51,6 +54,9 @@ test: \
 	test-signaling_server \
 	test-signaling_client \
 	test-comm_client
+
+test-multiclient_server_example-native:
+	./src/multiclient_server_example
 
 test-client_example-wasm:
 	yarn test:client_example
