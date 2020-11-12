@@ -10,8 +10,8 @@
 #include "berkeley_sockets.h"
 #endif
 
-#define REMOTE_ADDR "10.0.0.2"
-#define REMOTE_PORT 6912
+#define REMOTE_ADDR "127.0.0.1"
+#define REMOTE_PORT 8888
 
 #define SENT_MESSAGE_MAX_LENGTH 1024
 #define RECEIVED_MESSAGE_PREFIX "You've sent: "
