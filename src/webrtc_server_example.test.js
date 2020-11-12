@@ -140,7 +140,7 @@ ready.once("ready", async () => {
 
       return accepterBroadcaster;
     })
-    .setOnListen(() => () => ready.emit("isReady", true))
+    .setGetOnAccepting(() => () => ready.emit("isReady", true))
     .build();
 
   const instance = await Asyncify.instantiate(
