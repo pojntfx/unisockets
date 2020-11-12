@@ -6,7 +6,6 @@ import Asyncify from "asyncify-wasm";
 import DiscoveryClient from "../lib/discovery_client.js";
 import NetworkInterface from "../lib/network_interface.js";
 
-const LOCAL_ADDRESS = `127.0.0.1:${Math.floor(Math.random() * 10000)}`;
 const SIGNALING_ADDRESS = "ws://localhost:6999";
 
 const senderConnection = new EventEmitter();
@@ -24,7 +23,7 @@ const networkInterface = new NetworkInterface.Builder()
       },
     ],
   })
-  .setLocalAddress(LOCAL_ADDRESS)
+  .setGetLocalAddress(() => `127.0.0.1:${Math.floor(Math.random() * 10000)}`)
   .setOnConnect((id, establishedConnections, e) => {
     console.log(id, establishedConnections, "connected", e);
 
@@ -81,7 +80,9 @@ const discoveryClient = new DiscoveryClient.Builder()
 
     console.log(`Answering ${answer}`);
 
-    return { answer, answerConnectionId: LOCAL_ADDRESS };
+    const responseConnection = networkInterface.createConnection(null, handler);
+
+    return { answer, answerConnectionId: responseConnection };
   })
   .setOnAnswer(({ offerConnectionId, answer, answerConnectionId }) => {
     console.log(`Got answer ${answer}`);
