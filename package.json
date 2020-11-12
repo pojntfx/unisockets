@@ -1,33 +1,30 @@
 {
-  "name": "@pojntfx/webassembly-berkeley-sockets-webrtc",
+  "name": "@pojntfx/webassembly-berkeley-sockets-via-webrtc",
   "version": "0.0.1-alpha1",
-  "description": "Berkeley sockets implementation for WebAssembly using WebRTC.",
+  "description": "Berkeley sockets for WebAssembly via WebRTC.",
   "main": "index.js",
   "scripts": {
-    "test:client_example": "node --experimental-wasi-unstable-preview1 src/client_example.test.js",
-    "test:server_example": "node --experimental-wasi-unstable-preview1 src/server_example.test.js",
-    "test:client_server_example": "node --experimental-wasi-unstable-preview1 src/client_server_example.test.js",
-    "test:webrtc_client_example": "node --experimental-wasi-unstable-preview1 src/webrtc_client_example.test.js",
-    "test:webrtc_server_example": "node --experimental-wasi-unstable-preview1 src/webrtc_server_example.test.js",
-    "test:signaling_server": "node src/signaling_server.js",
-    "test:signaling_client": "node src/signaling_client.js",
-    "test:comm_client": "node src/comm_client.js"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pojntfx/webassembly-berkeley-sockets-webrtc.git"
+    "url": "git+https://github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc.git"
   },
   "author": "Felix Pojtinger <felix@pojtinger.com>",
   "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/pojntfx/webassembly-berkeley-sockets-webrtc/issues"
+    "url": "https://github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/issues"
   },
-  "homepage": "https://github.com/pojntfx/webassembly-berkeley-sockets-webrtc#readme",
-  "type": "module",
-  "dependencies": {
-    "asyncify-wasm": "^1.1.1",
-    "uuid": "^8.3.1",
-    "wrtc": "^0.4.6",
-    "ws": "^7.3.1"
+  "homepage": "https://github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc#readme",
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.15",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.4.4",
+    "tslib": "^2.0.3",
+    "typescript": "^4.0.5"
   }
 }
