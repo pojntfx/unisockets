@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { IAcknowledgementData } from "../operations/acknowledgement";
-import { Answer } from "../operations/answer";
+import { Answer, IAnswerData } from "../operations/answer";
 import { IGoneData } from "../operations/gone";
 import { IOfferData, Offer } from "../operations/offer";
 import {
@@ -19,7 +19,8 @@ export class SignalingClient extends Service {
     private address: string,
     private reconnectDuration: number,
     private getOffer: () => Promise<string>,
-    private getAnswer: (offer: string) => Promise<string>
+    private getAnswer: (offer: string) => Promise<string>,
+    private onAnswer: (answererId: string, answer: string) => Promise<void>
   ) {
     super();
   }
@@ -35,11 +36,11 @@ export class SignalingClient extends Service {
     };
     this.client.onclose = async () => await this.handleDisconnect();
 
-    this.logger.info("Connected", { address: this.address });
+    this.logger.info("Server connected", { address: this.address });
   }
 
   private async handleDisconnect() {
-    this.logger.info("Disconnected", {
+    this.logger.info("Server disconnected", {
       address: this.address,
       reconnectingIn: this.reconnectDuration,
     });
@@ -52,19 +53,19 @@ export class SignalingClient extends Service {
   private async handleOperation(
     operation: ISignalingOperation<TSignalingData>
   ) {
-    this.logger.debug("Handling Operation", operation);
+    this.logger.debug("Handling operation", operation);
 
     switch (operation.opcode) {
       case ESIGNALING_OPCODES.GONE: {
         const data = operation.data as IGoneData;
 
-        this.logger.info("Gone", data);
+        this.logger.info("Received gone", data);
       }
 
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {
         this.id = (operation.data as IAcknowledgementData).id;
 
-        this.logger.info("Acknowledged", { id: this.id });
+        this.logger.info("Received acknowledgement", { id: this.id });
 
         const offer = await this.getOffer();
 
@@ -76,7 +77,7 @@ export class SignalingClient extends Service {
           })
         );
 
-        this.logger.info("Offer", { id: this.id, offer });
+        this.logger.info("Sent offer", { id: this.id, offer });
 
         break;
       }
@@ -84,7 +85,7 @@ export class SignalingClient extends Service {
       case ESIGNALING_OPCODES.OFFER: {
         const data = operation.data as IOfferData;
 
-        this.logger.info("Answering", data);
+        this.logger.info("Received offer", data);
 
         const answer = await this.getAnswer(data.offer);
 
@@ -97,7 +98,7 @@ export class SignalingClient extends Service {
           })
         );
 
-        this.logger.info("Answer", {
+        this.logger.info("Sent answer", {
           offererId: data.id,
           answererId: this.id,
           answer,
@@ -106,7 +107,15 @@ export class SignalingClient extends Service {
         break;
       }
 
-      // TODO: Handle answers
+      case ESIGNALING_OPCODES.ANSWER: {
+        const data = operation.data as IAnswerData;
+
+        this.logger.info("Received answer", data);
+
+        await this.onAnswer(data.answererId, data.answer); // TODO: Also pass onCandidate handler
+
+        break;
+      }
 
       default: {
         throw new UnimplementedOperationError(operation.opcode);
