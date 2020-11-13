@@ -1,12 +1,14 @@
-import { IAcknowledgementData } from "./acknowledgement";
 import { IGoneData } from "./gone";
+import { IAcknowledgementData } from "./acknowledgement";
+import { IOfferData } from "./offer";
 
 export enum ESIGNALING_OPCODES {
-  ACKNOWLEDGED,
   GONE,
+  ACKNOWLEDGED,
+  OFFER,
 }
 
-export type TSignalingData = IAcknowledgementData | IGoneData;
+export type TSignalingData = IGoneData | IAcknowledgementData | IOfferData;
 
 export interface ISignalingOperation<T> {
   opcode: ESIGNALING_OPCODES;

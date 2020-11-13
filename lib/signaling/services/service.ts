@@ -1,7 +1,12 @@
 import WebSocket, { Data } from "ws";
 import { getLogger } from "../../utils/logger";
-import { Acknowledgement } from "../operations/acknowledgement";
-import { Gone } from "../operations/gone";
+import { UnimplementedOperationError } from "../errors/unimplemented-operation";
+import {
+  Acknowledgement,
+  IAcknowledgementData,
+} from "../operations/acknowledgement";
+import { Gone, IGoneData } from "../operations/gone";
+import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
   ISignalingOperation,
@@ -22,19 +27,31 @@ export class Service {
       TSignalingData
     >;
 
-    this.logger.debug("Operation", operation);
+    this.logger.debug("Received Operation", operation);
 
     switch (operation.opcode) {
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {
         this.logger.info("Acknowledged", operation.data);
 
-        return new Acknowledgement(operation.data);
+        return new Acknowledgement(operation.data as IAcknowledgementData);
       }
 
-      default: {
+      case ESIGNALING_OPCODES.OFFER: {
+        this.logger.info("Offer", operation.data);
+
+        return new Offer(operation.data as IOfferData);
+      }
+
+      case ESIGNALING_OPCODES.GONE: {
         this.logger.info("Gone", operation.data);
 
-        return new Gone(operation.data);
+        return new Gone(operation.data as IGoneData);
+      }
+
+      // TODO: Handle answers
+
+      default: {
+        throw new UnimplementedOperationError(operation.opcode);
       }
     }
   }
