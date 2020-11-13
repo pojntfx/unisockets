@@ -7,8 +7,24 @@ const logger = getLogger();
 
 const getOffer = async () => v4();
 const getAnswer = async (_: string) => v4();
-const onAnswer = async (answererId: string, answer: string) => {
-  logger.info("Handling answer", { answererId, answer });
+const handleAnswer = async (
+  offererId: string,
+  answererId: string,
+  answer: string,
+  handleCandidate: (candidate: string) => Promise<any>
+) => {
+  logger.info("Handling answer", { offererId, answererId, answer });
+
+  await handleCandidate(v4());
+  await handleCandidate(v4());
+  await handleCandidate(v4());
+};
+const handleCandidate = async (
+  offererId: string,
+  answererId: string,
+  candidate: string
+) => {
+  logger.info("Handling candidate", { offererId, answererId, candidate });
 };
 
 const { raddr, reconnectDuration } = yargs(process.argv.slice(2)).options({
@@ -27,7 +43,8 @@ const client = new SignalingClient(
   reconnectDuration,
   getOffer,
   getAnswer,
-  onAnswer
+  handleAnswer,
+  handleCandidate
 );
 
 client.open();

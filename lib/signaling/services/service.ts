@@ -7,6 +7,7 @@ import {
   IAcknowledgementData,
 } from "../operations/acknowledgement";
 import { Answer, IAnswerData } from "../operations/answer";
+import { Candidate, ICandidateData } from "../operations/candidate";
 import { Gone, IGoneData } from "../operations/gone";
 import { IOfferData, Offer } from "../operations/offer";
 import {
@@ -61,6 +62,12 @@ export class Service {
         this.logger.info("Received operation answer", operation.data);
 
         return new Answer(operation.data as IAnswerData);
+      }
+
+      case ESIGNALING_OPCODES.CANDIDATE: {
+        this.logger.info("Received operation candidate", operation.data);
+
+        return new Candidate(operation.data as ICandidateData);
       }
 
       default: {

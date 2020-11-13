@@ -2,6 +2,7 @@ import WebSocket from "ws";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { IAcknowledgementData } from "../operations/acknowledgement";
 import { Answer, IAnswerData } from "../operations/answer";
+import { Candidate, ICandidateData } from "../operations/candidate";
 import { IGoneData } from "../operations/gone";
 import { IOfferData, Offer } from "../operations/offer";
 import {
@@ -20,7 +21,17 @@ export class SignalingClient extends Service {
     private reconnectDuration: number,
     private getOffer: () => Promise<string>,
     private getAnswer: (offer: string) => Promise<string>,
-    private onAnswer: (answererId: string, answer: string) => Promise<void>
+    private onAnswer: (
+      offererId: string,
+      answererId: string,
+      answer: string,
+      handleCandidate: (candidate: string) => Promise<void>
+    ) => Promise<void>,
+    private onCandidate: (
+      offererId: string,
+      answererId: string,
+      candidate: string
+    ) => Promise<void>
   ) {
     super();
   }
@@ -48,6 +59,12 @@ export class SignalingClient extends Service {
     await new Promise((res) => setTimeout(res, this.reconnectDuration));
 
     await this.open();
+  }
+
+  private async sendCandidate(candidate: Candidate) {
+    await this.send(this.client, candidate);
+
+    this.logger.info("Sent candidate", candidate);
   }
 
   private async handleOperation(
@@ -112,7 +129,32 @@ export class SignalingClient extends Service {
 
         this.logger.info("Received answer", data);
 
-        await this.onAnswer(data.answererId, data.answer); // TODO: Also pass onCandidate handler
+        await this.onAnswer(
+          data.offererId,
+          data.answererId,
+          data.answer,
+          async (candidate: string) => {
+            await this.sendCandidate(
+              new Candidate({
+                offererId: data.offererId,
+                answererId: data.answererId,
+                candidate,
+              })
+            );
+
+            this.logger.info("Sent candidate", data);
+          }
+        );
+
+        break;
+      }
+
+      case ESIGNALING_OPCODES.CANDIDATE: {
+        const data = operation.data as ICandidateData;
+
+        this.logger.info("Received candidate", data);
+
+        await this.onCandidate(data.offererId, data.answererId, data.candidate);
 
         break;
       }
