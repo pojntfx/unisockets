@@ -48,7 +48,7 @@ export class SignalingServer extends Service {
 
     this.clients.set(id, client);
 
-    this.logger.info("Connected", { id });
+    this.logger.info("Client connected", { id });
 
     return id;
   }
@@ -64,7 +64,7 @@ export class SignalingServer extends Service {
           async (client) => await this.send(client, new Gone({ id }))
         );
 
-        this.logger.info("Disconnected", { id });
+        this.logger.info("Client disconnected", { id });
       });
     } else {
       throw new ClientDoesNotExistError();
@@ -74,24 +74,27 @@ export class SignalingServer extends Service {
   private async handleOperation(
     operation: ISignalingOperation<TSignalingData>
   ) {
-    this.logger.debug("Handling Operation", operation);
+    this.logger.debug("Handling operation", operation);
 
     switch (operation.opcode) {
       case ESIGNALING_OPCODES.OFFER: {
         const data = operation.data as IOfferData;
 
+        this.logger.info("Received offer", data);
+
         this.clients.forEach(async (client, id) => {
-          id !== data.id &&
-            (await this.send(
+          if (id !== data.id) {
+            await this.send(
               client,
               new Offer({
                 id: data.id,
                 offer: data.offer,
               })
-            ));
-        });
+            );
+          }
 
-        this.logger.info("Offer", data);
+          this.logger.info("Sent offer", { id, data });
+        });
 
         break;
       }
@@ -101,9 +104,11 @@ export class SignalingServer extends Service {
 
         const client = this.clients.get(data.offererId);
 
-        this.logger.info("Answer", data);
+        this.logger.info("Received answer", data);
 
         await this.send(client, new Answer(data));
+
+        this.logger.info("Sent answer", data);
 
         break;
       }
