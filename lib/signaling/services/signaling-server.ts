@@ -4,6 +4,7 @@ import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { Acknowledgement } from "../operations/acknowledgement";
 import { Answer, IAnswerData } from "../operations/answer";
+import { Candidate, ICandidateData } from "../operations/candidate";
 import { Gone } from "../operations/gone";
 import { IOfferData, Offer } from "../operations/offer";
 import {
@@ -109,6 +110,20 @@ export class SignalingServer extends Service {
         await this.send(client, new Answer(data));
 
         this.logger.info("Sent answer", data);
+
+        break;
+      }
+
+      case ESIGNALING_OPCODES.CANDIDATE: {
+        const data = operation.data as ICandidateData;
+
+        const client = this.clients.get(data.answererId);
+
+        this.logger.info("Received candidate", data);
+
+        await this.send(client, new Candidate(data));
+
+        this.logger.info("Sent candidate", data);
 
         break;
       }
