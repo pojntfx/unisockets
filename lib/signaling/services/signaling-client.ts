@@ -1,8 +1,9 @@
 import WebSocket from "ws";
-import { ClientClosedError } from "../errors/client-closed";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { IAcknowledgementData } from "../operations/acknowledgement";
-import { Offer } from "../operations/offer";
+import { Answer } from "../operations/answer";
+import { IGoneData } from "../operations/gone";
+import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
   ISignalingOperation,
@@ -17,7 +18,8 @@ export class SignalingClient extends Service {
   constructor(
     private address: string,
     private reconnectDuration: number,
-    private getOffer: () => Promise<string>
+    private getOffer: () => Promise<string>,
+    private getAnswer: (offer: string) => Promise<string>
   ) {
     super();
   }
@@ -53,6 +55,12 @@ export class SignalingClient extends Service {
     this.logger.debug("Handling Operation", operation);
 
     switch (operation.opcode) {
+      case ESIGNALING_OPCODES.GONE: {
+        const data = operation.data as IGoneData;
+
+        this.logger.info("Gone", data);
+      }
+
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {
         this.id = (operation.data as IAcknowledgementData).id;
 
@@ -60,19 +68,40 @@ export class SignalingClient extends Service {
 
         const offer = await this.getOffer();
 
-        if (this.client) {
-          await this.send(
-            this.client,
-            new Offer({
-              id: this.id,
-              offer,
-            })
-          );
-        } else {
-          throw new ClientClosedError();
-        }
+        await this.send(
+          this.client,
+          new Offer({
+            id: this.id,
+            offer,
+          })
+        );
 
         this.logger.info("Offer", { id: this.id, offer });
+
+        break;
+      }
+
+      case ESIGNALING_OPCODES.OFFER: {
+        const data = operation.data as IOfferData;
+
+        this.logger.info("Answering", data);
+
+        const answer = await this.getAnswer(data.offer);
+
+        await this.send(
+          this.client,
+          new Answer({
+            offererId: data.id,
+            answererId: this.id,
+            answer,
+          })
+        );
+
+        this.logger.info("Answer", {
+          offererId: data.id,
+          answererId: this.id,
+          answer,
+        });
 
         break;
       }
