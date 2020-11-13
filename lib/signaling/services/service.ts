@@ -36,29 +36,29 @@ export class Service {
       TSignalingData
     >;
 
-    this.logger.debug("Received Operation", operation);
+    this.logger.debug("Received operation", operation);
 
     switch (operation.opcode) {
       case ESIGNALING_OPCODES.GONE: {
-        this.logger.info("Gone", operation.data);
+        this.logger.info("Received operation gone", operation.data);
 
         return new Gone(operation.data as IGoneData);
       }
 
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {
-        this.logger.info("Acknowledged", operation.data);
+        this.logger.info("Received operation acknowledged", operation.data);
 
         return new Acknowledgement(operation.data as IAcknowledgementData);
       }
 
       case ESIGNALING_OPCODES.OFFER: {
-        this.logger.info("Offer", operation.data);
+        this.logger.info("Received operation offer", operation.data);
 
         return new Offer(operation.data as IOfferData);
       }
 
       case ESIGNALING_OPCODES.ANSWER: {
-        this.logger.info("Answer", operation.data);
+        this.logger.info("Received operation answer", operation.data);
 
         return new Answer(operation.data as IAnswerData);
       }
