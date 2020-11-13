@@ -3,6 +3,7 @@ import WebSocket, { Server } from "ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { Acknowledgement } from "../operations/acknowledgement";
+import { Answer, IAnswerData } from "../operations/answer";
 import { Gone } from "../operations/gone";
 import { IOfferData, Offer } from "../operations/offer";
 import {
@@ -84,7 +85,7 @@ export class SignalingServer extends Service {
             (await this.send(
               client,
               new Offer({
-                id,
+                id: data.id,
                 offer: data.offer,
               })
             ));
@@ -95,7 +96,17 @@ export class SignalingServer extends Service {
         break;
       }
 
-      // TODO: Handle answers
+      case ESIGNALING_OPCODES.ANSWER: {
+        const data = operation.data as IAnswerData;
+
+        const client = this.clients.get(data.offererId);
+
+        this.logger.info("Answer", data);
+
+        await this.send(client, new Answer(data));
+
+        break;
+      }
 
       default: {
         throw new UnimplementedOperationError(operation.opcode);
