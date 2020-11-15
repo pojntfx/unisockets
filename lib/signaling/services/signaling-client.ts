@@ -15,6 +15,8 @@ import { Service } from "./service";
 import { EventEmitter } from "events";
 import { Bind } from "../operations/bind";
 import { BindRejectedError } from "../errors/bind-rejected";
+import { ShutdownRejectedError } from "../errors/shutdown-rejected";
+import { Shutdown } from "../operations/shutdown";
 
 export class SignalingClient extends Service {
   private id = "";
@@ -61,23 +63,42 @@ export class SignalingClient extends Service {
     this.logger.info("Server connected", { address: this.address });
   }
 
-  // TODO: Implement `shutdown`
   async bind(alias: string) {
     this.logger.info("Binding", { id: this.id, alias });
 
     return new Promise(async (res, rej) => {
       this.asyncResolver.once(
-        this.getBindResolverKey(this.id, alias),
+        this.getAliasResolverKey(this.id, alias),
         (set: boolean) =>
           set
             ? res()
             : rej(
-                new BindRejectedError(this.getBindResolverKey(this.id, alias))
+                new BindRejectedError(this.getAliasResolverKey(this.id, alias))
                   .message
               )
       );
 
       await this.send(this.client, new Bind({ id: this.id, alias }));
+    });
+  }
+
+  async shutdown(alias: string) {
+    this.logger.info("Shutting down", { id: this.id, alias });
+
+    return new Promise(async (res, rej) => {
+      this.asyncResolver.once(
+        this.getAliasResolverKey(this.id, alias),
+        (set: boolean) =>
+          set
+            ? rej(
+                new ShutdownRejectedError(
+                  this.getAliasResolverKey(this.id, alias)
+                ).message
+              )
+            : res()
+      );
+
+      await this.send(this.client, new Shutdown({ id: this.id, alias }));
     });
   }
 
@@ -207,7 +228,7 @@ export class SignalingClient extends Service {
 
         this.logger.info("Received alias", data);
 
-        await this.notifyBind(data.id, data.alias, data.set);
+        await this.notifyBindAndShutdown(data.id, data.alias, data.set);
         await this.onAlias(data.id, data.alias, data.set);
 
         break;
@@ -219,11 +240,11 @@ export class SignalingClient extends Service {
     }
   }
 
-  private async notifyBind(id: string, alias: string, set: boolean) {
-    this.asyncResolver.emit(this.getBindResolverKey(id, alias), set);
+  private async notifyBindAndShutdown(id: string, alias: string, set: boolean) {
+    this.asyncResolver.emit(this.getAliasResolverKey(id, alias), set);
   }
 
-  private getBindResolverKey(id: string, alias: string) {
+  private getAliasResolverKey(id: string, alias: string) {
     return `alias ${id} => ${alias}`;
   }
 }
