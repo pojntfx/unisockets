@@ -10,6 +10,7 @@ import { Alias, IAliasData } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
 import { Bind, IBindData } from "../operations/bind";
 import { Candidate, ICandidateData } from "../operations/candidate";
+import { Connect, IConnectData } from "../operations/connect";
 import { Goodbye, IGoodbyeData } from "../operations/goodbye";
 import { IOfferData, Offer } from "../operations/offer";
 import {
@@ -89,6 +90,12 @@ export class Service {
         this.logger.info("Received operation shutdown", operation.data);
 
         return new Shutdown(operation.data as IShutdownData);
+      }
+
+      case ESIGNALING_OPCODES.CONNECT: {
+        this.logger.info("Received operation connect", operation.data);
+
+        return new Connect(operation.data as IConnectData);
       }
 
       default: {
