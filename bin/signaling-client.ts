@@ -3,11 +3,28 @@ import yargs from "yargs";
 import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { getLogger } from "../lib/utils/logger";
 
+const TEST_ALIAS = "bind-testing.com:443";
+
+const { raddr, reconnectDuration, testBind } = yargs(
+  process.argv.slice(2)
+).options({
+  raddr: {
+    description: "Remote address",
+    default: "ws://localhost:6999",
+  },
+  reconnectDuration: {
+    description: "Reconnect duration in milliseconds",
+    default: 1000,
+  },
+  testBind: {
+    description: `Bind to ${TEST_ALIAS} alias for testing purposes; all clients will try to connect to this test alias`,
+    default: false,
+  },
+}).argv;
+
 const logger = getLogger();
 
 const aliases = new Map<string, string>();
-
-const testAlias = `test-bind-${v4()}`;
 
 const handleConnect = async () => {
   logger.info("Handling connect");
@@ -18,20 +35,30 @@ const handleDisconnect = async () => {
 const handleAcknowledgement = async (id: string) => {
   logger.debug("Handling acknowledgement", { id });
 
-  try {
-    await client.bind(testAlias);
-
-    logger.info("Bind accepted", { id, alias: testAlias });
-
+  if (testBind) {
     try {
-      await client.shutdown(testAlias);
+      logger.info("Binding", { id, alias: TEST_ALIAS });
 
-      logger.info("Shutdown accepted", { id, alias: testAlias });
+      await client.bind(TEST_ALIAS);
+
+      logger.info("Bind accepted", { id, alias: TEST_ALIAS });
+
+      // TODO: `accept` and `shutdown`
     } catch (e) {
-      logger.error("Shutdown rejected", { id, alias: testAlias, error: e });
+      logger.error("Bind rejected", { id, alias: TEST_ALIAS, error: e });
     }
-  } catch (e) {
-    logger.error("Bind rejected", { id, alias: testAlias, error: e });
+  } else {
+    try {
+      logger.info("Connecting", { id, alias: TEST_ALIAS });
+
+      const clientAlias = await client.connect(TEST_ALIAS);
+
+      // TODO: `shutdown` client alias
+
+      logger.info("Connect accepted", { id, alias: TEST_ALIAS });
+    } catch (e) {
+      logger.error("Connect rejected", { id, alias: TEST_ALIAS, error: e });
+    }
   }
 };
 const getOffer = async () => v4();
@@ -75,17 +102,6 @@ const handleAlias = async (id: string, alias: string, set: boolean) => {
     logger.debug("New aliases", { aliases: JSON.stringify([...aliases]) });
   }
 };
-
-const { raddr, reconnectDuration } = yargs(process.argv.slice(2)).options({
-  raddr: {
-    description: "Remote address",
-    default: "ws://localhost:6999",
-  },
-  reconnectDuration: {
-    description: "Reconnect duration in milliseconds",
-    default: 1000,
-  },
-}).argv;
 
 const client = new SignalingClient(
   raddr,
