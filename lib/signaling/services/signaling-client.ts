@@ -12,14 +12,21 @@ import {
   TSignalingData,
 } from "../operations/operation";
 import { Service } from "./service";
+import { EventEmitter } from "events";
+import { Bind } from "../operations/bind";
+import { BindRejectedError } from "../errors/bind-rejected";
 
 export class SignalingClient extends Service {
   private id = "";
   private client?: WebSocket;
+  private asyncResolver = new EventEmitter();
 
   constructor(
     private address: string,
     private reconnectDuration: number,
+    private onConnect: () => Promise<void>,
+    private onDisconnect: () => Promise<void>,
+    private onAcknowledgement: (id: string) => Promise<void>,
     private getOffer: () => Promise<string>,
     private getAnswer: (offer: string) => Promise<string>,
     private onAnswer: (
@@ -52,9 +59,33 @@ export class SignalingClient extends Service {
 
       this.client?.terminate();
     };
+    this.client.onopen = async () => await this.handleConnect();
     this.client.onclose = async () => await this.handleDisconnect();
 
     this.logger.info("Server connected", { address: this.address });
+  }
+
+  // TODO: Implement `shutdown`
+  async bind(id: string, alias: string) {
+    this.logger.info("Binding", { id, alias });
+
+    return new Promise(async (res, rej) => {
+      this.asyncResolver.once(
+        this.getResolverKey(id, alias),
+        (aliasResponse: boolean) =>
+          aliasResponse
+            ? res()
+            : rej(new BindRejectedError(this.getResolverKey(id, alias)).message)
+      );
+
+      await this.send(this.client, new Bind({ id, alias }));
+    });
+  }
+
+  private async handleConnect() {
+    this.logger.info("Server connected", { address: this.address });
+
+    await this.onConnect();
   }
 
   private async handleDisconnect() {
@@ -62,6 +93,8 @@ export class SignalingClient extends Service {
       address: this.address,
       reconnectingIn: this.reconnectDuration,
     });
+
+    await this.onDisconnect();
 
     await new Promise((res) => setTimeout(res, this.reconnectDuration));
 
@@ -92,6 +125,8 @@ export class SignalingClient extends Service {
         this.id = (operation.data as IAcknowledgementData).id;
 
         this.logger.info("Received acknowledgement", { id: this.id });
+
+        await this.onAcknowledgement(this.id);
 
         const offer = await this.getOffer();
 
@@ -173,6 +208,7 @@ export class SignalingClient extends Service {
 
         this.logger.info("Received alias", data);
 
+        await this.notifyBind(data.id, data.alias, data.accepted);
         await this.onAlias(data.id, data.alias, data.accepted);
 
         break;
@@ -182,5 +218,13 @@ export class SignalingClient extends Service {
         throw new UnimplementedOperationError(operation.opcode);
       }
     }
+  }
+
+  private async notifyBind(id: string, alias: string, accepted: boolean) {
+    this.asyncResolver.emit(this.getResolverKey(id, alias), accepted);
+  }
+
+  private getResolverKey(id: string, alias: string) {
+    return `alias ${id} => ${alias}`;
   }
 }

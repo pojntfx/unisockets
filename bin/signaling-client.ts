@@ -7,6 +7,25 @@ const logger = getLogger();
 
 const aliases = new Map<string, string>();
 
+const handleConnect = async () => {
+  logger.info("Handling connect");
+};
+const handleDisconnect = async () => {
+  logger.info("Handling disconnect");
+};
+const handleAcknowledgement = async (id: string) => {
+  logger.debug("Handling acknowledgement", { id });
+
+  const alias = `test-bind-${v4()}`;
+
+  try {
+    await client.bind(id, alias);
+
+    logger.error("Bind accepted", { id, alias });
+  } catch (e) {
+    logger.error("Bind rejected", { id, alias, error: e });
+  }
+};
 const getOffer = async () => v4();
 const getAnswer = async (_: string) => v4();
 const handleAnswer = async (
@@ -63,6 +82,9 @@ const { raddr, reconnectDuration } = yargs(process.argv.slice(2)).options({
 const client = new SignalingClient(
   raddr,
   reconnectDuration,
+  handleConnect,
+  handleDisconnect,
+  handleAcknowledgement,
   getOffer,
   getAnswer,
   handleAnswer,
