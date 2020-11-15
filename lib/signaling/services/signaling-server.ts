@@ -177,6 +177,8 @@ export class SignalingServer extends Service {
         break;
       }
 
+      // TODO: Add `listen` and only allow `connect`ing to `bind`-ed alias afterwards
+
       case ESIGNALING_OPCODES.SHUTDOWN: {
         const data = operation.data as IShutdownData;
 
@@ -247,6 +249,7 @@ export class SignalingServer extends Service {
             alias,
             set: true,
             clientConnectionId: data.clientConnectionId,
+            isConnectionAlias: true,
           });
 
           await this.send(client, clientAliasMessage);
@@ -272,7 +275,7 @@ export class SignalingServer extends Service {
             alias: serverAliasMessage,
           });
 
-          // TODO: Send `Accept` to server and return `accept` call on the latter for specified `alias` from `bind` call
+          // TODO: Send `accept(boundAlias, clientAlias)` to server to which the latter responds by resolving the `clientAlias` for the `accept` call
 
           const serverAliasForClientsMessage = new Alias({
             id: serverId,
