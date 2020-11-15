@@ -43,7 +43,19 @@ const handleAcknowledgement = async (id: string) => {
 
       logger.info("Bind accepted", { id, alias: TEST_ALIAS });
 
-      // TODO: `listen` and `accept` loop (and maybe `shutdown`?)
+      while (true) {
+        logger.info("Starting Accepting", { id, alias: TEST_ALIAS });
+
+        const clientAlias = await client.accept(TEST_ALIAS);
+        const clientId = aliases.get(clientAlias);
+
+        logger.info("Accepted", {
+          id,
+          alias: TEST_ALIAS,
+          clientAlias,
+          clientId,
+        });
+      }
     } catch (e) {
       logger.error("Bind rejected", { id, alias: TEST_ALIAS, error: e });
     }

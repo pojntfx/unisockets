@@ -20,6 +20,7 @@ import { Shutdown } from "../operations/shutdown";
 import { v4 } from "uuid";
 import { ConnectionRejectedError } from "../errors/connection-rejected";
 import { Connect } from "../operations/connect";
+import { Accepting } from "../operations/accepting";
 
 export class SignalingClient extends Service {
   private id = "";
@@ -81,6 +82,16 @@ export class SignalingClient extends Service {
       );
 
       await this.send(this.client, new Bind({ id: this.id, alias }));
+    });
+  }
+
+  async accept(alias: string): Promise<string> {
+    this.logger.info("Accepting", { id: this.id, alias });
+
+    return new Promise(async (res) => {
+      // TODO: Wait till `accept` is returned from server and resolve with connectionAlias
+
+      await this.send(this.client, new Accepting({ id: this.id, alias }));
     });
   }
 
