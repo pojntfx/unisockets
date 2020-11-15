@@ -1,3 +1,4 @@
+import { IAcceptingData } from "./accepting";
 import { IAcknowledgementData } from "./acknowledgement";
 import { IAliasData } from "./alias";
 import { IAnswerData } from "./answer";
@@ -15,6 +16,7 @@ export enum ESIGNALING_OPCODES {
   ANSWER = "answer",
   CANDIDATE = "candidate",
   BIND = "bind",
+  ACCEPTING = "accepting",
   ALIAS = "alias",
   SHUTDOWN = "shutdown",
   CONNECT = "connect",
@@ -27,6 +29,7 @@ export type TSignalingData =
   | IAnswerData
   | ICandidateData
   | IBindData
+  | IAcceptingData
   | IAliasData
   | IShutdownData
   | IConnectData;
