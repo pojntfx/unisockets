@@ -145,7 +145,7 @@ export class SignalingServer extends Service {
 
           await this.send(
             client,
-            new Alias({ id: data.id, alias: data.alias, accepted: false })
+            new Alias({ id: data.id, alias: data.alias, set: false })
           );
         } else {
           this.logger.info("Accepting bind", data);
@@ -155,7 +155,7 @@ export class SignalingServer extends Service {
           this.clients.forEach(async (client, id) => {
             await this.send(
               client,
-              new Alias({ id: data.id, alias: data.alias, accepted: true })
+              new Alias({ id: data.id, alias: data.alias, set: true })
             );
 
             this.logger.info("Sent alias", { id, data });
