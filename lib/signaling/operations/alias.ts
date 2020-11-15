@@ -5,6 +5,7 @@ export interface IAliasData {
   alias: string;
   set: boolean;
   clientConnectionId?: string;
+  isConnectionAlias?: boolean;
 }
 
 export class Alias implements ISignalingOperation<IAliasData> {
