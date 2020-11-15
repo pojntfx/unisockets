@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { IAcknowledgementData } from "../operations/acknowledgement";
+import { IAliasData } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
 import { Candidate, ICandidateData } from "../operations/candidate";
 import { IGoodbyeData } from "../operations/goodbye";
@@ -32,7 +33,12 @@ export class SignalingClient extends Service {
       answererId: string,
       candidate: string
     ) => Promise<void>,
-    private onGoodbye: (id: string) => Promise<void>
+    private onGoodbye: (id: string) => Promise<void>,
+    private onAlias: (
+      id: string,
+      alias: string,
+      accepted: boolean
+    ) => Promise<void>
   ) {
     super();
   }
@@ -158,6 +164,16 @@ export class SignalingClient extends Service {
         this.logger.info("Received candidate", data);
 
         await this.onCandidate(data.offererId, data.answererId, data.candidate);
+
+        break;
+      }
+
+      case ESIGNALING_OPCODES.ALIAS: {
+        const data = operation.data as IAliasData;
+
+        this.logger.info("Received alias", data);
+
+        await this.onAlias(data.id, data.alias, data.accepted);
 
         break;
       }
