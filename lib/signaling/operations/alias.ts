@@ -3,7 +3,7 @@ import { ESIGNALING_OPCODES, ISignalingOperation } from "./operation";
 export interface IAliasData {
   id: string;
   alias: string;
-  accepted: boolean;
+  set: boolean;
 }
 
 export class Alias implements ISignalingOperation<IAliasData> {
