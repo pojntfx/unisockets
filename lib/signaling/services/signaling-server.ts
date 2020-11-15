@@ -2,6 +2,8 @@ import { v4 } from "uuid";
 import WebSocket, { Server } from "ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
+import { MAlias } from "../models/alias";
+import { IAcceptingData } from "../operations/accepting";
 import { Acknowledgement } from "../operations/acknowledgement";
 import { Alias } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
@@ -20,7 +22,7 @@ import { Service } from "./service";
 
 export class SignalingServer extends Service {
   private clients = new Map<string, WebSocket>();
-  private aliases = new Map<string, string>();
+  private aliases = new Map<string, MAlias>();
 
   constructor(private host: string, private port: number) {
     super();
@@ -61,12 +63,12 @@ export class SignalingServer extends Service {
 
   private async registerGoodbye(id: string) {
     if (this.clients.has(id)) {
-      const client = this.clients.get(id)!; // We check with `.has` above
+      const client = this.clients.get(id)!; // `.has` checks this
 
       client.on("close", () => {
         this.clients.delete(id);
 
-        this.aliases.forEach(async (clientId, alias) => {
+        this.aliases.forEach(async ({ id: clientId }, alias) => {
           if (clientId === id) {
             this.aliases.delete(alias);
 
@@ -162,7 +164,7 @@ export class SignalingServer extends Service {
         } else {
           this.logger.info("Accepting bind", data);
 
-          this.aliases.set(data.alias, data.id);
+          this.aliases.set(data.alias, new MAlias(data.id, false));
 
           this.clients.forEach(async (client, id) => {
             await this.send(
@@ -177,7 +179,24 @@ export class SignalingServer extends Service {
         break;
       }
 
-      // TODO: Add `listen` and only allow `connect`ing to `bind`-ed alias afterwards
+      case ESIGNALING_OPCODES.ACCEPTING: {
+        const data = operation.data as IAcceptingData;
+
+        this.logger.info("Received accepting", data);
+
+        if (
+          !this.aliases.has(data.alias) ||
+          this.aliases.get(data.alias)!.id !== data.id // `.has` checks this
+        ) {
+          this.logger.info("Rejecting accepting, alias does not exist", data);
+        } else {
+          this.logger.info("Accepting accepting", data);
+
+          this.aliases.set(data.alias, new MAlias(data.id, true));
+        }
+
+        break;
+      }
 
       case ESIGNALING_OPCODES.SHUTDOWN: {
         const data = operation.data as IShutdownData;
@@ -186,7 +205,7 @@ export class SignalingServer extends Service {
 
         if (
           this.aliases.has(data.alias) &&
-          this.aliases.get(data.alias) === data.id
+          this.aliases.get(data.alias)!.id === data.id // `.has` checks this
         ) {
           this.aliases.delete(data.alias);
 
@@ -223,7 +242,10 @@ export class SignalingServer extends Service {
         const alias = `client-${v4()}`;
         const client = this.clients.get(data.id);
 
-        if (!this.aliases.has(data.remoteAlias)) {
+        if (
+          !this.aliases.has(data.remoteAlias) ||
+          !this.aliases.get(data.remoteAlias)!.accepting // `.has` checks this
+        ) {
           this.logger.info("Rejecting connect, remote alias does not exist", {
             data,
           });
@@ -242,7 +264,7 @@ export class SignalingServer extends Service {
             data,
           });
 
-          this.aliases.set(alias, data.id);
+          this.aliases.set(alias, new MAlias(data.id, false));
 
           const clientAliasMessage = new Alias({
             id: data.id,
@@ -259,8 +281,8 @@ export class SignalingServer extends Service {
             alias: clientAliasMessage,
           });
 
-          const serverId = this.aliases.get(data.remoteAlias)!; // We check with `.has` above, so `!` is fine here
-          const server = this.clients.get(serverId);
+          const serverId = this.aliases.get(data.remoteAlias)!; // `.has` checks this
+          const server = this.clients.get(serverId.id);
 
           const serverAliasMessage = new Alias({
             id: data.id,
@@ -278,7 +300,7 @@ export class SignalingServer extends Service {
           // TODO: Send `accept(boundAlias, clientAlias)` to server to which the latter responds by resolving the `clientAlias` for the `accept` call
 
           const serverAliasForClientsMessage = new Alias({
-            id: serverId,
+            id: serverId.id,
             alias: data.remoteAlias,
             set: true,
             clientConnectionId: data.clientConnectionId,
