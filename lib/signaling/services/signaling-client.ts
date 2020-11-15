@@ -17,6 +17,9 @@ import { Bind } from "../operations/bind";
 import { BindRejectedError } from "../errors/bind-rejected";
 import { ShutdownRejectedError } from "../errors/shutdown-rejected";
 import { Shutdown } from "../operations/shutdown";
+import { v4 } from "uuid";
+import { ConnectionRejectedError } from "../errors/connection-rejected";
+import { Connect } from "../operations/connect";
 
 export class SignalingClient extends Service {
   private id = "";
@@ -68,13 +71,12 @@ export class SignalingClient extends Service {
 
     return new Promise(async (res, rej) => {
       this.asyncResolver.once(
-        this.getAliasResolverKey(this.id, alias),
+        this.getAliasKey(this.id, alias),
         (set: boolean) =>
           set
             ? res()
             : rej(
-                new BindRejectedError(this.getAliasResolverKey(this.id, alias))
-                  .message
+                new BindRejectedError(this.getAliasKey(this.id, alias)).message
               )
       );
 
@@ -87,19 +89,56 @@ export class SignalingClient extends Service {
 
     return new Promise(async (res, rej) => {
       this.asyncResolver.once(
-        this.getAliasResolverKey(this.id, alias),
+        this.getAliasKey(this.id, alias),
         (set: boolean) =>
           set
             ? rej(
-                new ShutdownRejectedError(
-                  this.getAliasResolverKey(this.id, alias)
-                ).message
+                new ShutdownRejectedError(this.getAliasKey(this.id, alias))
+                  .message
               )
             : res()
       );
 
       await this.send(this.client, new Shutdown({ id: this.id, alias }));
     });
+  }
+
+  async connect(remoteAlias: string) {
+    this.logger.info("Connecting", { id: this.id, remoteAlias });
+
+    const clientConnectionId = v4();
+
+    const clientAlias = await new Promise(async (res, rej) => {
+      let i = 0;
+
+      this.asyncResolver.on(
+        this.getConnectionKey(clientConnectionId),
+        (set: boolean) => {
+          if (set) {
+            i = i + 1;
+
+            if (i >= 2) {
+              res();
+            }
+          } else {
+            rej(
+              new ConnectionRejectedError(
+                this.getConnectionKey(clientConnectionId)
+              ).message
+            );
+          }
+        }
+      );
+
+      await this.send(
+        this.client,
+        new Connect({ id: this.id, clientConnectionId, remoteAlias })
+      );
+
+      // TODO: Resolve with client alias
+    });
+
+    return clientAlias;
   }
 
   private async handleConnect() {
@@ -139,6 +178,8 @@ export class SignalingClient extends Service {
         this.logger.info("Received goodbye", data);
 
         await this.onGoodbye(data.id);
+
+        break;
       }
 
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {
@@ -228,8 +269,13 @@ export class SignalingClient extends Service {
 
         this.logger.info("Received alias", data);
 
-        await this.notifyBindAndShutdown(data.id, data.alias, data.set);
-        await this.onAlias(data.id, data.alias, data.set);
+        if (data.clientConnectionId) {
+          await this.notifyConnect(data.set, data.clientConnectionId);
+          await this.onAlias(data.id, data.alias, data.set);
+        } else {
+          await this.notifyBindAndShutdown(data.id, data.alias, data.set);
+          await this.onAlias(data.id, data.alias, data.set);
+        }
 
         break;
       }
@@ -240,11 +286,19 @@ export class SignalingClient extends Service {
     }
   }
 
-  private async notifyBindAndShutdown(id: string, alias: string, set: boolean) {
-    this.asyncResolver.emit(this.getAliasResolverKey(id, alias), set);
+  private async notifyConnect(set: boolean, clientConnectionId: string) {
+    this.asyncResolver.emit(this.getConnectionKey(clientConnectionId), set);
   }
 
-  private getAliasResolverKey(id: string, alias: string) {
-    return `alias ${id} => ${alias}`;
+  private async notifyBindAndShutdown(id: string, alias: string, set: boolean) {
+    this.asyncResolver.emit(this.getAliasKey(id, alias), set);
+  }
+
+  private getAliasKey(id: string, alias: string) {
+    return `alias id=${id} alias=${alias}`;
+  }
+
+  private getConnectionKey(clientConnectionId: string) {
+    return `connection id=${clientConnectionId}`;
   }
 }

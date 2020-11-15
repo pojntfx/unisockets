@@ -60,18 +60,22 @@ export class SignalingServer extends Service {
   }
 
   private async registerGoodbye(id: string) {
-    const client = this.clients.get(id);
+    if (this.clients.has(id)) {
+      const client = this.clients.get(id)!; // We check with `.has` above
 
-    if (client) {
       client.on("close", () => {
         this.clients.delete(id);
 
-        this.aliases.forEach(async (alias, clientId) => {
-          clientId === id &&
-            this.clients.forEach(
-              async (client) =>
-                await this.send(client, new Alias({ id, alias, set: false }))
-            );
+        this.aliases.forEach(async (clientId, alias) => {
+          if (clientId === id) {
+            this.aliases.delete(alias);
+
+            this.clients.forEach(async (client) => {
+              await this.send(client, new Alias({ id, alias, set: false }));
+
+              this.logger.info("Sent alias", { id, alias });
+            });
+          }
         });
 
         this.clients.forEach(
@@ -214,7 +218,7 @@ export class SignalingServer extends Service {
       case ESIGNALING_OPCODES.CONNECT: {
         const data = operation.data as IConnectData;
 
-        const alias = v4();
+        const alias = `client-${v4()}`;
         const client = this.clients.get(data.id);
 
         if (!this.aliases.has(data.remoteAlias)) {
@@ -268,18 +272,20 @@ export class SignalingServer extends Service {
             alias: serverAliasMessage,
           });
 
+          // TODO: Send `Accept` to server and return `accept` call on the latter for specified `alias` from `bind` call
+
           const serverAliasForClientsMessage = new Alias({
             id: serverId,
             alias: data.remoteAlias,
             set: true,
+            clientConnectionId: data.clientConnectionId,
           });
 
-          this.clients.forEach(async (client, id) => {
-            if (id !== serverId) {
-              await this.send(client, serverAliasForClientsMessage);
+          await this.send(client, serverAliasForClientsMessage);
 
-              this.logger.info("Sent alias for server to client", { id, data });
-            }
+          this.logger.info("Sent alias for server to client", {
+            data,
+            alias: serverAliasForClientsMessage,
           });
         }
 
