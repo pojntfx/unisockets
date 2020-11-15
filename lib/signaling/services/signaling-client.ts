@@ -71,11 +71,14 @@ export class SignalingClient extends Service {
 
     return new Promise(async (res, rej) => {
       this.asyncResolver.once(
-        this.getResolverKey(id, alias),
-        (aliasResponse: boolean) =>
-          aliasResponse
+        this.getBindResolverKey(id, alias),
+        (accepted: boolean) =>
+          accepted
             ? res()
-            : rej(new BindRejectedError(this.getResolverKey(id, alias)).message)
+            : rej(
+                new BindRejectedError(this.getBindResolverKey(id, alias))
+                  .message
+              )
       );
 
       await this.send(this.client, new Bind({ id, alias }));
@@ -221,10 +224,10 @@ export class SignalingClient extends Service {
   }
 
   private async notifyBind(id: string, alias: string, accepted: boolean) {
-    this.asyncResolver.emit(this.getResolverKey(id, alias), accepted);
+    this.asyncResolver.emit(this.getBindResolverKey(id, alias), accepted);
   }
 
-  private getResolverKey(id: string, alias: string) {
+  private getBindResolverKey(id: string, alias: string) {
     return `alias ${id} => ${alias}`;
   }
 }
