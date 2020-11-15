@@ -6,7 +6,9 @@ import {
   Acknowledgement,
   IAcknowledgementData,
 } from "../operations/acknowledgement";
+import { Alias, IAliasData } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
+import { Bind, IBindData } from "../operations/bind";
 import { Candidate, ICandidateData } from "../operations/candidate";
 import { Goodbye, IGoodbyeData } from "../operations/goodbye";
 import { IOfferData, Offer } from "../operations/offer";
@@ -68,6 +70,18 @@ export class Service {
         this.logger.info("Received operation candidate", operation.data);
 
         return new Candidate(operation.data as ICandidateData);
+      }
+
+      case ESIGNALING_OPCODES.BIND: {
+        this.logger.info("Received operation bind", operation.data);
+
+        return new Bind(operation.data as IBindData);
+      }
+
+      case ESIGNALING_OPCODES.ALIAS: {
+        this.logger.info("Received operation alias", operation.data);
+
+        return new Alias(operation.data as IAliasData);
       }
 
       default: {

@@ -5,6 +5,8 @@ import { getLogger } from "../lib/utils/logger";
 
 const logger = getLogger();
 
+const aliases = new Map<string, string>();
+
 const getOffer = async () => v4();
 const getAnswer = async (_: string) => v4();
 const handleAnswer = async (
@@ -29,6 +31,23 @@ const handleCandidate = async (
 const handleGoodbye = async (id: string) => {
   logger.info("Handling goodbye", { id });
 };
+const handleAlias = async (id: string, alias: string, accepted: boolean) => {
+  logger.debug("Handling alias", { id });
+
+  if (accepted) {
+    logger.info("Setting alias", { id, alias });
+
+    aliases.set(alias, id);
+
+    logger.debug("New aliases", { aliases: JSON.stringify([...aliases]) });
+  } else {
+    logger.info("Removing alias", { id, alias });
+
+    aliases.delete(alias);
+
+    logger.debug("New aliases", { aliases: JSON.stringify([...aliases]) });
+  }
+};
 
 const { raddr, reconnectDuration } = yargs(process.argv.slice(2)).options({
   raddr: {
@@ -48,7 +67,8 @@ const client = new SignalingClient(
   getAnswer,
   handleAnswer,
   handleCandidate,
-  handleGoodbye
+  handleGoodbye,
+  handleAlias
 );
 
 client.open();

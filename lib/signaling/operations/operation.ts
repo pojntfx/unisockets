@@ -1,15 +1,19 @@
-import { IGoodbyeData } from "./goodbye";
 import { IAcknowledgementData } from "./acknowledgement";
-import { IOfferData } from "./offer";
+import { IAliasData } from "./alias";
 import { IAnswerData } from "./answer";
+import { IBindData } from "./bind";
 import { ICandidateData } from "./candidate";
+import { IGoodbyeData } from "./goodbye";
+import { IOfferData } from "./offer";
 
 export enum ESIGNALING_OPCODES {
-  GOODBYE,
-  ACKNOWLEDGED,
-  OFFER,
-  ANSWER,
-  CANDIDATE,
+  GOODBYE = "goodbye",
+  ACKNOWLEDGED = "acknowledged",
+  OFFER = "offer",
+  ANSWER = "answer",
+  CANDIDATE = "candidate",
+  BIND = "bind",
+  ALIAS = "alias",
 }
 
 export type TSignalingData =
@@ -17,7 +21,9 @@ export type TSignalingData =
   | IAcknowledgementData
   | IOfferData
   | IAnswerData
-  | ICandidateData;
+  | ICandidateData
+  | IBindData
+  | IAliasData;
 
 export interface ISignalingOperation<T> {
   opcode: ESIGNALING_OPCODES;
