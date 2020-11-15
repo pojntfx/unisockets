@@ -3,6 +3,7 @@ import WebSocket, { Server } from "ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { MAlias } from "../models/alias";
+import { Accept } from "../operations/accept";
 import { IAcceptingData } from "../operations/accepting";
 import { Acknowledgement } from "../operations/acknowledgement";
 import { Alias } from "../operations/alias";
@@ -239,7 +240,7 @@ export class SignalingServer extends Service {
       case ESIGNALING_OPCODES.CONNECT: {
         const data = operation.data as IConnectData;
 
-        const alias = `client-${v4()}`;
+        const clientAlias = `client-${v4()}`;
         const client = this.clients.get(data.id);
 
         if (
@@ -254,7 +255,7 @@ export class SignalingServer extends Service {
             client,
             new Alias({
               id: data.id,
-              alias,
+              alias: clientAlias,
               set: false,
               clientConnectionId: data.clientConnectionId,
             })
@@ -264,11 +265,11 @@ export class SignalingServer extends Service {
             data,
           });
 
-          this.aliases.set(alias, new MAlias(data.id, false));
+          this.aliases.set(clientAlias, new MAlias(data.id, false));
 
           const clientAliasMessage = new Alias({
             id: data.id,
-            alias,
+            alias: clientAlias,
             set: true,
             clientConnectionId: data.clientConnectionId,
             isConnectionAlias: true,
@@ -286,7 +287,7 @@ export class SignalingServer extends Service {
 
           const serverAliasMessage = new Alias({
             id: data.id,
-            alias,
+            alias: clientAlias,
             set: true,
           });
 
@@ -297,7 +298,17 @@ export class SignalingServer extends Service {
             alias: serverAliasMessage,
           });
 
-          // TODO: Send `accept(boundAlias, clientAlias)` to server to which the latter responds by resolving the `clientAlias` for the `accept` call
+          const serverAcceptMessage = new Accept({
+            boundAlias: data.remoteAlias,
+            clientAlias: clientAlias,
+          });
+
+          await this.send(server, serverAcceptMessage);
+
+          this.logger.info("Sent accept to server", {
+            data,
+            accept: serverAcceptMessage,
+          });
 
           const serverAliasForClientsMessage = new Alias({
             id: serverId.id,

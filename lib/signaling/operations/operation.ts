@@ -1,3 +1,4 @@
+import { IAcceptData } from "./accept";
 import { IAcceptingData } from "./accepting";
 import { IAcknowledgementData } from "./acknowledgement";
 import { IAliasData } from "./alias";
@@ -20,6 +21,7 @@ export enum ESIGNALING_OPCODES {
   ALIAS = "alias",
   SHUTDOWN = "shutdown",
   CONNECT = "connect",
+  ACCEPT = "accept",
 }
 
 export type TSignalingData =
@@ -32,7 +34,8 @@ export type TSignalingData =
   | IAcceptingData
   | IAliasData
   | IShutdownData
-  | IConnectData;
+  | IConnectData
+  | IAcceptData;
 
 export interface ISignalingOperation<T> {
   opcode: ESIGNALING_OPCODES;
