@@ -21,7 +21,15 @@ const handleAcknowledgement = async (id: string) => {
   try {
     await client.bind(testAlias);
 
-    logger.error("Bind accepted", { id, alias: testAlias });
+    logger.info("Bind accepted", { id, alias: testAlias });
+
+    try {
+      await client.shutdown(testAlias);
+
+      logger.info("Shutdown accepted", { id, alias: testAlias });
+    } catch (e) {
+      logger.error("Shutdown rejected", { id, alias: testAlias, error: e });
+    }
   } catch (e) {
     logger.error("Bind rejected", { id, alias: testAlias, error: e });
   }

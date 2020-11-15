@@ -14,6 +14,7 @@ import {
   ISignalingOperation,
   TSignalingData,
 } from "../operations/operation";
+import { IShutdownData } from "../operations/shutdown";
 import { Service } from "./service";
 
 export class SignalingServer extends Service {
@@ -63,6 +64,14 @@ export class SignalingServer extends Service {
     if (client) {
       client.on("close", () => {
         this.clients.delete(id);
+
+        this.aliases.forEach(async (alias, clientId) => {
+          clientId === id &&
+            this.clients.forEach(
+              async (client) =>
+                await this.send(client, new Alias({ id, alias, set: false }))
+            );
+        });
 
         this.clients.forEach(
           async (client) => await this.send(client, new Goodbye({ id }))
@@ -134,11 +143,9 @@ export class SignalingServer extends Service {
       case ESIGNALING_OPCODES.BIND: {
         const data = operation.data as IBindData;
 
-        const alias = this.aliases.get(data.alias);
-
         this.logger.info("Received bind", data);
 
-        if (alias) {
+        if (this.aliases.has(data.alias)) {
           this.logger.info("Rejecting bind, alias already taken", data);
 
           const client = this.clients.get(data.id);
@@ -160,6 +167,44 @@ export class SignalingServer extends Service {
 
             this.logger.info("Sent alias", { id, data });
           });
+        }
+
+        break;
+      }
+
+      case ESIGNALING_OPCODES.SHUTDOWN: {
+        const data = operation.data as IShutdownData;
+
+        this.logger.info("Received shutdown", data);
+
+        if (
+          this.aliases.has(data.alias) &&
+          this.aliases.get(data.alias) === data.id
+        ) {
+          this.aliases.delete(data.alias);
+
+          this.logger.info("Accepting shutdown", data);
+
+          this.clients.forEach(async (client, id) => {
+            await this.send(
+              client,
+              new Alias({ id: data.id, alias: data.alias, set: false })
+            );
+
+            this.logger.info("Sent alias", { id, data });
+          });
+        } else {
+          this.logger.info(
+            "Rejecting shutdown, alias not taken or incorrect client ID",
+            data
+          );
+
+          const client = this.clients.get(data.id);
+
+          await this.send(
+            client,
+            new Alias({ id: data.id, alias: data.alias, set: true })
+          );
         }
 
         break;

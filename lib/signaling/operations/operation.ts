@@ -5,6 +5,7 @@ import { IBindData } from "./bind";
 import { ICandidateData } from "./candidate";
 import { IGoodbyeData } from "./goodbye";
 import { IOfferData } from "./offer";
+import { IShutdownData } from "./shutdown";
 
 export enum ESIGNALING_OPCODES {
   GOODBYE = "goodbye",
@@ -14,6 +15,7 @@ export enum ESIGNALING_OPCODES {
   CANDIDATE = "candidate",
   BIND = "bind",
   ALIAS = "alias",
+  SHUTDOWN = "shutdown",
 }
 
 export type TSignalingData =
@@ -23,7 +25,8 @@ export type TSignalingData =
   | IAnswerData
   | ICandidateData
   | IBindData
-  | IAliasData;
+  | IAliasData
+  | IShutdownData;
 
 export interface ISignalingOperation<T> {
   opcode: ESIGNALING_OPCODES;
