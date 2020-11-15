@@ -5,7 +5,7 @@ import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { Acknowledgement } from "../operations/acknowledgement";
 import { Answer, IAnswerData } from "../operations/answer";
 import { Candidate, ICandidateData } from "../operations/candidate";
-import { Gone } from "../operations/gone";
+import { Goodbye } from "../operations/goodbye";
 import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
@@ -62,7 +62,7 @@ export class SignalingServer extends Service {
         this.clients.delete(id);
 
         this.clients.forEach(
-          async (client) => await this.send(client, new Gone({ id }))
+          async (client) => await this.send(client, new Goodbye({ id }))
         );
 
         this.logger.info("Client disconnected", { id });

@@ -3,7 +3,7 @@ import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { IAcknowledgementData } from "../operations/acknowledgement";
 import { Answer, IAnswerData } from "../operations/answer";
 import { Candidate, ICandidateData } from "../operations/candidate";
-import { IGoneData } from "../operations/gone";
+import { IGoodbyeData } from "../operations/goodbye";
 import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
@@ -73,10 +73,10 @@ export class SignalingClient extends Service {
     this.logger.debug("Handling operation", operation);
 
     switch (operation.opcode) {
-      case ESIGNALING_OPCODES.GONE: {
-        const data = operation.data as IGoneData;
+      case ESIGNALING_OPCODES.GOODBYE: {
+        const data = operation.data as IGoodbyeData;
 
-        this.logger.info("Received gone", data);
+        this.logger.info("Received goodbye", data);
       }
 
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {
