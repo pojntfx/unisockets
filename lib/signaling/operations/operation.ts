@@ -1,11 +1,11 @@
-import { IGoneData } from "./gone";
+import { IGoodbyeData } from "./goodbye";
 import { IAcknowledgementData } from "./acknowledgement";
 import { IOfferData } from "./offer";
 import { IAnswerData } from "./answer";
 import { ICandidateData } from "./candidate";
 
 export enum ESIGNALING_OPCODES {
-  GONE,
+  GOODBYE,
   ACKNOWLEDGED,
   OFFER,
   ANSWER,
@@ -13,7 +13,7 @@ export enum ESIGNALING_OPCODES {
 }
 
 export type TSignalingData =
-  | IGoneData
+  | IGoodbyeData
   | IAcknowledgementData
   | IOfferData
   | IAnswerData
