@@ -3,7 +3,9 @@ import WebSocket, { Server } from "ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { Acknowledgement } from "../operations/acknowledgement";
+import { Alias } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
+import { IBindData } from "../operations/bind";
 import { Candidate, ICandidateData } from "../operations/candidate";
 import { Goodbye } from "../operations/goodbye";
 import { IOfferData, Offer } from "../operations/offer";
@@ -16,6 +18,7 @@ import { Service } from "./service";
 
 export class SignalingServer extends Service {
   private clients = new Map<string, WebSocket>();
+  private aliases = new Map<string, string>();
 
   constructor(private host: string, private port: number) {
     super();
@@ -124,6 +127,40 @@ export class SignalingServer extends Service {
         await this.send(client, new Candidate(data));
 
         this.logger.info("Sent candidate", data);
+
+        break;
+      }
+
+      case ESIGNALING_OPCODES.BIND: {
+        const data = operation.data as IBindData;
+
+        const alias = this.aliases.get(data.alias);
+
+        this.logger.info("Received bind", data);
+
+        if (alias) {
+          this.logger.info("Rejecting bind, alias already taken", data);
+
+          const client = this.clients.get(data.id);
+
+          await this.send(
+            client,
+            new Alias({ id: data.id, alias: data.alias, accepted: false })
+          );
+        } else {
+          this.logger.info("Accepting bind", data);
+
+          this.aliases.set(data.alias, data.id);
+
+          this.clients.forEach(async (client, id) => {
+            await this.send(
+              client,
+              new Alias({ id: data.id, alias: data.alias, accepted: true })
+            );
+
+            this.logger.info("Sent alias", { id, data });
+          });
+        }
 
         break;
       }
