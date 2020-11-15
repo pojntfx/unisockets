@@ -55,6 +55,8 @@ const handleAcknowledgement = async (id: string) => {
           clientAlias,
           clientId,
         });
+
+        // TODO: `shutdown` server alias
       }
     } catch (e) {
       logger.error("Bind rejected", { id, alias: TEST_ALIAS, error: e });

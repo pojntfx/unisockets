@@ -2,6 +2,7 @@ import WebSocket, { Data } from "ws";
 import { getLogger } from "../../utils/logger";
 import { ClientClosedError } from "../errors/client-closed";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
+import { Accept, IAcceptData } from "../operations/accept";
 import { Accepting, IAcceptingData } from "../operations/accepting";
 import {
   Acknowledgement,
@@ -103,6 +104,12 @@ export class Service {
         this.logger.info("Received operation connect", operation.data);
 
         return new Connect(operation.data as IConnectData);
+      }
+
+      case ESIGNALING_OPCODES.ACCEPT: {
+        this.logger.info("Received operation accept", operation.data);
+
+        return new Accept(operation.data as IAcceptData);
       }
 
       default: {
