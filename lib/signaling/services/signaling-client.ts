@@ -110,15 +110,24 @@ export class SignalingClient extends Service {
 
     const clientAlias = await new Promise(async (res, rej) => {
       let i = 0;
+      let alias = "";
 
       this.asyncResolver.on(
         this.getConnectionKey(clientConnectionId),
-        (set: boolean) => {
+        (payload: string) => {
+          const { set, alias: newAlias, isConnectionAlias } = JSON.parse(
+            payload
+          );
+
           if (set) {
             i = i + 1;
 
+            if (isConnectionAlias) {
+              alias = newAlias;
+            }
+
             if (i >= 2) {
-              res();
+              res(alias);
             }
           } else {
             rej(
@@ -134,8 +143,6 @@ export class SignalingClient extends Service {
         this.client,
         new Connect({ id: this.id, clientConnectionId, remoteAlias })
       );
-
-      // TODO: Resolve with client alias
     });
 
     return clientAlias;
@@ -270,7 +277,12 @@ export class SignalingClient extends Service {
         this.logger.info("Received alias", data);
 
         if (data.clientConnectionId) {
-          await this.notifyConnect(data.set, data.clientConnectionId);
+          await this.notifyConnect(
+            data.clientConnectionId,
+            data.set,
+            data.alias,
+            data.isConnectionAlias ? true : false
+          );
           await this.onAlias(data.id, data.alias, data.set);
         } else {
           await this.notifyBindAndShutdown(data.id, data.alias, data.set);
@@ -286,8 +298,16 @@ export class SignalingClient extends Service {
     }
   }
 
-  private async notifyConnect(set: boolean, clientConnectionId: string) {
-    this.asyncResolver.emit(this.getConnectionKey(clientConnectionId), set);
+  private async notifyConnect(
+    clientConnectionId: string,
+    set: boolean,
+    alias: string,
+    isConnectionAlias: boolean
+  ) {
+    this.asyncResolver.emit(
+      this.getConnectionKey(clientConnectionId),
+      JSON.stringify({ set, alias, isConnectionAlias })
+    );
   }
 
   private async notifyBindAndShutdown(id: string, alias: string, set: boolean) {

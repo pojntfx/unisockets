@@ -3,7 +3,7 @@ import yargs from "yargs";
 import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { getLogger } from "../lib/utils/logger";
 
-const TEST_ALIAS = "bind-testing.com:443";
+const TEST_ALIAS = "bind-testing.com";
 
 const { raddr, reconnectDuration, testBind } = yargs(
   process.argv.slice(2)
@@ -43,21 +43,29 @@ const handleAcknowledgement = async (id: string) => {
 
       logger.info("Bind accepted", { id, alias: TEST_ALIAS });
 
-      // TODO: `accept` and `shutdown`
+      // TODO: `listen` and `accept` loop (and maybe `shutdown`?)
     } catch (e) {
       logger.error("Bind rejected", { id, alias: TEST_ALIAS, error: e });
     }
   } else {
     try {
-      logger.info("Connecting", { id, alias: TEST_ALIAS });
+      logger.info("Connecting", { id, remoteAlias: TEST_ALIAS });
 
       const clientAlias = await client.connect(TEST_ALIAS);
 
       // TODO: `shutdown` client alias
 
-      logger.info("Connect accepted", { id, alias: TEST_ALIAS });
+      logger.info("Connect accepted", {
+        id,
+        remoteAlias: TEST_ALIAS,
+        clientAlias,
+      });
     } catch (e) {
-      logger.error("Connect rejected", { id, alias: TEST_ALIAS, error: e });
+      logger.error("Connect rejected", {
+        id,
+        remoteAlias: TEST_ALIAS,
+        error: e,
+      });
     }
   }
 };
