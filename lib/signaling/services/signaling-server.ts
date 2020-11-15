@@ -7,6 +7,7 @@ import { Alias } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
 import { IBindData } from "../operations/bind";
 import { Candidate, ICandidateData } from "../operations/candidate";
+import { IConnectData } from "../operations/connect";
 import { Goodbye } from "../operations/goodbye";
 import { IOfferData, Offer } from "../operations/offer";
 import {
@@ -205,6 +206,81 @@ export class SignalingServer extends Service {
             client,
             new Alias({ id: data.id, alias: data.alias, set: true })
           );
+        }
+
+        break;
+      }
+
+      case ESIGNALING_OPCODES.CONNECT: {
+        const data = operation.data as IConnectData;
+
+        const alias = v4();
+        const client = this.clients.get(data.id);
+
+        if (!this.aliases.has(data.remoteAlias)) {
+          this.logger.info("Rejecting connect, remote alias does not exist", {
+            data,
+          });
+
+          await this.send(
+            client,
+            new Alias({
+              id: data.id,
+              alias,
+              set: false,
+              clientConnectionId: data.clientConnectionId,
+            })
+          );
+        } else {
+          this.logger.info("Accepting connect", {
+            data,
+          });
+
+          this.aliases.set(alias, data.id);
+
+          const clientAliasMessage = new Alias({
+            id: data.id,
+            alias,
+            set: true,
+            clientConnectionId: data.clientConnectionId,
+          });
+
+          await this.send(client, clientAliasMessage);
+
+          this.logger.info("Sent alias for connection to client", {
+            data,
+            alias: clientAliasMessage,
+          });
+
+          const serverId = this.aliases.get(data.remoteAlias)!; // We check with `.has` above, so `!` is fine here
+          const server = this.clients.get(serverId);
+
+          const serverAliasMessage = new Alias({
+            id: data.id,
+            alias,
+            set: true,
+          });
+
+          await this.send(server, serverAliasMessage);
+
+          this.logger.info("Sent alias for connection to server", {
+            data,
+            alias: serverAliasMessage,
+          });
+
+          const serverAliasForClientsMessage = new Alias({
+            id: serverId,
+            alias: data.remoteAlias,
+            set: true,
+          });
+
+          this.clients.forEach(async (client, id) => {
+            if (id !== serverId) {
+              await this.send(client, serverAliasForClientsMessage);
+
+              this.logger.info("Sent alias for server to client", { id, data });
+            }
+          });
         }
 
         break;
