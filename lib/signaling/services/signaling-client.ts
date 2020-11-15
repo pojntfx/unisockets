@@ -21,6 +21,7 @@ import { v4 } from "uuid";
 import { ConnectionRejectedError } from "../errors/connection-rejected";
 import { Connect } from "../operations/connect";
 import { Accepting } from "../operations/accepting";
+import { IAcceptData } from "../operations/accept";
 
 export class SignalingClient extends Service {
   private id = "";
@@ -89,7 +90,9 @@ export class SignalingClient extends Service {
     this.logger.info("Accepting", { id: this.id, alias });
 
     return new Promise(async (res) => {
-      // TODO: Wait till `accept` is returned from server and resolve with connectionAlias
+      this.asyncResolver.once(this.getAcceptKey(alias), (clientAlias: string) =>
+        res(clientAlias)
+      );
 
       await this.send(this.client, new Accepting({ id: this.id, alias }));
     });
@@ -303,6 +306,16 @@ export class SignalingClient extends Service {
         break;
       }
 
+      case ESIGNALING_OPCODES.ACCEPT: {
+        const data = operation.data as IAcceptData;
+
+        this.logger.info("Received accept", data);
+
+        await this.notifyAccept(data.boundAlias, data.clientAlias);
+
+        break;
+      }
+
       default: {
         throw new UnimplementedOperationError(operation.opcode);
       }
@@ -325,11 +338,19 @@ export class SignalingClient extends Service {
     this.asyncResolver.emit(this.getAliasKey(id, alias), set);
   }
 
+  private async notifyAccept(boundAlias: string, clientAlias: string) {
+    this.asyncResolver.emit(this.getAcceptKey(boundAlias), clientAlias);
+  }
+
   private getAliasKey(id: string, alias: string) {
     return `alias id=${id} alias=${alias}`;
   }
 
   private getConnectionKey(clientConnectionId: string) {
     return `connection id=${clientConnectionId}`;
+  }
+
+  private getAcceptKey(boundAlias: string) {
+    return `accept alias=${boundAlias}`;
   }
 }
