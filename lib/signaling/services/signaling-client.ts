@@ -31,7 +31,8 @@ export class SignalingClient extends Service {
       offererId: string,
       answererId: string,
       candidate: string
-    ) => Promise<void>
+    ) => Promise<void>,
+    private onGoodbye: (id: string) => Promise<void>
   ) {
     super();
   }
@@ -77,6 +78,8 @@ export class SignalingClient extends Service {
         const data = operation.data as IGoodbyeData;
 
         this.logger.info("Received goodbye", data);
+
+        await this.onGoodbye(data.id);
       }
 
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {

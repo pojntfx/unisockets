@@ -26,6 +26,9 @@ const handleCandidate = async (
 ) => {
   logger.info("Handling candidate", { offererId, answererId, candidate });
 };
+const handleGoodbye = async (id: string) => {
+  logger.info("Handling goodbye", { id });
+};
 
 const { raddr, reconnectDuration } = yargs(process.argv.slice(2)).options({
   raddr: {
@@ -44,7 +47,8 @@ const client = new SignalingClient(
   getOffer,
   getAnswer,
   handleAnswer,
-  handleCandidate
+  handleCandidate,
+  handleGoodbye
 );
 
 client.open();
