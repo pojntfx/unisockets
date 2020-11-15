@@ -7,6 +7,8 @@ const logger = getLogger();
 
 const aliases = new Map<string, string>();
 
+const testAlias = `test-bind-${v4()}`;
+
 const handleConnect = async () => {
   logger.info("Handling connect");
 };
@@ -16,14 +18,12 @@ const handleDisconnect = async () => {
 const handleAcknowledgement = async (id: string) => {
   logger.debug("Handling acknowledgement", { id });
 
-  const alias = `test-bind-${v4()}`;
-
   try {
-    await client.bind(id, alias);
+    await client.bind(testAlias);
 
-    logger.error("Bind accepted", { id, alias });
+    logger.error("Bind accepted", { id, alias: testAlias });
   } catch (e) {
-    logger.error("Bind rejected", { id, alias, error: e });
+    logger.error("Bind rejected", { id, alias: testAlias, error: e });
   }
 };
 const getOffer = async () => v4();
@@ -50,10 +50,10 @@ const handleCandidate = async (
 const handleGoodbye = async (id: string) => {
   logger.info("Handling goodbye", { id });
 };
-const handleAlias = async (id: string, alias: string, accepted: boolean) => {
+const handleAlias = async (id: string, alias: string, set: boolean) => {
   logger.debug("Handling alias", { id });
 
-  if (accepted) {
+  if (set) {
     logger.info("Setting alias", { id, alias });
 
     aliases.set(alias, id);

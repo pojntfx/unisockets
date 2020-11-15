@@ -41,11 +41,7 @@ export class SignalingClient extends Service {
       candidate: string
     ) => Promise<void>,
     private onGoodbye: (id: string) => Promise<void>,
-    private onAlias: (
-      id: string,
-      alias: string,
-      accepted: boolean
-    ) => Promise<void>
+    private onAlias: (id: string, alias: string, set: boolean) => Promise<void>
   ) {
     super();
   }
@@ -66,22 +62,22 @@ export class SignalingClient extends Service {
   }
 
   // TODO: Implement `shutdown`
-  async bind(id: string, alias: string) {
-    this.logger.info("Binding", { id, alias });
+  async bind(alias: string) {
+    this.logger.info("Binding", { id: this.id, alias });
 
     return new Promise(async (res, rej) => {
       this.asyncResolver.once(
-        this.getBindResolverKey(id, alias),
-        (accepted: boolean) =>
-          accepted
+        this.getBindResolverKey(this.id, alias),
+        (set: boolean) =>
+          set
             ? res()
             : rej(
-                new BindRejectedError(this.getBindResolverKey(id, alias))
+                new BindRejectedError(this.getBindResolverKey(this.id, alias))
                   .message
               )
       );
 
-      await this.send(this.client, new Bind({ id, alias }));
+      await this.send(this.client, new Bind({ id: this.id, alias }));
     });
   }
 
@@ -211,8 +207,8 @@ export class SignalingClient extends Service {
 
         this.logger.info("Received alias", data);
 
-        await this.notifyBind(data.id, data.alias, data.accepted);
-        await this.onAlias(data.id, data.alias, data.accepted);
+        await this.notifyBind(data.id, data.alias, data.set);
+        await this.onAlias(data.id, data.alias, data.set);
 
         break;
       }
@@ -223,8 +219,8 @@ export class SignalingClient extends Service {
     }
   }
 
-  private async notifyBind(id: string, alias: string, accepted: boolean) {
-    this.asyncResolver.emit(this.getBindResolverKey(id, alias), accepted);
+  private async notifyBind(id: string, alias: string, set: boolean) {
+    this.asyncResolver.emit(this.getBindResolverKey(id, alias), set);
   }
 
   private getBindResolverKey(id: string, alias: string) {
