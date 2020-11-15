@@ -17,6 +17,7 @@ import {
   ISignalingOperation,
   TSignalingData,
 } from "../operations/operation";
+import { IShutdownData, Shutdown } from "../operations/shutdown";
 
 export class Service {
   protected logger = getLogger();
@@ -82,6 +83,12 @@ export class Service {
         this.logger.info("Received operation alias", operation.data);
 
         return new Alias(operation.data as IAliasData);
+      }
+
+      case ESIGNALING_OPCODES.SHUTDOWN: {
+        this.logger.info("Received operation shutdown", operation.data);
+
+        return new Shutdown(operation.data as IShutdownData);
       }
 
       default: {
