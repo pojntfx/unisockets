@@ -8,7 +8,7 @@ import {
 } from "../operations/acknowledgement";
 import { Answer, IAnswerData } from "../operations/answer";
 import { Candidate, ICandidateData } from "../operations/candidate";
-import { Gone, IGoneData } from "../operations/gone";
+import { Goodbye, IGoodbyeData } from "../operations/goodbye";
 import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
@@ -40,10 +40,10 @@ export class Service {
     this.logger.debug("Received operation", operation);
 
     switch (operation.opcode) {
-      case ESIGNALING_OPCODES.GONE: {
-        this.logger.info("Received operation gone", operation.data);
+      case ESIGNALING_OPCODES.GOODBYE: {
+        this.logger.info("Received operation goodbye", operation.data);
 
-        return new Gone(operation.data as IGoneData);
+        return new Goodbye(operation.data as IGoodbyeData);
       }
 
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {
