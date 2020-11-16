@@ -35,7 +35,7 @@ export class SignalingClient extends Service {
     private onDisconnect: () => Promise<void>,
     private onAcknowledgement: (id: string) => Promise<void>,
     private getOffer: () => Promise<string>,
-    private getAnswer: (offer: string) => Promise<string>,
+    private getAnswer: (offererId: string, offer: string) => Promise<string>,
     private onAnswer: (
       offererId: string,
       answererId: string,
@@ -230,7 +230,7 @@ export class SignalingClient extends Service {
 
         this.logger.info("Received offer", data);
 
-        const answer = await this.getAnswer(data.offer);
+        const answer = await this.getAnswer(data.id, data.offer);
 
         await this.send(
           this.client,
