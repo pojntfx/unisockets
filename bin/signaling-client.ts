@@ -112,8 +112,20 @@ const handleAcknowledgement = async (id: string) => {
     }
   }
 };
-const getOffer = async () => v4();
-const getAnswer = async (_: string) => v4();
+const getOffer = async () => {
+  const offer = v4();
+
+  logger.info("Getting offer", { offer });
+
+  return offer;
+};
+const getAnswer = async (offererId: string, offer: string) => {
+  const answer = v4();
+
+  logger.info("Getting answer for offer", { offererId, offer, answer });
+
+  return answer;
+};
 const handleAnswer = async (
   offererId: string,
   answererId: string,
