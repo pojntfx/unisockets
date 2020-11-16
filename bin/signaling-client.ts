@@ -43,20 +43,34 @@ const handleAcknowledgement = async (id: string) => {
 
       logger.info("Bind accepted", { id, alias: TEST_ALIAS });
 
-      while (true) {
-        logger.info("Starting Accepting", { id, alias: TEST_ALIAS });
+      try {
+        while (true) {
+          logger.info("Starting Accepting", { id, alias: TEST_ALIAS });
 
-        const clientAlias = await client.accept(TEST_ALIAS);
-        const clientId = aliases.get(clientAlias);
+          const clientAlias = await client.accept(TEST_ALIAS);
+          const clientId = aliases.get(clientAlias);
 
-        logger.info("Accepted", {
-          id,
-          alias: TEST_ALIAS,
-          clientAlias,
-          clientId,
-        });
+          logger.info("Accepted", {
+            id,
+            alias: TEST_ALIAS,
+            clientAlias,
+            clientId,
+          });
+        }
+      } catch (e) {
+        logger.error("Accept rejected", { id, alias: TEST_ALIAS, error: e });
 
-        // TODO: `shutdown` server alias
+        try {
+          await client.shutdown(TEST_ALIAS);
+
+          logger.info("Shutdown accepted", { id, alias: TEST_ALIAS });
+        } catch (e) {
+          logger.error("Shutdown rejected", {
+            id,
+            alias: TEST_ALIAS,
+            error: e,
+          });
+        }
       }
     } catch (e) {
       logger.error("Bind rejected", { id, alias: TEST_ALIAS, error: e });
@@ -67,13 +81,28 @@ const handleAcknowledgement = async (id: string) => {
 
       const clientAlias = await client.connect(TEST_ALIAS);
 
-      // TODO: `shutdown` client alias
-
       logger.info("Connect accepted", {
         id,
         remoteAlias: TEST_ALIAS,
         clientAlias,
       });
+
+      try {
+        await client.shutdown(clientAlias);
+
+        logger.info("Shutdown accepted", {
+          id,
+          remoteAlias: TEST_ALIAS,
+          clientAlias,
+        });
+      } catch (e) {
+        logger.error("Shutdown rejected", {
+          id,
+          remoteAlias: TEST_ALIAS,
+          clientAlias,
+          error: e,
+        });
+      }
     } catch (e) {
       logger.error("Connect rejected", {
         id,
