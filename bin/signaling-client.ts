@@ -112,10 +112,10 @@ const handleAcknowledgement = async (id: string) => {
     }
   }
 };
-const getOffer = async () => {
+const getOffer = async (id: string) => {
   const offer = v4();
 
-  logger.info("Getting offer", { offer });
+  logger.info("Getting offer", { id, offer });
 
   return offer;
 };
