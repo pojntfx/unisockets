@@ -114,7 +114,7 @@ const handleAcknowledgement = async (id: string) => {
   }
 };
 const getOffer = async (id: string) => {
-  const offer = await transporter.open();
+  const offer = await transporter.getOffer();
 
   logger.info("Getting offer", { id, offer });
 

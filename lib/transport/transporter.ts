@@ -1,8 +1,15 @@
 import { v4 } from "uuid";
+import { getLogger } from "../utils/logger";
 
 export class Transporter {
-  async open() {
-    return v4();
+  private logger = getLogger();
+
+  async getOffer() {
+    const offer = v4();
+
+    this.logger.info("Created offer", { offer });
+
+    return offer;
   }
 
   async handleOffer(
@@ -10,6 +17,8 @@ export class Transporter {
     offer: string,
     handleCandidate: (candidate: string) => Promise<void>
   ) {
+    this.logger.info("Handling offer", { id, offer });
+
     await handleCandidate(v4());
     await handleCandidate(v4());
     await handleCandidate(v4());
@@ -22,6 +31,8 @@ export class Transporter {
     answer: string,
     handleCandidate: (candidate: string) => Promise<void>
   ) {
+    this.logger.info("Handling answer", { id, answer });
+
     await handleCandidate(v4());
     await handleCandidate(v4());
     await handleCandidate(v4());
@@ -29,5 +40,7 @@ export class Transporter {
     return v4();
   }
 
-  async handleCandidate(id: string, candidate: string) {}
+  async handleCandidate(id: string, candidate: string) {
+    this.logger.info("Handling candidate", { id, candidate });
+  }
 }
