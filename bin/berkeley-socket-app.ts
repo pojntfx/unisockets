@@ -1,6 +1,6 @@
-import { v4 } from "uuid";
 import yargs from "yargs";
 import { SignalingClient } from "../lib/signaling/services/signaling-client";
+import { Transporter } from "../lib/transport/transporter";
 import { getLogger } from "../lib/utils/logger";
 
 const TEST_ALIAS = "bind-testing.com";
@@ -25,6 +25,7 @@ const { raddr, reconnectDuration, testBind } = yargs(
 const logger = getLogger();
 
 const aliases = new Map<string, string>();
+const transporter = new Transporter();
 
 const handleConnect = async () => {
   logger.info("Handling connect");
@@ -113,14 +114,14 @@ const handleAcknowledgement = async (id: string) => {
   }
 };
 const getOffer = async (id: string) => {
-  const offer = v4();
+  const offer = await transporter.open();
 
   logger.info("Getting offer", { id, offer });
 
   return offer;
 };
 const getAnswer = async (offererId: string, offer: string) => {
-  const answer = v4();
+  const answer = await transporter.handleOffer(offererId, offer);
 
   logger.info("Getting answer for offer", { offererId, offer, answer });
 
@@ -132,11 +133,9 @@ const handleAnswer = async (
   answer: string,
   handleCandidate: (candidate: string) => Promise<any>
 ) => {
-  logger.info("Handling answer", { offererId, answererId, answer });
+  await transporter.handleAnswer(answererId, answer, handleCandidate);
 
-  await handleCandidate(v4());
-  await handleCandidate(v4());
-  await handleCandidate(v4());
+  logger.info("Handling answer", { offererId, answererId, answer });
 };
 const handleCandidate = async (
   offererId: string,
@@ -144,6 +143,8 @@ const handleCandidate = async (
   candidate: string
 ) => {
   logger.info("Handling candidate", { offererId, answererId, candidate });
+
+  await transporter.handleCandidate(offererId, candidate);
 };
 const handleGoodbye = async (id: string) => {
   logger.info("Handling goodbye", { id });
