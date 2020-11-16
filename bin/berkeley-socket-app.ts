@@ -144,7 +144,7 @@ const handleCandidate = async (
 ) => {
   logger.info("Handling candidate", { offererId, answererId, candidate });
 
-  await transporter.handleCandidate(answererId, candidate);
+  await transporter.handleCandidate(offererId, candidate);
 };
 const handleGoodbye = async (id: string) => {
   logger.info("Handling goodbye", { id });
