@@ -30,6 +30,8 @@ export class SignalingServer extends Service {
   }
 
   async open() {
+    this.logger.debug("Opening signaling server");
+
     const server = new Server({
       host: this.host,
       port: this.port,
