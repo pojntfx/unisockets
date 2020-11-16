@@ -58,6 +58,8 @@ export class SignalingClient extends Service {
   }
 
   async open() {
+    this.logger.debug("Opening signaling client");
+
     this.client = new WebSocket(this.address);
     this.client.onmessage = async (operation) =>
       await this.handleOperation(await this.receive(operation.data));
