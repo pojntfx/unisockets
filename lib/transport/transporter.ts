@@ -5,7 +5,15 @@ export class Transporter {
     return v4();
   }
 
-  async handleOffer(id: string, offer: string) {
+  async handleOffer(
+    id: string,
+    offer: string,
+    handleCandidate: (candidate: string) => Promise<void>
+  ) {
+    await handleCandidate(v4());
+    await handleCandidate(v4());
+    await handleCandidate(v4());
+
     return v4();
   }
 

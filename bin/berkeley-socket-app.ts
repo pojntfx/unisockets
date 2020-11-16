@@ -120,8 +120,16 @@ const getOffer = async (id: string) => {
 
   return offer;
 };
-const getAnswer = async (offererId: string, offer: string) => {
-  const answer = await transporter.handleOffer(offererId, offer);
+const getAnswer = async (
+  offererId: string,
+  offer: string,
+  handleCandidate: (candidate: string) => Promise<any>
+) => {
+  const answer = await transporter.handleOffer(
+    offererId,
+    offer,
+    handleCandidate
+  );
 
   logger.info("Getting answer for offer", { offererId, offer, answer });
 
