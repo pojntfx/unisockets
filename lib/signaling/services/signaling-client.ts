@@ -117,7 +117,7 @@ export class SignalingClient extends Service {
     });
   }
 
-  async connect(remoteAlias: string) {
+  async connect(remoteAlias: string): Promise<string> {
     this.logger.info("Connecting", { id: this.id, remoteAlias });
 
     const clientConnectionId = v4();
@@ -159,7 +159,7 @@ export class SignalingClient extends Service {
       );
     });
 
-    return clientAlias;
+    return clientAlias as string;
   }
 
   private async handleConnect() {
