@@ -1,10 +1,15 @@
 import { v4 } from "uuid";
 import { getLogger } from "../utils/logger";
-import { ExtendedRTCConfiguration, RTCPeerConnection } from "wrtc";
+import {
+  ExtendedRTCConfiguration,
+  RTCPeerConnection,
+  RTCSessionDescription,
+} from "wrtc";
 import { SDPInvalidError } from "../signaling/errors/sdp-invalid";
 
 export class Transporter {
   private logger = getLogger();
+  private connections = new Map<string, RTCPeerConnection>();
 
   constructor(private config: ExtendedRTCConfiguration) {}
 
@@ -31,11 +36,32 @@ export class Transporter {
   ) {
     this.logger.info("Handling offer", { id, offer });
 
-    await handleCandidate(v4());
-    await handleCandidate(v4());
-    await handleCandidate(v4());
+    const connection = new RTCPeerConnection(this.config);
 
-    return v4();
+    connection.onicecandidate = async (e) => {
+      e.candidate && handleCandidate(JSON.stringify(e));
+    };
+
+    connection.setRemoteDescription(
+      new RTCSessionDescription({
+        type: "offer",
+        sdp: offer,
+      })
+    );
+
+    const answer = await connection.createAnswer();
+
+    this.logger.info("Created answer", { offer: offer, answer: answer.sdp });
+
+    connection.setLocalDescription(answer);
+
+    this.connections.set(id, connection);
+
+    if (answer.sdp === undefined) {
+      throw new SDPInvalidError();
+    }
+
+    return answer.sdp;
   }
 
   async handleAnswer(
