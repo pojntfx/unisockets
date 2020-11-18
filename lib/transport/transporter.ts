@@ -15,6 +15,8 @@ export class Transporter {
 
     this.logger.info("Created offer", { offer: offer.sdp });
 
+    offerConnection.close();
+
     if (offer.sdp === undefined) {
       throw new SDPInvalidError();
     }
