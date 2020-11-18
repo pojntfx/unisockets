@@ -57,6 +57,10 @@ export class Transporter {
 
     this.connections.set(id, connection);
 
+    this.logger.debug("Created connection", {
+      newConnections: JSON.stringify(Array.from(this.connections.keys())),
+    });
+
     if (answer.sdp === undefined) {
       throw new SDPInvalidError();
     }
