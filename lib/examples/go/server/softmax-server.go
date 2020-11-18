@@ -66,10 +66,8 @@ func handleConnection(conn net.Conn) {
 				break
 			}
 }
-		fmt.Println(input[0:n])
 		s := string(input[0:n])
-		fmt.Println(s)
-		
+
 		rawIn := json.RawMessage(s)
 
 		bytes, err := rawIn.MarshalJSON()
@@ -83,18 +81,21 @@ func handleConnection(conn net.Conn) {
 			log.Fatal(err)
 		}
 
-
-		fmt.Printf("%+v", p)
-
 		arr := p.SoftmaxArray
 
-		fmt.Println(arr[0])
-		//SoftmaxArray := input.GetInt("input")
-		//fmt.Println(buf[0:n])
+		// At this point we have full access to array arr so call the function 
 
-		//_, err2 := conn.Write(buf[0:n])
-		//if err != nil {
-		//	log.Fatal(err2)
-		//}
+		fmt.Println(softmaxSum(arr))
+
 	}
+}
+
+func softmaxSum(arr []int) int {
+
+	sum := 0
+	for i := 0; i < len(arr); i++ {
+		sum = sum + arr[i]
+	}
+
+	return sum
 }
