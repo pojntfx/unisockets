@@ -173,13 +173,17 @@ const handleAlias = async (id: string, alias: string, set: boolean) => {
 
     aliases.set(alias, id);
 
-    logger.debug("New aliases", { aliases: JSON.stringify([...aliases]) });
+    logger.debug("New aliases", {
+      aliases: JSON.stringify(Array.from(aliases)),
+    });
   } else {
     logger.info("Removing alias", { id, alias });
 
     aliases.delete(alias);
 
-    logger.debug("New aliases", { aliases: JSON.stringify([...aliases]) });
+    logger.debug("New aliases", {
+      aliases: JSON.stringify(Array.from(aliases)),
+    });
   }
 };
 
