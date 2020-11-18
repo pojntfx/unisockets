@@ -1,14 +1,21 @@
 package main
 
 import (
+//	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net"
+//	"strconv"
 )
 
 type TCPServer struct {
 	laddr string
+}
+
+type Numbers struct {
+	SoftmaxArray []int `json:"input"`
 }
 
 func main() {
@@ -47,24 +54,47 @@ func (s TCPServer) open() error {
 }
 
 func handleConnection(conn net.Conn) {
-	var buf [512]byte
+	var input [512]byte
 
 	defer conn.Close()
 
 	for {
-		n, err := conn.Read(buf[0:])
+		n, err := conn.Read(input[0:])
 
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
+}
+		fmt.Println(input[0:n])
+		s := string(input[0:n])
+		fmt.Println(s)
+		
+		rawIn := json.RawMessage(s)
+
+		bytes, err := rawIn.MarshalJSON()
+		if err !=  nil {
+			log.Fatal(err)
 		}
 
-		fmt.Println(buf[0:n])
-
-		_, err2 := conn.Write(buf[0:n])
+		var p Numbers
+		err = json.Unmarshal(bytes, &p)
 		if err != nil {
-			log.Fatal(err2)
+			log.Fatal(err)
 		}
+
+
+		fmt.Printf("%+v", p)
+
+		arr := p.SoftmaxArray
+
+		fmt.Println(arr[0])
+		//SoftmaxArray := input.GetInt("input")
+		//fmt.Println(buf[0:n])
+
+		//_, err2 := conn.Write(buf[0:n])
+		//if err != nil {
+		//	log.Fatal(err2)
+		//}
 	}
 }
