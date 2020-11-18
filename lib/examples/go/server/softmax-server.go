@@ -7,9 +7,13 @@ import (
 	"io"
 	"log"
 	"net"
+	"github.com/valyala/fastjson"
 //	"strconv"
 )
 
+var (
+	JSONArena fastjson.Arena
+)
 type TCPServer struct {
 	laddr string
 }
@@ -85,8 +89,24 @@ func handleConnection(conn net.Conn) {
 
 		// At this point we have full access to array arr so call the function 
 
-		fmt.Println(softmaxSum(arr))
+		output := JSONArena.NewObject()
 
+		result := JSONArena.NewNumberInt(softmaxSum(arr))
+		output.Set("result", result)
+		fmt.Println(result)
+		fmt.Println(output)
+
+		// At this point we have another JSONObject we need to parse into a bytearray
+
+		outputDecoded := output.MarshalTo([]byte{})
+		
+		fmt.Println(outputDecoded)
+		// turn string into json and json into byte array
+		// needs to return byte array
+		_, err2 := conn.Write(outputDecoded)
+		if err2 != nil {
+			log.Fatal(err2)
+		}
 	}
 }
 
