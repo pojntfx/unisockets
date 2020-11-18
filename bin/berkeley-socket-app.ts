@@ -164,6 +164,8 @@ const handleCandidate = async (
 };
 const handleGoodbye = async (id: string) => {
   logger.info("Handling goodbye", { id });
+
+  await transporter.shutdown(id);
 };
 const handleAlias = async (id: string, alias: string, set: boolean) => {
   logger.debug("Handling alias", { id });

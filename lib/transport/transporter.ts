@@ -1,15 +1,15 @@
-import { v4 } from "uuid";
-import { getLogger } from "../utils/logger";
 import {
   ExtendedRTCConfiguration,
   RTCPeerConnection,
   RTCSessionDescription,
 } from "wrtc";
 import { SDPInvalidError } from "../signaling/errors/sdp-invalid";
+import { getLogger } from "../utils/logger";
 
 export class Transporter {
   private logger = getLogger();
   private connections = new Map<string, RTCPeerConnection>();
+  private channels = new Map<string, RTCDataChannel>();
 
   constructor(private config: ExtendedRTCConfiguration) {}
 
@@ -105,5 +105,31 @@ export class Transporter {
 
   async handleCandidate(id: string, candidate: string) {
     this.logger.info("Handling candidate", { id, candidate });
+  }
+
+  async shutdown(id: string) {
+    if (this.connections.has(id)) {
+      this.logger.info("Shutting down connection", { id });
+
+      this.connections.get(id)?.close();
+
+      this.connections.delete(id);
+
+      this.logger.debug("Deleted connection", {
+        newConnections: JSON.stringify(Array.from(this.connections.keys())),
+      });
+    }
+
+    if (this.channels.has(id)) {
+      this.logger.info("Shutting down channel", { id });
+
+      this.channels.get(id)?.close();
+
+      this.channels.delete(id);
+
+      this.logger.debug("Deleted channel", {
+        newConnections: JSON.stringify(Array.from(this.connections.keys())),
+      });
+    }
   }
 }
