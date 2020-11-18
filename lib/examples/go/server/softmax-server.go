@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 )
 
 type Result struct {
-	Result int `json:"result"`
+	Result []float64 `json:"result"`
 }
 
 type TCPServer struct {
@@ -17,7 +18,7 @@ type TCPServer struct {
 }
 
 type Numbers struct {
-	SoftmaxArray []int `json:"input"`
+	SoftmaxArray []float64 `json:"input"`
 }
 
 func main() {
@@ -69,12 +70,15 @@ func handleConnection(conn net.Conn) {
 			}
 		}
 
-		arr := decodeByteArray(input, n)
+		inputArray := decodeByteArray(input, n)
 
-		result := ignite(arr)
+		// calculate for each element seperately
+
+		result := ignite(inputArray)
 
 		byteArray := encodeByteArray(result)
 
+		fmt.Println(string(byteArray))
 		_, err2 := conn.Write(byteArray)
 		if err2 != nil {
 			log.Fatal(err2)
@@ -82,17 +86,15 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-func softmaxSum(arr []int) int {
-
-	sum := 0
-	for i := 0; i < len(arr); i++ {
-		sum = sum + arr[i]
-	}
-
-	return sum
+func softmaxSum(input float64) float64 {
+	return math.Exp(input)
 }
 
-func decodeByteArray(input [512]byte, n int) []int {
+func softmaxResult(sum float64, input float64) float64 {
+	return math.Exp(input) / sum
+}
+
+func decodeByteArray(input [512]byte, n int) []float64 {
 	s := string(input[0:n])
 
 	rawIn := json.RawMessage(s)
@@ -122,7 +124,20 @@ func encodeByteArray(result Result) []byte {
 	return byteArray
 }
 
-func ignite(arr []int) Result {
-	result := Result{Result: softmaxSum(arr)}
-	return result
+func ignite(inputArray []float64) Result {
+	sum := 0.
+	result := []float64{}
+
+	for i := 0; i < len(inputArray); i++ {
+		sum = sum + softmaxSum(inputArray[i])
+	}
+
+	for i := 0; i < len(inputArray); i++ {
+		result = append(result, softmaxResult(sum, inputArray[i]))
+	}
+
+	fmt.Println(result)
+
+	resultObj := Result{Result: result}
+	return resultObj
 }
