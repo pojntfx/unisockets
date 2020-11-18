@@ -1,15 +1,25 @@
 import { v4 } from "uuid";
 import { getLogger } from "../utils/logger";
+import { ExtendedRTCConfiguration, RTCPeerConnection } from "wrtc";
+import { SDPInvalidError } from "../signaling/errors/sdp-invalid";
 
 export class Transporter {
   private logger = getLogger();
 
+  constructor(private config: ExtendedRTCConfiguration) {}
+
   async getOffer() {
-    const offer = v4();
+    const offerConnection = new RTCPeerConnection(this.config);
 
-    this.logger.info("Created offer", { offer });
+    const offer = await offerConnection.createOffer();
 
-    return offer;
+    this.logger.info("Created offer", { offer: offer.sdp });
+
+    if (offer.sdp === undefined) {
+      throw new SDPInvalidError();
+    }
+
+    return offer.sdp;
   }
 
   async handleOffer(
