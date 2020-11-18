@@ -1,9 +1,17 @@
+import { ExtendedRTCConfiguration } from "wrtc";
 import yargs from "yargs";
 import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { Transporter } from "../lib/transport/transporter";
 import { getLogger } from "../lib/utils/logger";
 
 const TEST_ALIAS = "bind-testing.com";
+const transporterConfig: ExtendedRTCConfiguration = {
+  iceServers: [
+    {
+      urls: "stun:global.stun.twilio.com:3478?transport=udp",
+    },
+  ],
+};
 
 const { raddr, reconnectDuration, testBind } = yargs(
   process.argv.slice(2)
@@ -25,7 +33,7 @@ const { raddr, reconnectDuration, testBind } = yargs(
 const logger = getLogger();
 
 const aliases = new Map<string, string>();
-const transporter = new Transporter();
+const transporter = new Transporter(transporterConfig);
 
 const handleConnect = async () => {
   logger.info("Handling connect");
