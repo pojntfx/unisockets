@@ -75,11 +75,32 @@ export class Transporter {
   ) {
     this.logger.info("Handling answer", { id, answer });
 
-    await handleCandidate(v4());
-    await handleCandidate(v4());
-    await handleCandidate(v4());
+    const connection = new RTCPeerConnection(this.config);
 
-    return v4();
+    const offer = await this.getOffer();
+    connection.setLocalDescription(
+      new RTCSessionDescription({
+        type: "offer",
+        sdp: offer,
+      })
+    );
+
+    connection.onicecandidate = async (e) => {
+      e.candidate && handleCandidate(JSON.stringify(e));
+    };
+
+    connection.setRemoteDescription(
+      new RTCSessionDescription({
+        type: "answer",
+        sdp: answer,
+      })
+    );
+
+    this.connections.set(id, connection);
+
+    this.logger.debug("Created connection", {
+      newConnections: JSON.stringify(Array.from(this.connections.keys())),
+    });
   }
 
   async handleCandidate(id: string, candidate: string) {

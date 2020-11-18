@@ -149,9 +149,9 @@ const handleAnswer = async (
   answer: string,
   handleCandidate: (candidate: string) => Promise<any>
 ) => {
-  await transporter.handleAnswer(answererId, answer, handleCandidate);
-
   logger.info("Handling answer", { offererId, answererId, answer });
+
+  await transporter.handleAnswer(answererId, answer, handleCandidate);
 };
 const handleCandidate = async (
   offererId: string,
