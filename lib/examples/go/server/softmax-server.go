@@ -1,19 +1,17 @@
 package main
 
 import (
-//	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net"
-	"github.com/valyala/fastjson"
-//	"strconv"
 )
 
-var (
-	JSONArena fastjson.Arena
-)
+type Result struct {
+	Result int `json:"result"`
+}
+
 type TCPServer struct {
 	laddr string
 }
@@ -69,41 +67,15 @@ func handleConnection(conn net.Conn) {
 			if err == io.EOF {
 				break
 			}
-}
-		s := string(input[0:n])
-
-		rawIn := json.RawMessage(s)
-
-		bytes, err := rawIn.MarshalJSON()
-		if err !=  nil {
-			log.Fatal(err)
 		}
 
-		var p Numbers
-		err = json.Unmarshal(bytes, &p)
-		if err != nil {
-			log.Fatal(err)
-		}
+		arr := decodeByteArray(input, n)
 
-		arr := p.SoftmaxArray
+		result := ignite(arr)
 
-		// At this point we have full access to array arr so call the function 
+		byteArray := encodeByteArray(result)
 
-		output := JSONArena.NewObject()
-
-		result := JSONArena.NewNumberInt(softmaxSum(arr))
-		output.Set("result", result)
-		fmt.Println(result)
-		fmt.Println(output)
-
-		// At this point we have another JSONObject we need to parse into a bytearray
-
-		outputDecoded := output.MarshalTo([]byte{})
-		
-		fmt.Println(outputDecoded)
-		// turn string into json and json into byte array
-		// needs to return byte array
-		_, err2 := conn.Write(outputDecoded)
+		_, err2 := conn.Write(byteArray)
 		if err2 != nil {
 			log.Fatal(err2)
 		}
@@ -118,4 +90,39 @@ func softmaxSum(arr []int) int {
 	}
 
 	return sum
+}
+
+func decodeByteArray(input [512]byte, n int) []int {
+	s := string(input[0:n])
+
+	rawIn := json.RawMessage(s)
+
+	bytes, err := rawIn.MarshalJSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var p Numbers
+	err = json.Unmarshal(bytes, &p)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	arr := p.SoftmaxArray
+	return arr
+}
+
+func encodeByteArray(result Result) []byte {
+	byteArray, err := json.Marshal(result)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(string(byteArray))
+	return byteArray
+}
+
+func ignite(arr []int) Result {
+	result := Result{Result: softmaxSum(arr)}
+	return result
 }
