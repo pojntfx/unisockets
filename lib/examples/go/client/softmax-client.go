@@ -41,7 +41,7 @@ func (s *TCPClient) Open() error {
 
 	var buf [512]byte
 
-	n,err := conn.Read(buf[0:])
+	n, err := conn.Read(buf[0:])
 	if err != nil {
 		log.Fatal(err)
 	}
