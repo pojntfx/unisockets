@@ -32,8 +32,20 @@ const { raddr, reconnectDuration, testBind } = yargs(
 
 const logger = getLogger();
 
+const handleTransporterConnectionConnect = async (id: string) => {
+  logger.info("Handling transporter connection connect", { id });
+};
+
+const handleTransporterConnectionDisconnect = async (id: string) => {
+  logger.info("Handling transporter connection disconnect", { id });
+};
+
 const aliases = new Map<string, string>();
-const transporter = new Transporter(transporterConfig);
+const transporter = new Transporter(
+  transporterConfig,
+  handleTransporterConnectionConnect,
+  handleTransporterConnectionDisconnect
+);
 
 const handleConnect = async () => {
   logger.info("Handling connect");

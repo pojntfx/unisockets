@@ -11,7 +11,11 @@ export class Transporter {
   private connections = new Map<string, RTCPeerConnection>();
   private channels = new Map<string, RTCDataChannel>();
 
-  constructor(private config: ExtendedRTCConfiguration) {}
+  constructor(
+    private config: ExtendedRTCConfiguration,
+    private onConnect: (id: string) => Promise<void>,
+    private onDisconnect: (id: string) => Promise<void>
+  ) {}
 
   async getOffer() {
     const offerConnection = new RTCPeerConnection(this.config);
@@ -37,6 +41,9 @@ export class Transporter {
     this.logger.info("Handling offer", { id, offer });
 
     const connection = new RTCPeerConnection(this.config);
+
+    connection.onconnectionstatechange = async (e: any) =>
+      await this.handleConnectionStatusChange(e.connectionState as string, id);
 
     connection.onicecandidate = async (e) => {
       e.candidate && handleCandidate(JSON.stringify(e));
@@ -76,6 +83,9 @@ export class Transporter {
     this.logger.info("Handling answer", { id, answer });
 
     const connection = new RTCPeerConnection(this.config);
+
+    connection.onconnectionstatechange = async (e: any) =>
+      await this.handleConnectionStatusChange(e.connectionState as string, id);
 
     const offer = await this.getOffer();
     connection.setLocalDescription(
@@ -130,6 +140,25 @@ export class Transporter {
       this.logger.debug("Deleted channel", {
         newConnections: JSON.stringify(Array.from(this.connections.keys())),
       });
+    }
+  }
+
+  private async handleConnectionStatusChange(
+    connectionState: string,
+    id: string
+  ) {
+    switch (connectionState) {
+      case "connected": {
+        await this.onConnect(id);
+
+        break;
+      }
+
+      default: {
+        await this.onDisconnect(id);
+
+        break;
+      }
     }
   }
 }
