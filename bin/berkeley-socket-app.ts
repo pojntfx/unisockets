@@ -133,14 +133,17 @@ const handleAcknowledgement = async (id: string) => {
     }
   }
 };
-const getOffer = async (id: string) => {
-  const offer = await transporter.getOffer();
+const getOffer = async (
+  answererId: string,
+  handleCandidate: (candidate: string) => Promise<any>
+) => {
+  const offer = await transporter.getOffer(answererId, handleCandidate);
 
-  logger.info("Getting offer", { id, offer });
+  logger.info("Created offer", { answererId, offer });
 
   return offer;
 };
-const getAnswer = async (
+const handleOffer = async (
   offererId: string,
   offer: string,
   handleCandidate: (candidate: string) => Promise<any>
@@ -151,19 +154,18 @@ const getAnswer = async (
     handleCandidate
   );
 
-  logger.info("Getting answer for offer", { offererId, offer, answer });
+  logger.info("Created answer for offer", { offererId, offer, answer });
 
   return answer;
 };
 const handleAnswer = async (
   offererId: string,
   answererId: string,
-  answer: string,
-  handleCandidate: (candidate: string) => Promise<any>
+  answer: string
 ) => {
   logger.info("Handling answer", { offererId, answererId, answer });
 
-  await transporter.handleAnswer(answererId, answer, handleCandidate);
+  await transporter.handleAnswer(answererId, answer);
 };
 const handleCandidate = async (
   offererId: string,
@@ -208,7 +210,7 @@ const client = new SignalingClient(
   handleDisconnect,
   handleAcknowledgement,
   getOffer,
-  getAnswer,
+  handleOffer,
   handleAnswer,
   handleCandidate,
   handleGoodbye,
