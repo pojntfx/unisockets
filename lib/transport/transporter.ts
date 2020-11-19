@@ -15,8 +15,10 @@ export class Transporter {
 
   constructor(
     private config: ExtendedRTCConfiguration,
-    private onConnect: (id: string) => Promise<void>,
-    private onDisconnect: (id: string) => Promise<void>
+    private onConnectionConnect: (id: string) => Promise<void>,
+    private onConnectionDisconnect: (id: string) => Promise<void>,
+    private onChannelOpen: (id: string) => Promise<void>,
+    private onChannelClose: (id: string) => Promise<void>
   ) {}
 
   async getOffer(
@@ -35,7 +37,35 @@ export class Transporter {
       e.candidate && handleCandidate(JSON.stringify(e.candidate));
     };
 
-    connection.createDataChannel("channel");
+    const channel = connection.createDataChannel("channel");
+
+    channel.onopen = async () => {
+      this.logger.debug("Channel opened", { id: answererId });
+
+      await this.onChannelOpen(answererId);
+    };
+    channel.onmessage = async (msg) => {
+      // TODO: Remove this experimental block
+      console.log("channel onmessage", msg);
+    };
+    channel.onclose = async () => {
+      this.logger.debug("Channel close", { id: answererId });
+
+      await this.onChannelClose(answererId);
+    };
+
+    // TODO: Remove this experimental block
+    setInterval(async () => {
+      console.log("Sending ...");
+
+      channel.send("Hey!");
+    }, 1000);
+
+    this.channels.set(answererId, channel);
+
+    this.logger.debug("Created channel", {
+      newChannels: JSON.stringify(Array.from(this.channels.keys())),
+    });
 
     const offer = await connection.createOffer();
     await connection.setLocalDescription(offer);
@@ -88,17 +118,26 @@ export class Transporter {
 
     // TODO: Remove this experimental block
     connection.ondatachannel = async ({ channel }) => {
-      console.log("connection ondatachannel");
-
       channel.onopen = async () => {
-        console.log("channel onopen");
+        this.logger.debug("Channel opened", { id });
+
+        await this.onChannelOpen(id);
       };
       channel.onmessage = async (msg) => {
+        // TODO: Remove this experimental block
         console.log("channel onmessage", msg);
       };
       channel.onclose = async () => {
-        console.log("channel onclose");
+        this.logger.debug("Channel close", { id });
+
+        await this.onChannelClose(id);
       };
+
+      this.channels.set(id, channel);
+
+      this.logger.debug("Created channel", {
+        newChannels: JSON.stringify(Array.from(this.channels.keys())),
+      });
     };
 
     this.connections.set(id, connection);
@@ -126,25 +165,6 @@ export class Transporter {
           sdp: answer,
         })
       );
-
-      // TODO: Remove this experimental block
-      const channel = connection?.createDataChannel("channel")!; // We only ever create this channel, so this can't ever be undefined
-      channel.onopen = async () => {
-        console.log("channel onopen");
-      };
-      channel.onmessage = async (msg) => {
-        console.log("channel onmessage", msg);
-      };
-      channel.onclose = async () => {
-        console.log("channel onclose");
-      };
-
-      // TODO: Remove this experimental block
-      setInterval(async () => {
-        console.log("Sending ...");
-
-        channel.send("Hey!");
-      }, 1000);
     } else {
       throw new ConnectionDoesNotExistError();
     }
@@ -185,7 +205,7 @@ export class Transporter {
       this.channels.delete(id);
 
       this.logger.debug("Deleted channel", {
-        newConnections: JSON.stringify(Array.from(this.connections.keys())),
+        newChannels: JSON.stringify(Array.from(this.connections.keys())),
       });
     }
   }
@@ -196,13 +216,13 @@ export class Transporter {
   ) {
     switch (connectionState) {
       case "connected": {
-        await this.onConnect(id);
+        await this.onConnectionConnect(id);
 
         break;
       }
 
       default: {
-        await this.onDisconnect(id);
+        await this.onConnectionDisconnect(id);
 
         break;
       }

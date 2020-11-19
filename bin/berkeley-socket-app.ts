@@ -35,16 +35,23 @@ const logger = getLogger();
 const handleTransporterConnectionConnect = async (id: string) => {
   logger.info("Handling transporter connection connect", { id });
 };
-
 const handleTransporterConnectionDisconnect = async (id: string) => {
   logger.info("Handling transporter connection disconnect", { id });
+};
+const handleTransporterChannelOpen = async (id: string) => {
+  logger.info("Handling transporter connection open", { id });
+};
+const handleTransporterChannelClose = async (id: string) => {
+  logger.info("Handling transporter connection close", { id });
 };
 
 const aliases = new Map<string, string>();
 const transporter = new Transporter(
   transporterConfig,
   handleTransporterConnectionConnect,
-  handleTransporterConnectionDisconnect
+  handleTransporterConnectionDisconnect,
+  handleTransporterChannelOpen,
+  handleTransporterChannelClose
 );
 
 const handleConnect = async () => {
