@@ -4,6 +4,7 @@ import {
   RTCPeerConnection,
   RTCSessionDescription,
 } from "wrtc";
+import { ChannelDoesNotExistError } from "../signaling/errors/channel-does-not-exist";
 import { ConnectionDoesNotExistError } from "../signaling/errors/connection-does-not-exist";
 import { SDPInvalidError } from "../signaling/errors/sdp-invalid";
 import { getLogger } from "../utils/logger";
@@ -53,13 +54,6 @@ export class Transporter {
 
       await this.onChannelClose(answererId);
     };
-
-    // TODO: Remove this experimental block
-    setInterval(async () => {
-      console.log("Sending ...");
-
-      channel.send("Hey!");
-    }, 1000);
 
     this.channels.set(answererId, channel);
 
@@ -207,6 +201,18 @@ export class Transporter {
       this.logger.debug("Deleted channel", {
         newChannels: JSON.stringify(Array.from(this.connections.keys())),
       });
+    }
+  }
+
+  async send(id: string, msg: Uint8Array) {
+    this.logger.debug("Handling send", { id, msg });
+
+    if (this.channels.has(id)) {
+      const channel = this.channels.get(id);
+
+      channel?.send(msg);
+    } else {
+      throw new ChannelDoesNotExistError();
     }
   }
 
