@@ -1,9 +1,8 @@
 import {
   ExtendedRTCConfiguration,
-
-
-  RTCIceCandidate, RTCPeerConnection,
-  RTCSessionDescription
+  RTCIceCandidate,
+  RTCPeerConnection,
+  RTCSessionDescription,
 } from "wrtc";
 import { ConnectionDoesNotExistError } from "../signaling/errors/connection-does-not-exist";
 import { SDPInvalidError } from "../signaling/errors/sdp-invalid";
@@ -20,20 +19,40 @@ export class Transporter {
     private onDisconnect: (id: string) => Promise<void>
   ) {}
 
-  async getOffer() {
-    const offerConnection = new RTCPeerConnection(this.config);
+  async getOffer(
+    answererId: string,
+    handleCandidate: (candidate: string) => Promise<void>
+  ) {
+    const connection = new RTCPeerConnection(this.config);
 
-    offerConnection.createDataChannel("channel");
+    connection.onconnectionstatechange = async (e: any) =>
+      await this.handleConnectionStatusChange(
+        e.connectionState as string,
+        answererId
+      );
 
-    const offer = await offerConnection.createOffer();
+    connection.onicecandidate = async (e) => {
+      e.candidate && handleCandidate(JSON.stringify(e.candidate));
+    };
+
+    connection.createDataChannel("channel");
+
+    const offer = await connection.createOffer();
+    await connection.setLocalDescription(offer);
 
     this.logger.info("Created offer", { offer: offer.sdp });
 
-    offerConnection.close();
-
     if (offer.sdp === undefined) {
+      connection.close();
+
       throw new SDPInvalidError();
     }
+
+    this.connections.set(answererId, connection);
+
+    this.logger.debug("Created connection", {
+      newConnections: JSON.stringify(Array.from(this.connections.keys())),
+    });
 
     return offer.sdp;
   }
@@ -95,56 +114,40 @@ export class Transporter {
     return answer.sdp;
   }
 
-  async handleAnswer(
-    id: string,
-    answer: string,
-    handleCandidate: (candidate: string) => Promise<void>
-  ) {
+  async handleAnswer(id: string, answer: string) {
     this.logger.info("Handling answer", { id, answer });
 
-    const connection = new RTCPeerConnection(this.config);
+    if (this.connections.has(id)) {
+      const connection = this.connections.get(id);
 
-    connection.onconnectionstatechange = async (e: any) =>
-      await this.handleConnectionStatusChange(e.connectionState as string, id);
+      await connection?.setRemoteDescription(
+        new RTCSessionDescription({
+          type: "answer",
+          sdp: answer,
+        })
+      );
 
-    connection.onicecandidate = async (e) => {
-      e.candidate && handleCandidate(JSON.stringify(e.candidate));
-    };
+      // TODO: Remove this experimental block
+      const channel = connection?.createDataChannel("channel")!; // We only ever create this channel, so this can't ever be undefined
+      channel.onopen = async () => {
+        console.log("channel onopen");
+      };
+      channel.onmessage = async (msg) => {
+        console.log("channel onmessage", msg);
+      };
+      channel.onclose = async () => {
+        console.log("channel onclose");
+      };
 
-    const offer = await connection.createOffer();
-    await connection.setLocalDescription(offer);
+      // TODO: Remove this experimental block
+      setInterval(async () => {
+        console.log("Sending ...");
 
-    await connection.setRemoteDescription(
-      new RTCSessionDescription({
-        type: "answer",
-        sdp: answer,
-      })
-    );
-
-    // TODO: Remove this experimental block
-    const channel = connection.createDataChannel("channel");
-    channel.onopen = async () => {
-      console.log("channel onopen");
-    };
-    channel.onmessage = async (msg) => {
-      console.log("channel onmessage", msg);
-    };
-    channel.onclose = async () => {
-      console.log("channel onclose");
-    };
-
-    // TODO: Remove this experimental block
-    setInterval(async () => {
-      console.log("Sending ...");
-
-      channel.send("Hey!");
-    }, 1000);
-
-    this.connections.set(id, connection);
-
-    this.logger.debug("Created connection", {
-      newConnections: JSON.stringify(Array.from(this.connections.keys())),
-    });
+        channel.send("Hey!");
+      }, 1000);
+    } else {
+      throw new ConnectionDoesNotExistError();
+    }
   }
 
   async handleCandidate(id: string, candidate: string) {

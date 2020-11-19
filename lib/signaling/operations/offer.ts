@@ -1,7 +1,8 @@
 import { ESIGNALING_OPCODES, ISignalingOperation } from "./operation";
 
 export interface IOfferData {
-  id: string;
+  offererId: string;
+  answererId: string;
   offer: string;
 }
 

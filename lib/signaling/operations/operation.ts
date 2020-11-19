@@ -7,12 +7,14 @@ import { IBindData } from "./bind";
 import { ICandidateData } from "./candidate";
 import { IConnectData } from "./connect";
 import { IGoodbyeData } from "./goodbye";
+import { IGreetingData } from "./greeting";
 import { IOfferData } from "./offer";
 import { IShutdownData } from "./shutdown";
 
 export enum ESIGNALING_OPCODES {
   GOODBYE = "goodbye",
   ACKNOWLEDGED = "acknowledged",
+  GREETING = "greeting",
   OFFER = "offer",
   ANSWER = "answer",
   CANDIDATE = "candidate",
@@ -27,6 +29,7 @@ export enum ESIGNALING_OPCODES {
 export type TSignalingData =
   | IGoodbyeData
   | IAcknowledgementData
+  | IGreetingData
   | IOfferData
   | IAnswerData
   | ICandidateData

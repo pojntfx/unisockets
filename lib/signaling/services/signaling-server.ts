@@ -12,6 +12,7 @@ import { IBindData } from "../operations/bind";
 import { Candidate, ICandidateData } from "../operations/candidate";
 import { IConnectData } from "../operations/connect";
 import { Goodbye } from "../operations/goodbye";
+import { Greeting } from "../operations/greeting";
 import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
@@ -56,6 +57,23 @@ export class SignalingServer extends Service {
     const id = v4();
 
     await this.send(client, new Acknowledgement({ id }));
+
+    this.clients.forEach(async (existingClient, existingId) => {
+      if (existingId !== id) {
+        await this.send(
+          existingClient,
+          new Greeting({
+            offererId: existingId,
+            answererId: id,
+          })
+        );
+
+        this.logger.info("Sent greeting", {
+          offererId: existingId,
+          answererId: id,
+        });
+      }
+    });
 
     this.clients.set(id, client);
 
@@ -105,18 +123,21 @@ export class SignalingServer extends Service {
 
         this.logger.info("Received offer", data);
 
-        this.clients.forEach(async (client, id) => {
-          if (id !== data.id) {
-            await this.send(
-              client,
-              new Offer({
-                id: data.id,
-                offer: data.offer,
-              })
-            );
-          }
+        const client = this.clients.get(data.answererId);
 
-          this.logger.info("Sent offer", { id, data });
+        await this.send(
+          client,
+          new Offer({
+            offererId: data.offererId,
+            answererId: data.answererId,
+            offer: data.offer,
+          })
+        );
+
+        this.logger.info("Sent offer", {
+          offererId: data.offererId,
+          answererId: data.answererId,
+          offer: data.offer,
         });
 
         break;

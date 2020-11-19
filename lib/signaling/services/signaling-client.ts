@@ -22,6 +22,7 @@ import { ConnectionRejectedError } from "../errors/connection-rejected";
 import { Connect } from "../operations/connect";
 import { Accepting } from "../operations/accepting";
 import { IAcceptData } from "../operations/accept";
+import { IGreetingData } from "../operations/greeting";
 
 export class SignalingClient extends Service {
   private id = "";
@@ -34,7 +35,10 @@ export class SignalingClient extends Service {
     private onConnect: () => Promise<void>,
     private onDisconnect: () => Promise<void>,
     private onAcknowledgement: (id: string) => Promise<void>,
-    private getOffer: (id: string) => Promise<string>,
+    private getOffer: (
+      answererId: string,
+      handleCandidate: (candidate: string) => Promise<void>
+    ) => Promise<string>,
     private getAnswer: (
       offererId: string,
       offer: string,
@@ -43,8 +47,7 @@ export class SignalingClient extends Service {
     private onAnswer: (
       offererId: string,
       answererId: string,
-      answer: string,
-      handleCandidate: (candidate: string) => Promise<void>
+      answer: string
     ) => Promise<void>,
     private onCandidate: (
       offererId: string,
@@ -216,17 +219,41 @@ export class SignalingClient extends Service {
 
         await this.onAcknowledgement(this.id);
 
-        const offer = await this.getOffer(this.id);
+        break;
+      }
+
+      case ESIGNALING_OPCODES.GREETING: {
+        const data = operation.data as IGreetingData;
+
+        const offer = await this.getOffer(
+          data.answererId,
+          async (candidate: string) => {
+            await this.sendCandidate(
+              new Candidate({
+                offererId: this.id,
+                answererId: data.offererId,
+                candidate,
+              })
+            );
+
+            this.logger.info("Sent candidate", data);
+          }
+        );
 
         await this.send(
           this.client,
           new Offer({
-            id: this.id,
+            offererId: this.id,
+            answererId: data.answererId,
             offer,
           })
         );
 
-        this.logger.info("Sent offer", { id: this.id, offer });
+        this.logger.info("Sent offer", {
+          offererId: this.id,
+          answererId: data.answererId,
+          offer,
+        });
 
         break;
       }
@@ -237,13 +264,13 @@ export class SignalingClient extends Service {
         this.logger.info("Received offer", data);
 
         const answer = await this.getAnswer(
-          data.id,
+          data.offererId,
           data.offer,
           async (candidate: string) => {
             await this.sendCandidate(
               new Candidate({
                 offererId: this.id,
-                answererId: data.id,
+                answererId: data.offererId,
                 candidate,
               })
             );
@@ -255,14 +282,14 @@ export class SignalingClient extends Service {
         await this.send(
           this.client,
           new Answer({
-            offererId: data.id,
+            offererId: data.offererId,
             answererId: this.id,
             answer,
           })
         );
 
         this.logger.info("Sent answer", {
-          offererId: data.id,
+          offererId: data.offererId,
           answererId: this.id,
           answer,
         });
@@ -275,22 +302,7 @@ export class SignalingClient extends Service {
 
         this.logger.info("Received answer", data);
 
-        await this.onAnswer(
-          data.offererId,
-          data.answererId,
-          data.answer,
-          async (candidate: string) => {
-            await this.sendCandidate(
-              new Candidate({
-                offererId: data.offererId,
-                answererId: data.answererId,
-                candidate,
-              })
-            );
-
-            this.logger.info("Sent candidate", data);
-          }
-        );
+        await this.onAnswer(data.offererId, data.answererId, data.answer);
 
         break;
       }

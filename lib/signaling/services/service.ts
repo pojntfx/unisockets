@@ -14,6 +14,7 @@ import { Bind, IBindData } from "../operations/bind";
 import { Candidate, ICandidateData } from "../operations/candidate";
 import { Connect, IConnectData } from "../operations/connect";
 import { Goodbye, IGoodbyeData } from "../operations/goodbye";
+import { Greeting, IGreetingData } from "../operations/greeting";
 import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
@@ -56,6 +57,12 @@ export class Service {
         this.logger.info("Received operation acknowledged", operation.data);
 
         return new Acknowledgement(operation.data as IAcknowledgementData);
+      }
+
+      case ESIGNALING_OPCODES.GREETING: {
+        this.logger.info("Received operation greeting", operation.data);
+
+        return new Greeting(operation.data as IGreetingData);
       }
 
       case ESIGNALING_OPCODES.OFFER: {
