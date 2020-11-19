@@ -77,8 +77,8 @@ const handleAcknowledgement = async (id: string) => {
           logger.info("Starting to accept", { id, alias: TEST_ALIAS });
 
           const clientAlias = await client.accept(TEST_ALIAS);
-          const clientId = aliases.get(clientAlias);
 
+          const clientId = aliases.get(clientAlias);
           if (clientId === undefined) {
             throw new ClientDoesNotExistError();
           }
@@ -91,6 +91,7 @@ const handleAcknowledgement = async (id: string) => {
           });
 
           while (true) {
+            // TODO: Fix race condition where connection does not exist and put this `sleep` the following statement
             await new Promise((res) => setTimeout(() => res(), 1000));
 
             await transporter.send(
@@ -123,27 +124,28 @@ const handleAcknowledgement = async (id: string) => {
 
       const clientAlias = await client.connect(TEST_ALIAS);
 
+      const serverId = aliases.get(TEST_ALIAS);
+      if (serverId === undefined) {
+        throw new ClientDoesNotExistError();
+      }
+
       logger.info("Connect accepted", {
         id,
         remoteAlias: TEST_ALIAS,
         clientAlias,
       });
 
-      try {
-        await client.shutdown(clientAlias);
+      while (true) {
+        const msg = await transporter.recv(serverId);
 
-        logger.info("Shutdown accepted", {
+        logger.info("Received", {
           id,
           remoteAlias: TEST_ALIAS,
           clientAlias,
+          msg,
         });
-      } catch (e) {
-        logger.error("Shutdown rejected", {
-          id,
-          remoteAlias: TEST_ALIAS,
-          clientAlias,
-          error: e,
-        });
+
+        await new Promise((res) => setTimeout(() => res(), 1000));
       }
     } catch (e) {
       logger.error("Connect rejected", {
@@ -151,6 +153,21 @@ const handleAcknowledgement = async (id: string) => {
         remoteAlias: TEST_ALIAS,
         error: e,
       });
+
+      try {
+        await client.shutdown(TEST_ALIAS);
+
+        logger.info("Shutdown accepted", {
+          id,
+          remoteAlias: TEST_ALIAS,
+        });
+      } catch (e) {
+        logger.error("Shutdown rejected", {
+          id,
+          remoteAlias: TEST_ALIAS,
+          error: e,
+        });
+      }
     }
   }
 };

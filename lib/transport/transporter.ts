@@ -8,11 +8,14 @@ import { ChannelDoesNotExistError } from "../signaling/errors/channel-does-not-e
 import { ConnectionDoesNotExistError } from "../signaling/errors/connection-does-not-exist";
 import { SDPInvalidError } from "../signaling/errors/sdp-invalid";
 import { getLogger } from "../utils/logger";
+import { EventEmitter, once } from "events";
 
 export class Transporter {
   private logger = getLogger();
   private connections = new Map<string, RTCPeerConnection>();
   private channels = new Map<string, RTCDataChannel>();
+  private queuedMessages = new Map<string, Uint8Array[]>();
+  private messagesReceiver = new EventEmitter();
 
   constructor(
     private config: ExtendedRTCConfiguration,
@@ -46,8 +49,7 @@ export class Transporter {
       await this.onChannelOpen(answererId);
     };
     channel.onmessage = async (msg) => {
-      // TODO: Remove this experimental block
-      console.log("channel onmessage", msg);
+      await this.queueAndEmitMessage(answererId, msg.data);
     };
     channel.onclose = async () => {
       this.logger.debug("Channel close", { id: answererId });
@@ -56,6 +58,7 @@ export class Transporter {
     };
 
     this.channels.set(answererId, channel);
+    this.queuedMessages.set(answererId, []);
 
     this.logger.debug("Created channel", {
       newChannels: JSON.stringify(Array.from(this.channels.keys())),
@@ -110,7 +113,6 @@ export class Transporter {
 
     await connection.setLocalDescription(answer);
 
-    // TODO: Remove this experimental block
     connection.ondatachannel = async ({ channel }) => {
       channel.onopen = async () => {
         this.logger.debug("Channel opened", { id });
@@ -118,8 +120,7 @@ export class Transporter {
         await this.onChannelOpen(id);
       };
       channel.onmessage = async (msg) => {
-        // TODO: Remove this experimental block
-        console.log("channel onmessage", msg);
+        await this.queueAndEmitMessage(id, msg.data);
       };
       channel.onclose = async () => {
         this.logger.debug("Channel close", { id });
@@ -128,6 +129,7 @@ export class Transporter {
       };
 
       this.channels.set(id, channel);
+      this.queuedMessages.set(id, []);
 
       this.logger.debug("Created channel", {
         newChannels: JSON.stringify(Array.from(this.channels.keys())),
@@ -216,6 +218,20 @@ export class Transporter {
     }
   }
 
+  async recv(id: string) {
+    this.logger.debug("Handling receive", { id });
+
+    if (this.queuedMessages.has(id) && this.queuedMessages.size !== 0) {
+      return this.queuedMessages.get(id)?.shift()!; // size !== 0 and undefined is ever pushed
+    } else {
+      const [msg] = await once(this.messagesReceiver, id);
+
+      this.queuedMessages.get(id)?.shift();
+
+      return msg! as Uint8Array;
+    }
+  }
+
   private async handleConnectionStatusChange(
     connectionState: string,
     id: string
@@ -232,6 +248,20 @@ export class Transporter {
 
         break;
       }
+    }
+  }
+
+  private async queueAndEmitMessage(id: string, msg: Uint8Array) {
+    this.logger.debug("Queueing message", { id, msg });
+
+    if (this.channels.has(id)) {
+      const messages = this.queuedMessages.get(id);
+
+      messages?.push(msg);
+
+      this.messagesReceiver.emit(id, msg);
+    } else {
+      throw new ChannelDoesNotExistError();
     }
   }
 }
