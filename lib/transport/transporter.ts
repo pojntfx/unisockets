@@ -30,6 +30,7 @@ export class Transporter {
     handleCandidate: (candidate: string) => Promise<void>
   ) {
     const connection = new RTCPeerConnection(this.config);
+    this.connections.set(answererId, connection);
 
     connection.onconnectionstatechange = async (e: any) =>
       await this.handleConnectionStatusChange(
@@ -42,6 +43,7 @@ export class Transporter {
     };
 
     const channel = connection.createDataChannel("channel");
+    this.channels.set(answererId, channel);
 
     channel.onopen = async () => {
       this.logger.debug("Channel opened", { id: answererId });
@@ -57,7 +59,6 @@ export class Transporter {
       await this.onChannelClose(answererId);
     };
 
-    this.channels.set(answererId, channel);
     this.queuedMessages.set(answererId, []);
 
     this.logger.debug("Created channel", {
@@ -75,8 +76,6 @@ export class Transporter {
       throw new SDPInvalidError();
     }
 
-    this.connections.set(answererId, connection);
-
     this.logger.debug("Created connection", {
       newConnections: JSON.stringify(Array.from(this.connections.keys())),
     });
@@ -92,6 +91,7 @@ export class Transporter {
     this.logger.info("Handling offer", { id, offer });
 
     const connection = new RTCPeerConnection(this.config);
+    this.connections.set(id, connection);
 
     connection.onconnectionstatechange = async (e: any) =>
       await this.handleConnectionStatusChange(e.connectionState as string, id);
@@ -114,6 +114,8 @@ export class Transporter {
     await connection.setLocalDescription(answer);
 
     connection.ondatachannel = async ({ channel }) => {
+      this.channels.set(id, channel);
+
       channel.onopen = async () => {
         this.logger.debug("Channel opened", { id });
 
@@ -128,15 +130,12 @@ export class Transporter {
         await this.onChannelClose(id);
       };
 
-      this.channels.set(id, channel);
       this.queuedMessages.set(id, []);
 
       this.logger.debug("Created channel", {
         newChannels: JSON.stringify(Array.from(this.channels.keys())),
       });
     };
-
-    this.connections.set(id, connection);
 
     this.logger.debug("Created connection", {
       newConnections: JSON.stringify(Array.from(this.connections.keys())),
