@@ -1,8 +1,11 @@
 import {
   ExtendedRTCConfiguration,
-  RTCPeerConnection,
-  RTCSessionDescription,
+
+
+  RTCIceCandidate, RTCPeerConnection,
+  RTCSessionDescription
 } from "wrtc";
+import { ConnectionDoesNotExistError } from "../signaling/errors/connection-does-not-exist";
 import { SDPInvalidError } from "../signaling/errors/sdp-invalid";
 import { getLogger } from "../utils/logger";
 
@@ -19,6 +22,8 @@ export class Transporter {
 
   async getOffer() {
     const offerConnection = new RTCPeerConnection(this.config);
+
+    offerConnection.createDataChannel("channel");
 
     const offer = await offerConnection.createOffer();
 
@@ -46,10 +51,10 @@ export class Transporter {
       await this.handleConnectionStatusChange(e.connectionState as string, id);
 
     connection.onicecandidate = async (e) => {
-      e.candidate && handleCandidate(JSON.stringify(e));
+      e.candidate && handleCandidate(JSON.stringify(e.candidate));
     };
 
-    connection.setRemoteDescription(
+    await connection.setRemoteDescription(
       new RTCSessionDescription({
         type: "offer",
         sdp: offer,
@@ -60,7 +65,22 @@ export class Transporter {
 
     this.logger.info("Created answer", { offer: offer, answer: answer.sdp });
 
-    connection.setLocalDescription(answer);
+    await connection.setLocalDescription(answer);
+
+    // TODO: Remove this experimental block
+    connection.ondatachannel = async ({ channel }) => {
+      console.log("connection ondatachannel");
+
+      channel.onopen = async () => {
+        console.log("channel onopen");
+      };
+      channel.onmessage = async (msg) => {
+        console.log("channel onmessage", msg);
+      };
+      channel.onclose = async () => {
+        console.log("channel onclose");
+      };
+    };
 
     this.connections.set(id, connection);
 
@@ -87,24 +107,38 @@ export class Transporter {
     connection.onconnectionstatechange = async (e: any) =>
       await this.handleConnectionStatusChange(e.connectionState as string, id);
 
-    const offer = await this.getOffer();
-    connection.setLocalDescription(
-      new RTCSessionDescription({
-        type: "offer",
-        sdp: offer,
-      })
-    );
-
     connection.onicecandidate = async (e) => {
-      e.candidate && handleCandidate(JSON.stringify(e));
+      e.candidate && handleCandidate(JSON.stringify(e.candidate));
     };
 
-    connection.setRemoteDescription(
+    const offer = await connection.createOffer();
+    await connection.setLocalDescription(offer);
+
+    await connection.setRemoteDescription(
       new RTCSessionDescription({
         type: "answer",
         sdp: answer,
       })
     );
+
+    // TODO: Remove this experimental block
+    const channel = connection.createDataChannel("channel");
+    channel.onopen = async () => {
+      console.log("channel onopen");
+    };
+    channel.onmessage = async (msg) => {
+      console.log("channel onmessage", msg);
+    };
+    channel.onclose = async () => {
+      console.log("channel onclose");
+    };
+
+    // TODO: Remove this experimental block
+    setInterval(async () => {
+      console.log("Sending ...");
+
+      channel.send("Hey!");
+    }, 1000);
 
     this.connections.set(id, connection);
 
@@ -115,6 +149,16 @@ export class Transporter {
 
   async handleCandidate(id: string, candidate: string) {
     this.logger.info("Handling candidate", { id, candidate });
+
+    if (this.connections.has(id)) {
+      const connection = this.connections.get(id);
+
+      await connection?.addIceCandidate(
+        new RTCIceCandidate(JSON.parse(candidate))
+      );
+    } else {
+      throw new ConnectionDoesNotExistError();
+    }
   }
 
   async shutdown(id: string) {
