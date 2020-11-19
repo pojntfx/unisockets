@@ -78,29 +78,31 @@ const handleAcknowledgement = async (id: string) => {
 
           const clientAlias = await client.accept(TEST_ALIAS);
 
-          const clientId = aliases.get(clientAlias);
-          if (clientId === undefined) {
-            throw new ClientDoesNotExistError();
-          }
+          (async () => {
+            const clientId = aliases.get(clientAlias);
+            if (clientId === undefined) {
+              throw new ClientDoesNotExistError();
+            }
 
-          logger.info("Accepted", {
-            id,
-            alias: TEST_ALIAS,
-            clientAlias,
-            clientId,
-          });
-
-          // TODO: Fix the race condition below where candidates for the connection seem to be ignored
-          await new Promise((res) => setTimeout(() => res(), 1000));
-
-          while (true) {
-            await transporter.send(
+            logger.info("Accepted", {
+              id,
+              alias: TEST_ALIAS,
+              clientAlias,
               clientId,
-              new TextEncoder().encode("Hello, client!")
-            );
+            });
 
+            // TODO: Queue candidates until connections exists, add them to the connection, and remove the line below
             await new Promise((res) => setTimeout(() => res(), 1000));
-          }
+
+            while (true) {
+              await transporter.send(
+                clientId,
+                new TextEncoder().encode("Hello, client!")
+              );
+
+              await new Promise((res) => setTimeout(() => res(), 1000));
+            }
+          })();
         }
       } catch (e) {
         logger.error("Accept rejected", { id, alias: TEST_ALIAS, error: e });
