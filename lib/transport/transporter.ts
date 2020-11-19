@@ -250,7 +250,9 @@ export class Transporter {
     }
   }
 
-  private async queueAndEmitMessage(id: string, msg: Uint8Array) {
+  private async queueAndEmitMessage(id: string, rawMsg: ArrayBuffer) {
+    const msg = new Uint8Array(rawMsg);
+
     this.logger.debug("Queueing message", { id, msg });
 
     if (this.channels.has(id)) {
