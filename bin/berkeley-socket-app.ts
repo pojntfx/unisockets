@@ -1,5 +1,6 @@
 import { ExtendedRTCConfiguration } from "wrtc";
 import yargs from "yargs";
+import { ClientDoesNotExistError } from "../lib/signaling/errors/client-does-not-exist";
 import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { Transporter } from "../lib/transport/transporter";
 import { getLogger } from "../lib/utils/logger";
@@ -73,10 +74,14 @@ const handleAcknowledgement = async (id: string) => {
 
       try {
         while (true) {
-          logger.info("Starting Accepting", { id, alias: TEST_ALIAS });
+          logger.info("Starting to accept", { id, alias: TEST_ALIAS });
 
           const clientAlias = await client.accept(TEST_ALIAS);
           const clientId = aliases.get(clientAlias);
+
+          if (clientId === undefined) {
+            throw new ClientDoesNotExistError();
+          }
 
           logger.info("Accepted", {
             id,
@@ -84,6 +89,15 @@ const handleAcknowledgement = async (id: string) => {
             clientAlias,
             clientId,
           });
+
+          while (true) {
+            await new Promise((res) => setTimeout(() => res(), 1000));
+
+            await transporter.send(
+              clientId,
+              new TextEncoder().encode("Hello, client!")
+            );
+          }
         }
       } catch (e) {
         logger.error("Accept rejected", { id, alias: TEST_ALIAS, error: e });
