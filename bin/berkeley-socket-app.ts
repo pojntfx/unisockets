@@ -90,14 +90,16 @@ const handleAcknowledgement = async (id: string) => {
             clientId,
           });
 
-          while (true) {
-            // TODO: Fix race condition where connection does not exist and put this `sleep` the following statement
-            await new Promise((res) => setTimeout(() => res(), 1000));
+          // TODO: Fix the race condition below where candidates for the connection seem to be ignored
+          await new Promise((res) => setTimeout(() => res(), 1000));
 
+          while (true) {
             await transporter.send(
               clientId,
               new TextEncoder().encode("Hello, client!")
             );
+
+            await new Promise((res) => setTimeout(() => res(), 1000));
           }
         }
       } catch (e) {
