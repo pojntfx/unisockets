@@ -3,19 +3,26 @@ package main
 import (
 	"fmt"
 	"math"
+	"math/big"
 )
 
 func main() {
 
 	sum := 0.
-	k := 0.
+	k := 28.
 
 
 	for i := 0; i <= int(k); i++ {
-		sum = sum + sumElement(k)
+		sum = sum + sumElement(float64(i))
 	}
 
 	result := 4270934400./(math.Sqrt(10005.) *  sum)
+
+
+	a := big.NewInt(2)
+	b := big.NewInt(3)
+
+	fmt.Println(a.Add(a,b))
 	fmt.Println(result)
 }
 
