@@ -33,9 +33,9 @@ export class Transporter {
     const connection = new RTCPeerConnection(this.config);
     this.connections.set(answererId, connection);
 
-    connection.onconnectionstatechange = async (e: any) =>
+    connection.onconnectionstatechange = async () =>
       await this.handleConnectionStatusChange(
-        e.connectionState as string,
+        connection.connectionState,
         answererId
       );
 
@@ -96,8 +96,8 @@ export class Transporter {
     const connection = new RTCPeerConnection(this.config);
     this.connections.set(id, connection);
 
-    connection.onconnectionstatechange = async (e: any) =>
-      await this.handleConnectionStatusChange(e.connectionState as string, id);
+    connection.onconnectionstatechange = async () =>
+      await this.handleConnectionStatusChange(connection.connectionState, id);
 
     connection.onicecandidate = async (e) => {
       e.candidate && handleCandidate(JSON.stringify(e.candidate));
@@ -228,6 +228,18 @@ export class Transporter {
         ),
       });
     }
+
+    if (this.queuedMessages.has(id)) {
+      this.logger.info("Removing queued messages", { id });
+
+      this.queuedMessages.delete(id);
+
+      this.logger.debug("Deleted queued messages", {
+        newQueuedMessages: JSON.stringify(
+          Array.from(this.queuedMessages.keys())
+        ),
+      });
+    }
   }
 
   async send(id: string, msg: Uint8Array) {
@@ -263,18 +275,12 @@ export class Transporter {
     connectionState: string,
     id: string
   ) {
-    switch (connectionState) {
-      case "connected": {
-        await this.onConnectionConnect(id);
+    if (["new", "connected", undefined].includes(connectionState)) {
+      connectionState === "connected" && (await this.onConnectionConnect(id));
+    } else {
+      await this.onConnectionDisconnect(id);
 
-        break;
-      }
-
-      default: {
-        await this.onConnectionDisconnect(id);
-
-        break;
-      }
+      await this.shutdown(id);
     }
   }
 
