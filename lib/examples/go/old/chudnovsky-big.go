@@ -2,50 +2,73 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"math/big"
 )
 
 func main() {
-
-	sum := big.NewFloat(0)
 	result := big.NewFloat(0)
+	result.SetPrec(512)
+	sum := big.NewFloat(0)
+	sum.SetPrec(512)
+	fmt.Println(sum.Acc())
 
-	k := 2
-	fmt.Println(Factorial(big.NewFloat(3)))
+	k := 30
 	for i := 0; i <= k; i++ {
-		sum = sum.Add(sum, sumElement(big.NewFloat(float64(i))))
+		iFloat := big.NewFloat(float64(i))
+		iFloat.SetPrec(512)
+		sum = sum.Add(sum, sumElement(iFloat))
 	}
-	fmt.Println(sum)
 
-	result = Div(big.NewFloat(4270934400), Mul(big.NewFloat(math.Sqrt(10005)), sum))
+	a := big.NewFloat(4270934400)
+	a.SetPrec(512)
+
+	b := big.NewFloat(10005)
+	b.SetPrec(512)
+
+	result = Div(a, Mul(Root(b, 2), sum))
 	fmt.Println(result)
+	fmt.Println(result.Acc())
 }
 
-// 0 hoch 0 ist nicht definiert
 func sumElement(i *big.Float) *big.Float {
 	iAsUint64, _ := i.Uint64()
-	mulAsUint64, _ := Mul(big.NewFloat(3), i).Uint64()
-	fmt.Println(iAsUint64)
-	// Bis hier stimmt alles
+	threeFloat := big.NewFloat(3)
+	threeFloat.SetPrec(512)
+	mulAsUint64, _ := Mul(threeFloat, i).Uint64()
+
+	oneFloat := big.NewFloat(-1)
+	oneFloat.SetPrec(512)
+
+	sixFloat := big.NewFloat(6)
+	sixFloat.SetPrec(512)
+
+	bigFloat := big.NewFloat(13591409)
+	bigFloat.SetPrec(512)
+
+	bigOtherFloat := big.NewFloat(545140134)
+	bigOtherFloat.SetPrec(512)
+
+	bigBigFloat := big.NewFloat(640320)
+	bigBigFloat.SetPrec(512)
+
 	return Mul(
 		Pow(
-			big.NewFloat(-1),
+			oneFloat,
 			iAsUint64),
 		Mul(
 			Div(
 				Factorial(
-					Mul(big.NewFloat(6), i)),
+					Mul(sixFloat, i)),
 				Mul(
 					Pow(Factorial(i), 3),
-					Factorial(Mul(big.NewFloat(3), i)),
+					Factorial(Mul(threeFloat, i)),
 				),
 			),
 			Div(
 				Add(
-					big.NewFloat(13591409),
-					Mul(big.NewFloat(5451401409), i)),
-				Pow(big.NewFloat(640320), mulAsUint64),
+					bigFloat,
+					Mul(bigOtherFloat, i)),
+				Pow(bigBigFloat, mulAsUint64),
 			),
 		),
 	)
@@ -54,7 +77,9 @@ func sumElement(i *big.Float) *big.Float {
 func Pow(a *big.Float, e uint64) *big.Float {
 	result := Zero().Copy(a)
 	if e == 0 {
-		return big.NewFloat(1)
+		one := big.NewFloat(1)
+		one.SetPrec(512)
+		return one
 	}
 	for i := uint64(0); i < e-1; i++ {
 		result = Mul(result, a)
@@ -90,7 +115,7 @@ func Abs(a *big.Float) *big.Float {
 
 func New(f float64) *big.Float {
 	r := big.NewFloat(f)
-	r.SetPrec(256)
+	r.SetPrec(512)
 	return r
 }
 
@@ -100,7 +125,7 @@ func Div(a, b *big.Float) *big.Float {
 
 func Zero() *big.Float {
 	r := big.NewFloat(0.0)
-	r.SetPrec(256)
+	r.SetPrec(512)
 	return r
 }
 
@@ -122,9 +147,15 @@ func Lesser(x, y *big.Float) bool {
 
 func Factorial(n *big.Float) *big.Float {
 
-	if Lesser(n, big.NewFloat(2)) {
-		return big.NewFloat(1)
+	twoFloat := big.NewFloat(2)
+	twoFloat.SetPrec(512)
+
+	oneFloat := big.NewFloat(1)
+	oneFloat.SetPrec(512)
+
+	if Lesser(n, twoFloat) {
+		return oneFloat
 	}
 
-	return Mul(n, Factorial(Sub(n, big.NewFloat(1))))
+	return Mul(n, Factorial(Sub(n, oneFloat)))
 }
