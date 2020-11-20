@@ -12,7 +12,7 @@ func main() {
 	result := big.NewFloat(0)
 
 	k := 2
-
+	fmt.Println(Factorial(big.NewFloat(3)))
 	for i := 0; i <= k; i++ {
 		sum = sum.Add(sum, sumElement(big.NewFloat(float64(i))))
 	}
@@ -28,7 +28,6 @@ func sumElement(i *big.Float) *big.Float {
 	fmt.Println(iAsUint64)
 	// Bis hier stimmt alles
 	return Pow(big.NewFloat(-1), iAsUint64)
-
 }
 
 func Pow(a *big.Float, e uint64) *big.Float {
@@ -98,4 +97,13 @@ func Sub(a, b *big.Float) *big.Float {
 
 func Lesser(x, y *big.Float) bool {
 	return x.Cmp(y) == -1
+}
+
+func Factorial(n *big.Float) *big.Float {
+
+	if Lesser(n, big.NewFloat(2)) {
+		return big.NewFloat(1)
+	}
+
+	return Mul(n, Factorial(Sub(n, big.NewFloat(1))))
 }
