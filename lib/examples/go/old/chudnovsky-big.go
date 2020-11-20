@@ -25,9 +25,30 @@ func main() {
 // 0 hoch 0 ist nicht definiert
 func sumElement(i *big.Float) *big.Float {
 	iAsUint64, _ := i.Uint64()
+	mulAsUint64, _ := Mul(big.NewFloat(3), i).Uint64()
 	fmt.Println(iAsUint64)
 	// Bis hier stimmt alles
-	return Pow(big.NewFloat(-1), iAsUint64)
+	return Mul(
+		Pow(
+			big.NewFloat(-1),
+			iAsUint64),
+		Mul(
+			Div(
+				Factorial(
+					Mul(big.NewFloat(6), i)),
+				Mul(
+					Pow(Factorial(i), 3),
+					Factorial(Mul(big.NewFloat(3), i)),
+				),
+			),
+			Div(
+				Add(
+					big.NewFloat(13591409),
+					Mul(big.NewFloat(5451401409), i)),
+				Pow(big.NewFloat(640320), mulAsUint64),
+			),
+		),
+	)
 }
 
 func Pow(a *big.Float, e uint64) *big.Float {
