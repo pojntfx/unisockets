@@ -15,8 +15,8 @@ export class Transporter {
   private connections = new Map<string, RTCPeerConnection>();
   private channels = new Map<string, RTCDataChannel>();
   private queuedMessages = new Map<string, Uint8Array[]>();
-  private messagesReceiver = new EventEmitter();
   private queuedCandidates = new Map<string, string[]>();
+  private asyncResolver = new EventEmitter();
 
   constructor(
     private config: ExtendedRTCConfiguration,
@@ -49,6 +49,8 @@ export class Transporter {
     channel.onopen = async () => {
       this.logger.debug("Channel opened", { id: answererId });
 
+      this.asyncResolver.emit(this.getChannelKey(answererId), true);
+
       await this.onChannelOpen(answererId);
     };
     channel.onmessage = async (msg) => {
@@ -68,8 +70,6 @@ export class Transporter {
 
     const offer = await connection.createOffer();
     await connection.setLocalDescription(offer);
-
-    await this.addQueuedCandidates(answererId);
 
     this.logger.info("Created offer", { offer: offer.sdp });
 
@@ -165,6 +165,8 @@ export class Transporter {
           sdp: answer,
         })
       );
+
+      await this.addQueuedCandidates(id);
     } else {
       throw new ConnectionDoesNotExistError();
     }
@@ -234,6 +236,9 @@ export class Transporter {
     if (this.channels.has(id)) {
       const channel = this.channels.get(id);
 
+      channel?.readyState !== "open" &&
+        (await once(this.asyncResolver, this.getChannelKey(id)));
+
       channel?.send(msg);
     } else {
       throw new ChannelDoesNotExistError();
@@ -246,7 +251,7 @@ export class Transporter {
     if (this.queuedMessages.has(id) && this.queuedMessages.size !== 0) {
       return this.queuedMessages.get(id)?.shift()!; // size !== 0 and undefined is ever pushed
     } else {
-      const [msg] = await once(this.messagesReceiver, id);
+      const [msg] = await once(this.asyncResolver, this.getMessageKey(id));
 
       this.queuedMessages.get(id)?.shift();
 
@@ -283,7 +288,7 @@ export class Transporter {
 
       messages?.push(msg);
 
-      this.messagesReceiver.emit(id, msg);
+      this.asyncResolver.emit(this.getMessageKey(id), msg);
     } else {
       throw new ChannelDoesNotExistError();
     }
@@ -302,5 +307,13 @@ export class Transporter {
     this.logger.debug("Added queued candidate", {
       newQueuedCandidates: JSON.stringify(Array.from(this.queuedCandidates)),
     });
+  }
+
+  private getMessageKey(id: string) {
+    return `message id=${id}`;
+  }
+
+  private getChannelKey(id: string) {
+    return `channel id=${id}`;
   }
 }
