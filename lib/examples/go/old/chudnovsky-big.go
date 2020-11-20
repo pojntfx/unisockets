@@ -7,23 +7,23 @@ import (
 
 func main() {
 	result := big.NewFloat(0)
-	result.SetPrec(512)
+	result.SetPrec(1024)
 	sum := big.NewFloat(0)
-	sum.SetPrec(512)
+	sum.SetPrec(1024)
 	fmt.Println(sum.Acc())
 
-	k := 30
+	k := 100
 	for i := 0; i <= k; i++ {
 		iFloat := big.NewFloat(float64(i))
-		iFloat.SetPrec(512)
+		iFloat.SetPrec(1024)
 		sum = sum.Add(sum, sumElement(iFloat))
 	}
 
 	a := big.NewFloat(4270934400)
-	a.SetPrec(512)
+	a.SetPrec(1024)
 
 	b := big.NewFloat(10005)
-	b.SetPrec(512)
+	b.SetPrec(1024)
 
 	result = Div(a, Mul(Root(b, 2), sum))
 	fmt.Println(result)
@@ -33,23 +33,23 @@ func main() {
 func sumElement(i *big.Float) *big.Float {
 	iAsUint64, _ := i.Uint64()
 	threeFloat := big.NewFloat(3)
-	threeFloat.SetPrec(512)
+	threeFloat.SetPrec(1024)
 	mulAsUint64, _ := Mul(threeFloat, i).Uint64()
 
 	oneFloat := big.NewFloat(-1)
-	oneFloat.SetPrec(512)
+	oneFloat.SetPrec(1024)
 
 	sixFloat := big.NewFloat(6)
-	sixFloat.SetPrec(512)
+	sixFloat.SetPrec(1024)
 
 	bigFloat := big.NewFloat(13591409)
-	bigFloat.SetPrec(512)
+	bigFloat.SetPrec(1024)
 
 	bigOtherFloat := big.NewFloat(545140134)
-	bigOtherFloat.SetPrec(512)
+	bigOtherFloat.SetPrec(1024)
 
 	bigBigFloat := big.NewFloat(640320)
-	bigBigFloat.SetPrec(512)
+	bigBigFloat.SetPrec(1024)
 
 	return Mul(
 		Pow(
@@ -78,7 +78,7 @@ func Pow(a *big.Float, e uint64) *big.Float {
 	result := Zero().Copy(a)
 	if e == 0 {
 		one := big.NewFloat(1)
-		one.SetPrec(512)
+		one.SetPrec(1024)
 		return one
 	}
 	for i := uint64(0); i < e-1; i++ {
@@ -88,7 +88,7 @@ func Pow(a *big.Float, e uint64) *big.Float {
 }
 
 func Root(a *big.Float, n uint64) *big.Float {
-	limit := Pow(New(2), 256)
+	limit := Pow(New(2), 1024)
 	n1 := n - 1
 	n1f, rn := New(float64(n1)), Div(New(1.0), New(float64(n)))
 	x, x0 := New(1.0), Zero()
@@ -115,7 +115,7 @@ func Abs(a *big.Float) *big.Float {
 
 func New(f float64) *big.Float {
 	r := big.NewFloat(f)
-	r.SetPrec(512)
+	r.SetPrec(1024)
 	return r
 }
 
@@ -125,7 +125,7 @@ func Div(a, b *big.Float) *big.Float {
 
 func Zero() *big.Float {
 	r := big.NewFloat(0.0)
-	r.SetPrec(512)
+	r.SetPrec(1024)
 	return r
 }
 
@@ -148,10 +148,10 @@ func Lesser(x, y *big.Float) bool {
 func Factorial(n *big.Float) *big.Float {
 
 	twoFloat := big.NewFloat(2)
-	twoFloat.SetPrec(512)
+	twoFloat.SetPrec(1024)
 
 	oneFloat := big.NewFloat(1)
-	oneFloat.SetPrec(512)
+	oneFloat.SetPrec(1024)
 
 	if Lesser(n, twoFloat) {
 		return oneFloat
