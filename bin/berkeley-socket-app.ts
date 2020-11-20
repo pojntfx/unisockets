@@ -91,7 +91,7 @@ const handleAcknowledgement = async (id: string) => {
               clientId,
             });
 
-            // TODO: Queue candidates until connections exists, add them to the connection, and remove the line below
+            // TODO: Wait until channel is open and remove the line below
             await new Promise((res) => setTimeout(() => res(), 1000));
 
             while (true) {

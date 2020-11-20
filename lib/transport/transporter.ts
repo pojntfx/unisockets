@@ -16,6 +16,7 @@ export class Transporter {
   private channels = new Map<string, RTCDataChannel>();
   private queuedMessages = new Map<string, Uint8Array[]>();
   private messagesReceiver = new EventEmitter();
+  private queuedCandidates = new Map<string, string[]>();
 
   constructor(
     private config: ExtendedRTCConfiguration,
@@ -68,6 +69,8 @@ export class Transporter {
     const offer = await connection.createOffer();
     await connection.setLocalDescription(offer);
 
+    await this.addQueuedCandidates(answererId);
+
     this.logger.info("Created offer", { offer: offer.sdp });
 
     if (offer.sdp === undefined) {
@@ -112,6 +115,8 @@ export class Transporter {
     this.logger.info("Created answer", { offer: offer, answer: answer.sdp });
 
     await connection.setLocalDescription(answer);
+
+    await this.addQueuedCandidates(id);
 
     connection.ondatachannel = async ({ channel }) => {
       this.channels.set(id, channel);
@@ -166,7 +171,7 @@ export class Transporter {
   }
 
   async handleCandidate(id: string, candidate: string) {
-    this.logger.info("Handling candidate", { id, candidate });
+    this.logger.debug("Handling candidate", { id, candidate });
 
     if (this.connections.has(id)) {
       const connection = this.connections.get(id);
@@ -174,8 +179,14 @@ export class Transporter {
       await connection?.addIceCandidate(
         new RTCIceCandidate(JSON.parse(candidate))
       );
+
+      this.logger.info("Added candidate", { id, candidate });
     } else {
-      throw new ConnectionDoesNotExistError();
+      this.logger.info("Queueing candidate", { id, candidate });
+
+      if (!this.queuedCandidates.has(id)) this.queuedCandidates.set(id, []);
+
+      this.queuedCandidates.get(id)?.push(candidate);
     }
   }
 
@@ -201,6 +212,18 @@ export class Transporter {
 
       this.logger.debug("Deleted channel", {
         newChannels: JSON.stringify(Array.from(this.connections.keys())),
+      });
+    }
+
+    if (this.queuedCandidates.has(id)) {
+      this.logger.info("Removing queued candidates", { id });
+
+      this.queuedCandidates.delete(id);
+
+      this.logger.debug("Deleted queued candidate", {
+        newQueuedCandidates: JSON.stringify(
+          Array.from(this.queuedCandidates.keys())
+        ),
       });
     }
   }
@@ -264,5 +287,20 @@ export class Transporter {
     } else {
       throw new ChannelDoesNotExistError();
     }
+  }
+
+  private async addQueuedCandidates(id: string) {
+    this.queuedCandidates.get(id)?.forEach(async (candidate) => {
+      this.queuedCandidates.set(
+        id,
+        this.queuedCandidates.get(id)?.filter((c) => c !== candidate)! // This only runs if it is not undefined
+      );
+
+      await this.handleCandidate(id, candidate);
+    });
+
+    this.logger.debug("Added queued candidate", {
+      newQueuedCandidates: JSON.stringify(Array.from(this.queuedCandidates)),
+    });
   }
 }

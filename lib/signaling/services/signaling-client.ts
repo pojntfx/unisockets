@@ -230,7 +230,7 @@ export class SignalingClient extends Service {
           async (candidate: string) => {
             await this.sendCandidate(
               new Candidate({
-                offererId: this.id,
+                offererId: data.answererId,
                 answererId: data.offererId,
                 candidate,
               })
@@ -269,7 +269,7 @@ export class SignalingClient extends Service {
           async (candidate: string) => {
             await this.sendCandidate(
               new Candidate({
-                offererId: this.id,
+                offererId: data.answererId,
                 answererId: data.offererId,
                 candidate,
               })
