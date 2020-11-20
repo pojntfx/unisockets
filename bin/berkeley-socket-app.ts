@@ -78,21 +78,18 @@ const handleAcknowledgement = async (id: string) => {
 
           const clientAlias = await client.accept(TEST_ALIAS);
 
-          (async () => {
-            const clientId = aliases.get(clientAlias);
-            if (clientId === undefined) {
-              throw new ClientDoesNotExistError();
-            }
+          const clientId = aliases.get(clientAlias);
+          if (clientId === undefined) {
+            throw new ClientDoesNotExistError();
+          }
 
+          (async () => {
             logger.info("Accepted", {
               id,
               alias: TEST_ALIAS,
               clientAlias,
               clientId,
             });
-
-            // TODO: Wait until channel is open and remove the line below
-            await new Promise((res) => setTimeout(() => res(), 1000));
 
             while (true) {
               await transporter.send(
