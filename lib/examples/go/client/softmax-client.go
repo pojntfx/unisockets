@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"math"
 	"net"
@@ -20,16 +19,8 @@ type Result struct {
 	Result float64 `json:"result"`
 }
 
-type ResultingResult struct {
-	input []float64 `json:"input"`
-	sum   float64   `json:"sum"`
-}
-
 type ReturningResult struct {
 	Result []float64 `json:"result"`
-}
-type TCPServer struct {
-	laddr string
 }
 
 type Numbers struct {
@@ -60,7 +51,7 @@ func (s *TCPClient) Open() error {
 		log.Fatal(err)
 	}
 
-	// send "Connected"
+	// Connect to server
 	_, err2 := conn.Write([]byte(`Connected`))
 	if err != nil {
 		log.Fatal(err2)
@@ -68,56 +59,46 @@ func (s *TCPClient) Open() error {
 
 	var buf [512]byte
 
-	// Read input
+	// Read input values
 	n, err := conn.Read(buf[0:])
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(string(buf[0:n]))
 	inputArray := decodeByteArray(buf, n)
-	// just calculate sum first
-	// we also need the index later
-	result := ignite(inputArray)
-	fmt.Println(result)
-	byteArray := encodeByteArray(result)
-	fmt.Println(byteArray)
-	fmt.Println(string(byteArray))
 
-	// Send sum
+	result := ignite(inputArray)
+
+	byteArray := encodeByteArray(result)
+
+	// Write sum
 	_, err3 := conn.Write(byteArray)
 	if err3 != nil {
 		log.Fatal(err3)
 	}
 
-	// Receive input, sum
 	var bufInputSum [512]byte
 
+	// Read input, sum
 	m, err := conn.Read(bufInputSum[0:])
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(string(bufInputSum[0:m]))
-
-	// Calculate result
 	finalInputArray := decodeByteArray(bufInputSum, m)
-	fmt.Println(finalInputArray)
+
 	inputSum := decodeSum(bufInputSum, m)
-	fmt.Println(inputSum)
+
 	finalResult := igniteResult(finalInputArray, inputSum)
 
-	fmt.Println(finalResult)
 	finalByteArray := encodeFinalByteArray(finalResult)
-	// Send result
-	fmt.Println(string(finalByteArray))
-	fmt.Println(string(finalByteArray))
 
-	// Send sum
+	// Write result
 	_, err4 := conn.Write(finalByteArray)
 	if err4 != nil {
 		log.Fatal(err3)
 	}
+
 	return nil
 }
 
@@ -132,12 +113,14 @@ func decodeSum(output [512]byte, m int) float64 {
 	}
 
 	var p Sum
+
 	err = json.Unmarshal(bytes, &p)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	res := p.SumNum
+
 	return res
 }
 
@@ -160,12 +143,14 @@ func decodeByteArray(input [512]byte, n int) []float64 {
 	}
 
 	var p Numbers
+
 	err = json.Unmarshal(bytes, &p)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	arr := p.SoftmaxArray
+
 	return arr
 }
 
@@ -189,17 +174,13 @@ func encodeFinalByteArray(result ReturningResult) []byte {
 
 func ignite(inputArray []float64) Result {
 	sum := 0.
-	//result := []float64{}
 
 	for i := 0; i < len(inputArray); i++ {
 		sum = sum + softmaxSum(inputArray[i])
 	}
 
-	// for i := 0; i < len(inputArray); i++ {
-	// 	result = append(result, softmaxResult(sum, inputArray[i]))
-	// }
-
 	resultObj := Result{Result: sum}
+
 	return resultObj
 }
 
@@ -211,5 +192,6 @@ func igniteResult(inputArray []float64, sum float64) ReturningResult {
 	}
 
 	resultObj := ReturningResult{Result: finalresult}
+
 	return resultObj
 }
