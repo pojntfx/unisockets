@@ -4,7 +4,10 @@ import { ClientClosedError } from "../errors/client-closed";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { Accept, IAcceptData } from "../operations/accept";
 import { Accepting, IAcceptingData } from "../operations/accepting";
-import { Welcome, IWelcomeData } from "../operations/welcome";
+import {
+  Acknowledgement,
+  IAcknowledgementData,
+} from "../operations/acknowledgement";
 import { Alias, IAliasData } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
 import { Bind, IBindData } from "../operations/bind";
@@ -50,10 +53,10 @@ export class Service {
         return new Goodbye(operation.data as IGoodbyeData);
       }
 
-      case ESIGNALING_OPCODES.WELCOME: {
-        this.logger.info("Received operation welcome", operation.data);
+      case ESIGNALING_OPCODES.ACKNOWLEDGED: {
+        this.logger.info("Received operation acknowledged", operation.data);
 
-        return new Welcome(operation.data as IWelcomeData);
+        return new Acknowledgement(operation.data as IAcknowledgementData);
       }
 
       case ESIGNALING_OPCODES.GREETING: {
