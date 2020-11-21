@@ -5,7 +5,9 @@ import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { Transporter } from "../lib/transport/transporter";
 import { getLogger } from "../lib/utils/logger";
 
-const TEST_ALIAS = "10.0.0.240:42069";
+const TEST_SUBNET = "10.0.0";
+const TEST_ALIAS = `${TEST_SUBNET}.240:42069`;
+
 const transporterConfig: ExtendedRTCConfiguration = {
   iceServers: [
     {
@@ -252,6 +254,7 @@ const handleAlias = async (id: string, alias: string, set: boolean) => {
 const client = new SignalingClient(
   raddr,
   reconnectDuration,
+  TEST_SUBNET,
   handleConnect,
   handleDisconnect,
   handleAcknowledgement,
