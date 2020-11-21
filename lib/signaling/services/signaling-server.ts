@@ -1,4 +1,3 @@
-import { v4 } from "uuid";
 import WebSocket, { Server } from "ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { PortAlreadyAllocatedError } from "../errors/port-already-allocated-error";
@@ -29,12 +28,11 @@ import { Service } from "./service";
 export class SignalingServer extends Service {
   private clients = new Map<string, WebSocket>();
   private aliases = new Map<string, MAlias>();
-  private clientIds: number[] = [];
 
   constructor(
     private host: string,
     private port: number,
-    private subnet: string
+    private subnet: string // TODO: Request before acknowledgement (Wait for KNOCK operation from client before continuing in `acknowledge`)
   ) {
     super();
   }
@@ -67,7 +65,7 @@ export class SignalingServer extends Service {
   }
 
   private async acknowledge(client: WebSocket) {
-    const id = v4();
+    const id = await this.createIPAddress(this.subnet);
 
     await this.send(client, new Acknowledgement({ id }));
 
@@ -105,8 +103,8 @@ export class SignalingServer extends Service {
         this.aliases.forEach(async ({ id: clientId }, alias) => {
           if (clientId === id) {
             this.aliases.delete(alias);
-
-            await this.removeIP(alias);
+            await this.removeIPAddress(alias);
+            await this.removeTCPAddress(alias);
 
             this.clients.forEach(async (client) => {
               await this.send(client, new Alias({ id, alias, set: false }));
@@ -194,8 +192,6 @@ export class SignalingServer extends Service {
         if (this.aliases.has(data.alias)) {
           this.logger.info("Rejecting bind, alias already taken", data);
 
-          await this.removeIP(data.alias);
-
           const client = this.clients.get(data.id);
 
           await this.send(
@@ -205,7 +201,7 @@ export class SignalingServer extends Service {
         } else {
           this.logger.info("Accepting bind", data);
 
-          await this.claimIP(data.alias);
+          await this.claimTCPAddress(data.alias);
 
           this.aliases.set(data.alias, new MAlias(data.id, false));
 
@@ -251,8 +247,8 @@ export class SignalingServer extends Service {
           this.aliases.get(data.alias)!.id === data.id // `.has` checks this
         ) {
           this.aliases.delete(data.alias);
-
-          await this.removeIP(data.alias);
+          await this.removeTCPAddress(data.alias);
+          await this.removeIPAddress(data.alias);
 
           this.logger.info("Accepting shutdown", data);
 
@@ -284,7 +280,7 @@ export class SignalingServer extends Service {
       case ESIGNALING_OPCODES.CONNECT: {
         const data = operation.data as IConnectData;
 
-        const clientAlias = await this.createClientId();
+        const clientAlias = await this.createTCPAddress(data.id);
         const client = this.clients.get(data.id);
 
         if (
@@ -295,7 +291,7 @@ export class SignalingServer extends Service {
             data,
           });
 
-          await this.removeIP(clientAlias);
+          await this.removeTCPAddress(clientAlias);
 
           await this.send(
             client,
@@ -380,41 +376,6 @@ export class SignalingServer extends Service {
     }
   }
 
-  private async claimIP(ip: string) {
-    this.clientIds.push(this.getClientIdFromIP(ip));
-  }
-
-  private async createClientId() {
-    const sortedClientIds = this.clientIds.sort();
-
-    // Find the first free ID
-    const clientId: number = await new Promise((res) => {
-      sortedClientIds.forEach((actualId, index) => {
-        actualId !== index && res(index);
-      });
-
-      res(sortedClientIds.length);
-    });
-
-    this.clientIds.push(clientId);
-
-    return this.getIPFromClientId(clientId);
-  }
-
-  private async removeIP(ip: string) {
-    this.clientIds = this.clientIds.filter(
-      (c) => c !== this.getClientIdFromIP(ip)
-    );
-  }
-
-  private getIPFromClientId(clientId: number) {
-    return `${this.subnet}.${clientId}:42069`;
-  }
-
-  private getClientIdFromIP(ip: string) {
-    return parseInt(ip.split(":42069")[0].split(".")[3]);
-  }
-
   private subnets = new Map<string, Map<number, MMember>>();
 
   private async createIPAddress(subnet: string) {
@@ -435,7 +396,7 @@ export class SignalingServer extends Service {
       res(existingMembers.length);
     });
 
-    const newMember = new MMember(false, []);
+    const newMember = new MMember([]);
 
     this.subnets.get(subnet)!.set(newSuffix, newMember); // We ensure above
 
@@ -477,19 +438,19 @@ export class SignalingServer extends Service {
     const { subnet, suffix } = this.parseIPAddress(ipAddress);
 
     if (this.subnets.has(subnet)) {
-      if (this.subnets.get(subnet)!.has(suffix)) {
-        if (
-          this.subnets
-            .get(subnet)!
-            .get(suffix)!
-            .ports.find((p) => p === port) !== undefined
-        ) {
-          this.subnets.get(subnet)!.get(suffix)!.ports.push(port); // We ensure above
-        } else {
-          throw new PortAlreadyAllocatedError();
-        }
+      if (!this.subnets.get(subnet)!.has(suffix)) {
+        this.subnets.get(subnet)!.set(suffix, new MMember([])); // We ensure above
+      }
+
+      if (
+        this.subnets
+          .get(subnet)!
+          .get(suffix)!
+          .ports.find((p) => p === port) === undefined
+      ) {
+        this.subnets.get(subnet)!.get(suffix)!.ports.push(port); // We ensure above
       } else {
-        throw new SuffixDoesNotExistError();
+        throw new PortAlreadyAllocatedError();
       }
     } else {
       throw new SubnetDoesNotExistError();
@@ -502,11 +463,7 @@ export class SignalingServer extends Service {
     if (this.subnets.has(subnet)) {
       if (this.subnets.get(subnet)!.has(suffix)) {
         this.subnets.get(subnet)!.delete(suffix); // We ensure above
-      } else {
-        throw new SuffixDoesNotExistError();
       }
-    } else {
-      throw new SubnetDoesNotExistError();
     }
   }
 
@@ -520,11 +477,7 @@ export class SignalingServer extends Service {
           .get(subnet)!
           .get(suffix)!
           .ports.filter((p) => p !== port); // We ensure above
-      } else {
-        throw new SuffixDoesNotExistError();
       }
-    } else {
-      throw new SubnetDoesNotExistError();
     }
   }
 
