@@ -5,7 +5,7 @@ import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { Transporter } from "../lib/transport/transporter";
 import { getLogger } from "../lib/utils/logger";
 
-const TEST_ALIAS = "bind-testing.com";
+const TEST_ALIAS = "10.0.0.240:42069";
 const transporterConfig: ExtendedRTCConfiguration = {
   iceServers: [
     {

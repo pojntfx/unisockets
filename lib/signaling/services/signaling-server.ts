@@ -25,8 +25,13 @@ import { Service } from "./service";
 export class SignalingServer extends Service {
   private clients = new Map<string, WebSocket>();
   private aliases = new Map<string, MAlias>();
+  private clientIds: number[] = [];
 
-  constructor(private host: string, private port: number) {
+  constructor(
+    private host: string,
+    private port: number,
+    private subnet: string
+  ) {
     super();
   }
 
@@ -50,7 +55,11 @@ export class SignalingServer extends Service {
       await this.registerGoodbye(id);
     });
 
-    this.logger.info("Listening", { host: this.host, port: this.port });
+    this.logger.info("Listening", {
+      host: this.host,
+      port: this.port,
+      subnet: this.subnet,
+    });
   }
 
   private async acknowledge(client: WebSocket) {
@@ -92,6 +101,8 @@ export class SignalingServer extends Service {
         this.aliases.forEach(async ({ id: clientId }, alias) => {
           if (clientId === id) {
             this.aliases.delete(alias);
+
+            await this.removeIP(alias);
 
             this.clients.forEach(async (client) => {
               await this.send(client, new Alias({ id, alias, set: false }));
@@ -179,6 +190,8 @@ export class SignalingServer extends Service {
         if (this.aliases.has(data.alias)) {
           this.logger.info("Rejecting bind, alias already taken", data);
 
+          await this.removeIP(data.alias);
+
           const client = this.clients.get(data.id);
 
           await this.send(
@@ -187,6 +200,8 @@ export class SignalingServer extends Service {
           );
         } else {
           this.logger.info("Accepting bind", data);
+
+          await this.claimIP(data.alias);
 
           this.aliases.set(data.alias, new MAlias(data.id, false));
 
@@ -233,6 +248,8 @@ export class SignalingServer extends Service {
         ) {
           this.aliases.delete(data.alias);
 
+          await this.removeIP(data.alias);
+
           this.logger.info("Accepting shutdown", data);
 
           this.clients.forEach(async (client, id) => {
@@ -263,7 +280,7 @@ export class SignalingServer extends Service {
       case ESIGNALING_OPCODES.CONNECT: {
         const data = operation.data as IConnectData;
 
-        const clientAlias = `client-${v4()}`;
+        const clientAlias = await this.createClientId();
         const client = this.clients.get(data.id);
 
         if (
@@ -273,6 +290,8 @@ export class SignalingServer extends Service {
           this.logger.info("Rejecting connect, remote alias does not exist", {
             data,
           });
+
+          await this.removeIP(clientAlias);
 
           await this.send(
             client,
@@ -355,5 +374,40 @@ export class SignalingServer extends Service {
         throw new UnimplementedOperationError(operation.opcode);
       }
     }
+  }
+
+  private async claimIP(ip: string) {
+    this.clientIds.push(this.getClientIdFromIP(ip));
+  }
+
+  private async createClientId() {
+    const sortedClientIds = this.clientIds.sort();
+
+    // Find the first free ID
+    const clientId: number = await new Promise((res) => {
+      sortedClientIds.forEach((actualId, index) => {
+        actualId !== index && res(index);
+      });
+
+      res(sortedClientIds.length);
+    });
+
+    this.clientIds.push(clientId);
+
+    return this.getIPFromClientId(clientId);
+  }
+
+  private async removeIP(ip: string) {
+    this.clientIds = this.clientIds.filter(
+      (c) => c !== this.getClientIdFromIP(ip)
+    );
+  }
+
+  private getIPFromClientId(clientId: number) {
+    return `${this.subnet}.${clientId}:42069`;
+  }
+
+  private getClientIdFromIP(ip: string) {
+    return parseInt(ip.split(":42069")[0].split(".")[3]);
   }
 }
