@@ -61,115 +61,122 @@ const handleConnect = async () => {
 const handleDisconnect = async () => {
   logger.info("Handling disconnect");
 };
-const handleAcknowledgement = async (id: string) => {
-  logger.debug("Handling acknowledgement", { id });
+const handleAcknowledgement = async (id: string, rejected: boolean) => {
+  logger.debug("Handling acknowledgement", { id, rejected });
 
-  if (testBind) {
-    try {
-      logger.info("Binding", { id, alias: TEST_ALIAS });
-
-      await client.bind(TEST_ALIAS);
-
-      logger.info("Bind accepted", { id, alias: TEST_ALIAS });
-
+  if (!rejected) {
+    if (testBind) {
       try {
-        while (true) {
-          logger.info("Starting to accept", { id, alias: TEST_ALIAS });
+        logger.info("Binding", { id, alias: TEST_ALIAS });
 
-          const clientAlias = await client.accept(TEST_ALIAS);
+        await client.bind(TEST_ALIAS);
 
-          const clientId = aliases.get(clientAlias);
-          if (clientId === undefined) {
-            throw new ClientDoesNotExistError();
-          }
-
-          (async () => {
-            logger.info("Accepted", {
-              id,
-              alias: TEST_ALIAS,
-              clientAlias,
-              clientId,
-            });
-
-            while (true) {
-              await transporter.send(
-                clientId,
-                new TextEncoder().encode("Hello, client!")
-              );
-
-              await new Promise((res) => setTimeout(() => res(), 1000));
-            }
-          })();
-        }
-      } catch (e) {
-        logger.error("Accept rejected", { id, alias: TEST_ALIAS, error: e });
+        logger.info("Bind accepted", { id, alias: TEST_ALIAS });
 
         try {
-          await client.shutdown(TEST_ALIAS);
+          while (true) {
+            logger.info("Starting to accept", { id, alias: TEST_ALIAS });
 
-          logger.info("Shutdown accepted", { id, alias: TEST_ALIAS });
+            const clientAlias = await client.accept(TEST_ALIAS);
+
+            const clientId = aliases.get(clientAlias);
+            if (clientId === undefined) {
+              throw new ClientDoesNotExistError();
+            }
+
+            (async () => {
+              logger.info("Accepted", {
+                id,
+                alias: TEST_ALIAS,
+                clientAlias,
+                clientId,
+              });
+
+              while (true) {
+                await transporter.send(
+                  clientId,
+                  new TextEncoder().encode("Hello, client!")
+                );
+
+                await new Promise((res) => setTimeout(() => res(), 1000));
+              }
+            })();
+          }
         } catch (e) {
-          logger.error("Shutdown rejected", {
-            id,
-            alias: TEST_ALIAS,
-            error: e,
-          });
+          logger.error("Accept rejected", { id, alias: TEST_ALIAS, error: e });
+
+          try {
+            await client.shutdown(TEST_ALIAS);
+
+            logger.info("Shutdown accepted", { id, alias: TEST_ALIAS });
+          } catch (e) {
+            logger.error("Shutdown rejected", {
+              id,
+              alias: TEST_ALIAS,
+              error: e,
+            });
+          }
         }
+      } catch (e) {
+        logger.error("Bind rejected", { id, alias: TEST_ALIAS, error: e });
       }
-    } catch (e) {
-      logger.error("Bind rejected", { id, alias: TEST_ALIAS, error: e });
-    }
-  } else {
-    try {
-      logger.info("Connecting", { id, remoteAlias: TEST_ALIAS });
+    } else {
+      try {
+        logger.info("Connecting", { id, remoteAlias: TEST_ALIAS });
 
-      const clientAlias = await client.connect(TEST_ALIAS);
+        const clientAlias = await client.connect(TEST_ALIAS);
 
-      const serverId = aliases.get(TEST_ALIAS);
-      if (serverId === undefined) {
-        throw new ClientDoesNotExistError();
-      }
+        const serverId = aliases.get(TEST_ALIAS);
+        if (serverId === undefined) {
+          throw new ClientDoesNotExistError();
+        }
 
-      logger.info("Connect accepted", {
-        id,
-        remoteAlias: TEST_ALIAS,
-        clientAlias,
-      });
-
-      while (true) {
-        const msg = await transporter.recv(serverId);
-
-        logger.info("Received", {
+        logger.info("Connect accepted", {
           id,
           remoteAlias: TEST_ALIAS,
           clientAlias,
-          msg,
         });
 
-        await new Promise((res) => setTimeout(() => res(), 1000));
-      }
-    } catch (e) {
-      logger.error("Connect rejected", {
-        id,
-        remoteAlias: TEST_ALIAS,
-        error: e,
-      });
+        while (true) {
+          const msg = await transporter.recv(serverId);
 
-      try {
-        await client.shutdown(TEST_ALIAS);
+          logger.info("Received", {
+            id,
+            remoteAlias: TEST_ALIAS,
+            clientAlias,
+            msg,
+          });
 
-        logger.info("Shutdown accepted", {
-          id,
-          remoteAlias: TEST_ALIAS,
-        });
+          await new Promise((res) => setTimeout(() => res(), 1000));
+        }
       } catch (e) {
-        logger.error("Shutdown rejected", {
+        logger.error("Connect rejected", {
           id,
           remoteAlias: TEST_ALIAS,
           error: e,
         });
+
+        try {
+          await client.shutdown(TEST_ALIAS);
+
+          logger.info("Shutdown accepted", {
+            id,
+            remoteAlias: TEST_ALIAS,
+          });
+        } catch (e) {
+          logger.error("Shutdown rejected", {
+            id,
+            remoteAlias: TEST_ALIAS,
+            error: e,
+          });
+        }
       }
     }
+  } else {
+    logger.error("Knock rejected", {
+      id,
+      remoteAlias: TEST_ALIAS,
+    });
   }
 };
 const getOffer = async (

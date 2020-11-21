@@ -2,6 +2,7 @@ import WebSocket, { Server } from "ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { PortAlreadyAllocatedError } from "../errors/port-already-allocated-error";
 import { SubnetDoesNotExistError } from "../errors/subnet-does-not-exist";
+import { SubnetOverflowError } from "../errors/subnet-overflow";
 import { SuffixDoesNotExistError } from "../errors/suffix-does-not-exist";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { MAlias } from "../models/alias";
@@ -46,15 +47,19 @@ export class SignalingServer extends Service {
     });
 
     server.on("connection", async (client) => {
-      const id = await this.acknowledge(client);
+      try {
+        const id = await this.acknowledge(client);
 
-      client.on(
-        "message",
-        async (operation) =>
-          await this.handleOperation(await this.receive(operation))
-      );
+        client.on(
+          "message",
+          async (operation) =>
+            await this.handleOperation(await this.receive(operation))
+        );
 
-      await this.registerGoodbye(id);
+        await this.registerGoodbye(id);
+      } catch (e) {
+        this.logger.error("Knock rejected", { error: e });
+      }
     });
 
     this.logger.info("Listening", {
@@ -67,7 +72,13 @@ export class SignalingServer extends Service {
   private async acknowledge(client: WebSocket) {
     const id = await this.createIPAddress(this.subnet);
 
-    await this.send(client, new Acknowledgement({ id }));
+    if (id !== "-1") {
+      await this.send(client, new Acknowledgement({ id, rejected: false }));
+    } else {
+      await this.send(client, new Acknowledgement({ id, rejected: true }));
+
+      throw new SubnetOverflowError();
+    }
 
     this.clients.forEach(async (existingClient, existingId) => {
       if (existingId !== id) {
@@ -395,6 +406,10 @@ export class SignalingServer extends Service {
 
       res(existingMembers.length);
     });
+
+    if (newSuffix > 255) {
+      return "-1";
+    }
 
     const newMember = new MMember([]);
 

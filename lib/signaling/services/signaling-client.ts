@@ -34,7 +34,7 @@ export class SignalingClient extends Service {
     private reconnectDuration: number,
     private onConnect: () => Promise<void>,
     private onDisconnect: () => Promise<void>,
-    private onAcknowledgement: (id: string) => Promise<void>,
+    private onAcknowledgement: (id: string, rejected: boolean) => Promise<void>,
     private getOffer: (
       answererId: string,
       handleCandidate: (candidate: string) => Promise<void>
@@ -213,11 +213,13 @@ export class SignalingClient extends Service {
       }
 
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {
-        this.id = (operation.data as IAcknowledgementData).id;
+        const data = operation.data as IAcknowledgementData;
+
+        this.id = data.id;
 
         this.logger.info("Received acknowledgement", { id: this.id });
 
-        await this.onAcknowledgement(this.id);
+        await this.onAcknowledgement(this.id, data.rejected);
 
         break;
       }
