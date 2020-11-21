@@ -1,6 +1,3 @@
 export class MMember {
-  constructor(
-    public accepting: boolean,
-    public ports: number[]
-  ) {}
+  constructor(public ports: number[]) {}
 }
