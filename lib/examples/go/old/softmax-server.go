@@ -62,19 +62,25 @@ func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
 	for {
-		//n, err := conn.Read(input[0:])
-		_, err := conn.Read(input[0:])
+		n, err := conn.Read(input[0:])
+
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 		}
-		// inputArray := decodeByteArray(input, n)
-		// We could allow different operations here
-		// Then if server allows to start calculations
 
-		_, err2 := conn.Write([]byte(`{"input": [1,1,3]}`))
-		if err != nil {
+		inputArray := decodeByteArray(input, n)
+
+		// calculate for each element seperately
+
+		result := ignite(inputArray)
+
+		byteArray := encodeByteArray(result)
+
+		fmt.Println(string(byteArray))
+		_, err2 := conn.Write(byteArray)
+		if err2 != nil {
 			log.Fatal(err2)
 		}
 	}
