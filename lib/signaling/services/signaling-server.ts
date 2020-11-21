@@ -2,7 +2,6 @@ import WebSocket, { Server } from "ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { PortAlreadyAllocatedError } from "../errors/port-already-allocated-error";
 import { SubnetDoesNotExistError } from "../errors/subnet-does-not-exist";
-import { SubnetOverflowError } from "../errors/subnet-overflow";
 import { SuffixDoesNotExistError } from "../errors/suffix-does-not-exist";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { MAlias } from "../models/alias";
@@ -17,6 +16,7 @@ import { Candidate, ICandidateData } from "../operations/candidate";
 import { IConnectData } from "../operations/connect";
 import { Goodbye } from "../operations/goodbye";
 import { Greeting } from "../operations/greeting";
+import { IKnockData } from "../operations/knock";
 import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
@@ -30,11 +30,7 @@ export class SignalingServer extends Service {
   private clients = new Map<string, WebSocket>();
   private aliases = new Map<string, MAlias>();
 
-  constructor(
-    private host: string,
-    private port: number,
-    private subnet: string // TODO: Request before acknowledgement (Wait for KNOCK operation from client before continuing in `acknowledge`)
-  ) {
+  constructor(private host: string, private port: number) {
     super();
   }
 
@@ -47,61 +43,17 @@ export class SignalingServer extends Service {
     });
 
     server.on("connection", async (client) => {
-      try {
-        const id = await this.acknowledge(client);
-
-        client.on(
-          "message",
-          async (operation) =>
-            await this.handleOperation(await this.receive(operation))
-        );
-
-        await this.registerGoodbye(id);
-      } catch (e) {
-        this.logger.error("Knock rejected", { error: e });
-      }
+      client.on(
+        "message",
+        async (operation) =>
+          await this.handleOperation(await this.receive(operation), client)
+      );
     });
 
     this.logger.info("Listening", {
       host: this.host,
       port: this.port,
-      subnet: this.subnet,
     });
-  }
-
-  private async acknowledge(client: WebSocket) {
-    const id = await this.createIPAddress(this.subnet);
-
-    if (id !== "-1") {
-      await this.send(client, new Acknowledgement({ id, rejected: false }));
-    } else {
-      await this.send(client, new Acknowledgement({ id, rejected: true }));
-
-      throw new SubnetOverflowError();
-    }
-
-    this.clients.forEach(async (existingClient, existingId) => {
-      if (existingId !== id) {
-        await this.send(
-          existingClient,
-          new Greeting({
-            offererId: existingId,
-            answererId: id,
-          })
-        );
-
-        this.logger.info("Sent greeting", {
-          offererId: existingId,
-          answererId: id,
-        });
-      }
-    });
-
-    this.clients.set(id, client);
-
-    this.logger.info("Client connected", { id });
-
-    return id;
   }
 
   private async registerGoodbye(id: string) {
@@ -137,11 +89,57 @@ export class SignalingServer extends Service {
   }
 
   private async handleOperation(
-    operation: ISignalingOperation<TSignalingData>
+    operation: ISignalingOperation<TSignalingData>,
+    client: WebSocket
   ) {
     this.logger.debug("Handling operation", operation);
 
     switch (operation.opcode) {
+      case ESIGNALING_OPCODES.KNOCK: {
+        const data = operation.data as IKnockData;
+
+        this.logger.info("Received knock", data);
+
+        const id = await this.createIPAddress(data.subnet);
+
+        if (id !== "-1") {
+          await this.send(client, new Acknowledgement({ id, rejected: false }));
+        } else {
+          await this.send(client, new Acknowledgement({ id, rejected: true }));
+
+          this.logger.error("Knock rejected", {
+            id,
+            reason: "subnet overflow",
+          });
+
+          break;
+        }
+
+        this.clients.forEach(async (existingClient, existingId) => {
+          if (existingId !== id) {
+            await this.send(
+              existingClient,
+              new Greeting({
+                offererId: existingId,
+                answererId: id,
+              })
+            );
+
+            this.logger.info("Sent greeting", {
+              offererId: existingId,
+              answererId: id,
+            });
+          }
+        });
+
+        this.clients.set(id, client);
+        await this.registerGoodbye(id);
+
+        this.logger.info("Client connected", { id });
+
+        break;
+      }
+
       case ESIGNALING_OPCODES.OFFER: {
         const data = operation.data as IOfferData;
 

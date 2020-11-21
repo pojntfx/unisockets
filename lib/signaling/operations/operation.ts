@@ -8,11 +8,13 @@ import { ICandidateData } from "./candidate";
 import { IConnectData } from "./connect";
 import { IGoodbyeData } from "./goodbye";
 import { IGreetingData } from "./greeting";
+import { IKnockData } from "./knock";
 import { IOfferData } from "./offer";
 import { IShutdownData } from "./shutdown";
 
 export enum ESIGNALING_OPCODES {
   GOODBYE = "goodbye",
+  KNOCK = "knock",
   ACKNOWLEDGED = "acknowledged",
   GREETING = "greeting",
   OFFER = "offer",
@@ -28,6 +30,7 @@ export enum ESIGNALING_OPCODES {
 
 export type TSignalingData =
   | IGoodbyeData
+  | IKnockData
   | IAcknowledgementData
   | IGreetingData
   | IOfferData

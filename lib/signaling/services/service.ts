@@ -15,6 +15,7 @@ import { Candidate, ICandidateData } from "../operations/candidate";
 import { Connect, IConnectData } from "../operations/connect";
 import { Goodbye, IGoodbyeData } from "../operations/goodbye";
 import { Greeting, IGreetingData } from "../operations/greeting";
+import { IKnockData, Knock } from "../operations/knock";
 import { IOfferData, Offer } from "../operations/offer";
 import {
   ESIGNALING_OPCODES,
@@ -51,6 +52,12 @@ export class Service {
         this.logger.info("Received operation goodbye", operation.data);
 
         return new Goodbye(operation.data as IGoodbyeData);
+      }
+
+      case ESIGNALING_OPCODES.KNOCK: {
+        this.logger.info("Received operation knock", operation.data);
+
+        return new Knock(operation.data as IKnockData);
       }
 
       case ESIGNALING_OPCODES.ACKNOWLEDGED: {

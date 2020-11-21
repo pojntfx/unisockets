@@ -23,6 +23,7 @@ import { Connect } from "../operations/connect";
 import { Accepting } from "../operations/accepting";
 import { IAcceptData } from "../operations/accept";
 import { IGreetingData } from "../operations/greeting";
+import { Knock } from "../operations/knock";
 
 export class SignalingClient extends Service {
   private id = "";
@@ -32,6 +33,7 @@ export class SignalingClient extends Service {
   constructor(
     private address: string,
     private reconnectDuration: number,
+    private subnet: string,
     private onConnect: () => Promise<void>,
     private onDisconnect: () => Promise<void>,
     private onAcknowledgement: (id: string, rejected: boolean) => Promise<void>,
@@ -173,6 +175,8 @@ export class SignalingClient extends Service {
 
   private async handleConnect() {
     this.logger.info("Server connected", { address: this.address });
+
+    await this.send(this.client, new Knock({ subnet: this.subnet }));
 
     await this.onConnect();
   }
