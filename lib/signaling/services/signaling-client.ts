@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
-import { IWelcomeData } from "../operations/welcome";
+import { IAcknowledgementData } from "../operations/acknowledgement";
 import { IAliasData } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
 import { Candidate, ICandidateData } from "../operations/candidate";
@@ -34,7 +34,7 @@ export class SignalingClient extends Service {
     private reconnectDuration: number,
     private onConnect: () => Promise<void>,
     private onDisconnect: () => Promise<void>,
-    private onWelcome: (id: string) => Promise<void>,
+    private onAcknowledgement: (id: string) => Promise<void>,
     private getOffer: (
       answererId: string,
       handleCandidate: (candidate: string) => Promise<void>
@@ -212,12 +212,12 @@ export class SignalingClient extends Service {
         break;
       }
 
-      case ESIGNALING_OPCODES.WELCOME: {
-        this.id = (operation.data as IWelcomeData).id;
+      case ESIGNALING_OPCODES.ACKNOWLEDGED: {
+        this.id = (operation.data as IAcknowledgementData).id;
 
-        this.logger.info("Received welcome", { id: this.id });
+        this.logger.info("Received acknowledgement", { id: this.id });
 
-        await this.onWelcome(this.id);
+        await this.onAcknowledgement(this.id);
 
         break;
       }

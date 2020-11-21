@@ -8,7 +8,7 @@ import { MAlias } from "../models/alias";
 import { MMember } from "../models/member";
 import { Accept } from "../operations/accept";
 import { IAcceptingData } from "../operations/accepting";
-import { Welcome } from "../operations/welcome";
+import { Acknowledgement } from "../operations/acknowledgement";
 import { Alias } from "../operations/alias";
 import { Answer, IAnswerData } from "../operations/answer";
 import { IBindData } from "../operations/bind";
@@ -32,7 +32,7 @@ export class SignalingServer extends Service {
   constructor(
     private host: string,
     private port: number,
-    private subnet: string // TODO: Knock with subnet and only then send welcome; remove subnets var afterwards
+    private subnet: string // TODO: Request before acknowledgement (Wait for KNOCK operation from client before continuing in `acknowledge`)
   ) {
     super();
   }
@@ -46,7 +46,7 @@ export class SignalingServer extends Service {
     });
 
     server.on("connection", async (client) => {
-      const id = await this.welcome(client);
+      const id = await this.acknowledge(client);
 
       client.on(
         "message",
@@ -64,10 +64,10 @@ export class SignalingServer extends Service {
     });
   }
 
-  private async welcome(client: WebSocket) {
+  private async acknowledge(client: WebSocket) {
     const id = await this.createIPAddress(this.subnet);
 
-    await this.send(client, new Welcome({ id }));
+    await this.send(client, new Acknowledgement({ id }));
 
     this.clients.forEach(async (existingClient, existingId) => {
       if (existingId !== id) {
