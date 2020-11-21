@@ -10,7 +10,8 @@ const { laddr } = yargs(process.argv.slice(2)).options({
 
 const server = new SignalingServer(
   laddr.split(":")[0],
-  parseInt(laddr.split(":")[1])
+  parseInt(laddr.split(":")[1]),
+  "10.0.0"
 );
 
 server.open();
