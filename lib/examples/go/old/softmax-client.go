@@ -34,7 +34,7 @@ func (s *TCPClient) Open() error {
 		log.Fatal(err)
 	}
 
-	_, err2 := conn.Write([]byte(`Connected`))
+	_, err2 := conn.Write([]byte(`{"input": [1,1,3]}`))
 	if err != nil {
 		log.Fatal(err2)
 	}
@@ -46,7 +46,7 @@ func (s *TCPClient) Open() error {
 		log.Fatal(err)
 	}
 
-	fmt.Println(string(buf[0:n]))
+	fmt.Println(buf[0:n])
 
 	return nil
 }
