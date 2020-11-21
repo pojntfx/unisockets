@@ -1,6 +1,6 @@
 import { IAcceptData } from "./accept";
 import { IAcceptingData } from "./accepting";
-import { IAcknowledgementData } from "./acknowledgement";
+import { IWelcomeData } from "./welcome";
 import { IAliasData } from "./alias";
 import { IAnswerData } from "./answer";
 import { IBindData } from "./bind";
@@ -13,7 +13,7 @@ import { IShutdownData } from "./shutdown";
 
 export enum ESIGNALING_OPCODES {
   GOODBYE = "goodbye",
-  ACKNOWLEDGED = "acknowledged",
+  WELCOME = "welcome",
   GREETING = "greeting",
   OFFER = "offer",
   ANSWER = "answer",
@@ -28,7 +28,7 @@ export enum ESIGNALING_OPCODES {
 
 export type TSignalingData =
   | IGoodbyeData
-  | IAcknowledgementData
+  | IWelcomeData
   | IGreetingData
   | IOfferData
   | IAnswerData
