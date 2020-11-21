@@ -61,8 +61,8 @@ const handleConnect = async () => {
 const handleDisconnect = async () => {
   logger.info("Handling disconnect");
 };
-const handleAcknowledgement = async (id: string) => {
-  logger.debug("Handling acknowledgement", { id });
+const handleWelcome = async (id: string) => {
+  logger.debug("Handling welcome", { id });
 
   if (testBind) {
     try {
@@ -247,7 +247,7 @@ const client = new SignalingClient(
   reconnectDuration,
   handleConnect,
   handleDisconnect,
-  handleAcknowledgement,
+  handleWelcome,
   getOffer,
   handleOffer,
   handleAnswer,
