@@ -58,6 +58,7 @@ func (s TCPServer) open() error {
 
 func handleConnection(conn net.Conn) {
 	var input [512]byte
+	var output [512]byte
 
 	defer conn.Close()
 
@@ -74,10 +75,29 @@ func handleConnection(conn net.Conn) {
 		// Then if server allows to start calculations
 
 		_, err2 := conn.Write([]byte(`{"input": [1,1,3]}`))
-		if err != nil {
+		if err2 != nil {
 			log.Fatal(err2)
 		}
+		if err == nil {
+			break
+		}
 	}
+
+	for {
+		//n, err := conn.Read(input[0:])
+		m, err := conn.Read(output[0:])
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+		// inputArray := decodeByteArray(input, n)
+		// We could allow different operations here
+		// Then if server allows to start calculations
+
+		fmt.Println(string(output[0:m]))
+	}
+
 }
 
 func softmaxSum(input float64) float64 {
