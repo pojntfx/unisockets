@@ -1,7 +1,10 @@
+import { v4 } from "uuid";
+import { MemoryDoesNotExistError } from "../signaling/errors/memory-does-not-exist";
 import { SocketDoesNotExistError } from "../signaling/errors/socket-does-not-exist";
 
 export class Sockets {
   private binds = new Map<number, string>();
+  private memories = new Map<string, WebAssembly.Memory>();
 
   constructor(
     private externalBind: (alias: string) => Promise<void>,
@@ -11,7 +14,17 @@ export class Sockets {
     private externalRecv: (alias: string) => Promise<Uint8Array>
   ) {}
 
-  async getImports() {}
+  async getImports() {
+    const memoryId = v4();
+
+    return { memoryId, imports: {} };
+  }
+
+  async setMemory(memoryId: string) {
+    if (!this.memories.has(memoryId)) {
+      throw new MemoryDoesNotExistError();
+    }
+  }
 
   private async socket() {
     const fd = this.binds.size + 1;
