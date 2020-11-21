@@ -12,10 +12,22 @@ type TCPClient struct {
 	laddr string
 }
 
-type Result struct {
-	Result []float64 `json:"result"`
+type Sum struct {
+	SumNum float64 `json:"sum"`
 }
 
+type Result struct {
+	Result float64 `json:"result"`
+}
+
+type ResultingResult struct {
+	input []float64 `json:"input"`
+	sum   float64   `json:"sum"`
+}
+
+type ReturningResult struct {
+	Result []float64 `json:"result"`
+}
 type TCPServer struct {
 	laddr string
 }
@@ -37,7 +49,6 @@ func NewTCPClient(laddr string) *TCPClient {
 }
 
 func (s *TCPClient) Open() error {
-	//var input [512]byte
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", s.laddr)
 	if err != nil {
@@ -49,6 +60,7 @@ func (s *TCPClient) Open() error {
 		log.Fatal(err)
 	}
 
+	// send "Connected"
 	_, err2 := conn.Write([]byte(`Connected`))
 	if err != nil {
 		log.Fatal(err2)
@@ -56,30 +68,77 @@ func (s *TCPClient) Open() error {
 
 	var buf [512]byte
 
+	// Read input
 	n, err := conn.Read(buf[0:])
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println(string(buf[0:n]))
-	// Also bis hier gehts dann kommt ein Invalid character irgendwo
-	// Wo kommt das n her?
 	inputArray := decodeByteArray(buf, n)
-
-	//calculate for each element seperately
-
+	// just calculate sum first
+	// we also need the index later
 	result := ignite(inputArray)
-
+	fmt.Println(result)
 	byteArray := encodeByteArray(result)
+	fmt.Println(byteArray)
+	fmt.Println(string(byteArray))
 
-	// Der Client rechnet, das Ergebnis muss beim Server ankommen
-	//fmt.Println(string(byteArray))
+	// Send sum
 	_, err3 := conn.Write(byteArray)
 	if err3 != nil {
-		log.Fatal(err2)
+		log.Fatal(err3)
 	}
-	fmt.Println("Solution successfully sent!")
+
+	// Receive input, sum
+	var bufInputSum [512]byte
+
+	m, err := conn.Read(bufInputSum[0:])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(string(bufInputSum[0:m]))
+
+	// Calculate result
+	finalInputArray := decodeByteArray(bufInputSum, m)
+	fmt.Println(finalInputArray)
+	inputSum := decodeSum(bufInputSum, m)
+	fmt.Println(inputSum)
+	finalResult := igniteResult(finalInputArray, inputSum)
+
+	fmt.Println(finalResult)
+	finalByteArray := encodeFinalByteArray(finalResult)
+	// Send result
+	fmt.Println(string(finalByteArray))
+	fmt.Println(string(finalByteArray))
+
+	// Send sum
+	_, err4 := conn.Write(finalByteArray)
+	if err4 != nil {
+		log.Fatal(err3)
+	}
 	return nil
+}
+
+func decodeSum(output [512]byte, m int) float64 {
+	s := string(output[0:m])
+
+	rawIn := json.RawMessage(s)
+
+	bytes, err := rawIn.MarshalJSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var p Sum
+	err = json.Unmarshal(bytes, &p)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	res := p.SumNum
+	return res
 }
 
 func softmaxSum(input float64) float64 {
@@ -119,18 +178,38 @@ func encodeByteArray(result Result) []byte {
 	return byteArray
 }
 
+func encodeFinalByteArray(result ReturningResult) []byte {
+	byteArray, err := json.Marshal(result)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return byteArray
+}
+
 func ignite(inputArray []float64) Result {
 	sum := 0.
-	result := []float64{}
+	//result := []float64{}
 
 	for i := 0; i < len(inputArray); i++ {
 		sum = sum + softmaxSum(inputArray[i])
 	}
 
+	// for i := 0; i < len(inputArray); i++ {
+	// 	result = append(result, softmaxResult(sum, inputArray[i]))
+	// }
+
+	resultObj := Result{Result: sum}
+	return resultObj
+}
+
+func igniteResult(inputArray []float64, sum float64) ReturningResult {
+	finalresult := []float64{}
+
 	for i := 0; i < len(inputArray); i++ {
-		result = append(result, softmaxResult(sum, inputArray[i]))
+		finalresult = append(finalresult, softmaxResult(sum, inputArray[i]))
 	}
 
-	resultObj := Result{Result: result}
+	resultObj := ReturningResult{Result: finalresult}
 	return resultObj
 }
