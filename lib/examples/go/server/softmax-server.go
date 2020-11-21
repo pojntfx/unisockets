@@ -13,6 +13,10 @@ type Result struct {
 	Result []float64 `json:"result"`
 }
 
+type Sum struct {
+	SumNum float64 `json:"result"`
+}
+
 type TCPServer struct {
 	laddr string
 }
@@ -59,21 +63,20 @@ func (s TCPServer) open() error {
 func handleConnection(conn net.Conn) {
 	var input [512]byte
 	var output [512]byte
+	var result [512]byte
 
 	defer conn.Close()
 
 	for {
-		//n, err := conn.Read(input[0:])
+		// Read "Connected"
 		_, err := conn.Read(input[0:])
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 		}
-		// inputArray := decodeByteArray(input, n)
-		// We could allow different operations here
-		// Then if server allows to start calculations
 
+		// Send input
 		_, err2 := conn.Write([]byte(`{"input": [1,1,3]}`))
 		if err2 != nil {
 			log.Fatal(err2)
@@ -84,20 +87,68 @@ func handleConnection(conn net.Conn) {
 	}
 
 	for {
-		//n, err := conn.Read(input[0:])
+
+		// Receive sum
 		m, err := conn.Read(output[0:])
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 		}
-		// inputArray := decodeByteArray(input, n)
-		// We could allow different operations here
-		// Then if server allows to start calculations
-
 		fmt.Println(string(output[0:m]))
+
+		// This is useless at the moment
+		inputSum := decodeSum(output, m)
+
+		fmt.Println(inputSum)
+		// ------------------
+
+		s := fmt.Sprintf("%f", inputSum)
+
+		// Send array + sum
+		_, err2 := conn.Write([]byte(`{"input": [1,1,3], "sum": ` + s + `}`))
+		if err2 != nil {
+			log.Fatal(err2)
+		}
+		if err2 == nil {
+			break
+		}
 	}
 
+	for {
+
+		// receive result
+		l, err := conn.Read(result[0:])
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+		fmt.Println(string(result[0:l]))
+	}
+
+	// Add all result parts together and confirm its 1
+
+}
+
+func decodeSum(output [512]byte, m int) float64 {
+	s := string(output[0:m])
+
+	rawIn := json.RawMessage(s)
+
+	bytes, err := rawIn.MarshalJSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var p Sum
+	err = json.Unmarshal(bytes, &p)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	res := p.SumNum
+	return res
 }
 
 func softmaxSum(input float64) float64 {
