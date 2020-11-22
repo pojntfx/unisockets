@@ -1,2 +1,8 @@
 node_modules
 diagram.svg
+echo_client
+echo_server
+echo_client*.wasm
+echo_server*.wasm
+!echo_client.c
+!echo_server.c
