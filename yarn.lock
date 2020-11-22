@@ -113,6 +113,11 @@ async@^3.1.0:
   resolved "https://registry.yarnpkg.com/async/-/async-3.2.0.tgz#b3a2685c5ebb641d3de02d161002c60fc9f85720"
   integrity sha512-TR2mEZFVOj2pLStYxLht7TyfuRzaydfpxr3k9RpHIzMgw7A64dzsdqCxH1WJyQdoe8T10nDXd9wnEigmiuHIZw==
 
+asyncify-wasm@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/asyncify-wasm/-/asyncify-wasm-1.1.1.tgz#326d491426d5335b78689492600765a59737aad1"
+  integrity sha512-3h+2XTir20fmWegvM+I6ZUxvXNKeMHdAezoeyDeghZ3A74tD0hxCC1jYFFs5t/MPZnZAwRDz9OLSVrl06pABgg==
+
 balanced-match@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"

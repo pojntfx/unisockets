@@ -1,7 +1,11 @@
+import * as Asyncify from "asyncify-wasm";
+import fs from "fs";
+import { WASI } from "wasi";
 import { ExtendedRTCConfiguration } from "wrtc";
 import yargs from "yargs";
 import { ClientDoesNotExistError } from "../lib/signaling/errors/client-does-not-exist";
 import { SignalingClient } from "../lib/signaling/services/signaling-client";
+import { Sockets } from "../lib/sockets/sockets";
 import { Transporter } from "../lib/transport/transporter";
 import { getLogger } from "../lib/utils/logger";
 
@@ -266,4 +270,62 @@ const client = new SignalingClient(
   handleAlias
 );
 
-client.open();
+const handleExternalBind = async (alias: string) => {
+  logger.info("Handling external bind", { alias });
+};
+
+const handleExternalAccept = async (alias: string) => {
+  logger.info("Handling external accept", { alias });
+
+  return `${TEST_SUBNET}.1:0`;
+};
+
+const handleExternalConnect = async (alias: string) => {
+  logger.info("Handling external connect", { alias });
+};
+
+const handleExternalSend = async (alias: string, msg: Uint8Array) => {
+  logger.info("Handling external send", { alias, msg });
+};
+
+const handleExternalRecv = async (alias: string) => {
+  const msg = new TextEncoder().encode("Hello from client!");
+
+  logger.info("Handling external rev", { alias, msg });
+
+  return new Promise((res) =>
+    setTimeout(() => res(msg), 1000)
+  ) as Promise<Uint8Array>;
+};
+
+const sockets = new Sockets(
+  handleExternalBind,
+  handleExternalAccept,
+  handleExternalConnect,
+  handleExternalSend,
+  handleExternalRecv
+);
+
+const wasi = new WASI();
+
+(async () => {
+  const { memoryId, imports } = await sockets.getImports();
+
+  const instance = await Asyncify.instantiate(
+    await WebAssembly.compile(
+      testBind
+        ? fs.readFileSync("./examples/echo_server.wasm")
+        : fs.readFileSync("./examples/echo_client.wasm")
+    ),
+    {
+      wasi_snapshot_preview1: wasi.wasiImport,
+      env: imports,
+    }
+  );
+
+  sockets.setMemory(memoryId, instance.exports.memory);
+
+  wasi.start(instance);
+})();
+
+// client.open();

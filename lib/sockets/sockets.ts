@@ -182,12 +182,6 @@ export class Sockets {
     };
   }
 
-  async setMemory(memoryId: string) {
-    if (!this.memories.has(memoryId)) {
-      throw new MemoryDoesNotExistError();
-    }
-  }
-
   private async socket() {
     const fd = this.binds.size + 1;
 
@@ -242,6 +236,10 @@ export class Sockets {
     if (!this.binds.has(fd)) {
       throw new SocketDoesNotExistError();
     }
+  }
+
+  async setMemory(memoryId: string, memory: Uint8Array) {
+    this.memories.set(memoryId, memory);
   }
 
   private async accessMemory(memoryId: string) {

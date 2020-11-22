@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files bin/signaling-server.ts",
-    "dev:berkeley-socket-app": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files bin/berkeley-socket-app.ts",
+    "dev:berkeley-socket-app": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --files bin/berkeley-socket-app.ts",
     "dev:diagram": "tplant -p tsconfig.json -i './**/*.ts*' --output 'diagram.svg'",
     "start:signaling-server": "ts-node --files bin/signaling-server.ts",
-    "start:berkeley-socket-app": "ts-node --files bin/berkeley-socket-app.ts"
+    "start:berkeley-socket-app": "ts-node --experimental-wasi-unstable-preview1 --files bin/berkeley-socket-app.ts"
   },
   "repository": {
     "type": "git",
@@ -31,6 +31,7 @@
     "typescript": "^4.0.5"
   },
   "dependencies": {
+    "asyncify-wasm": "^1.1.1",
     "uuid": "^8.3.1",
     "winston": "^3.3.3",
     "wrtc": "^0.4.6",
