@@ -7,10 +7,16 @@ import (
 	"log"
 	"net"
 	"os"
+
+	"github.com/ugjka/messenger"
 )
 
 type TCPServer struct {
 	laddr string
+}
+
+type Messenger struct {
+	message string
 }
 
 func main() {
@@ -39,8 +45,11 @@ func (s TCPServer) open() error {
 		log.Fatal(err)
 	}
 
-	messages := make(chan string)
-	go startCalc(messages)
+	m := messenger.New(0, false)
+
+	//messages := make(chan string)
+
+	go startCalc(m)
 
 	for {
 		conn, err := ln.Accept()
@@ -50,12 +59,12 @@ func (s TCPServer) open() error {
 
 		ionCount++
 
-		go handleConnection(conn, ionCount, messages)
+		go handleConnection(conn, ionCount, m)
 	}
 
 }
 
-func startCalc(messages chan string) {
+func startCalc(m *messenger.Messenger) {
 	for {
 		reader := bufio.NewReader(os.Stdin)
 
@@ -67,13 +76,19 @@ func startCalc(messages chan string) {
 		// Code receiving channel
 
 		// send jsonString with necessary information
-		messages <- "Hi"
+		// Maybe just notify all goroutines and get the data from "public variables" afterwards
+		//messages <- "Hi"
+
+		var i interface{}
+		i = "Hello World"
+
+		m.Broadcast(i)
 
 		break
 	}
 }
 
-func handleConnection(conn net.Conn, myCount int, messages chan string) {
+func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 	var input [512]byte
 	for {
 		n, err := conn.Read(input[0:])
@@ -86,11 +101,13 @@ func handleConnection(conn net.Conn, myCount int, messages chan string) {
 		// Print "Connected"
 		fmt.Println(string(input[0:n]))
 
-		data := <-messages
+		data, err := m.Sub()
 
-		fmt.Println(data)
+		msg := <-data
 
-		_, err2 := conn.Write([]byte(data))
+		fmt.Println(msg)
+
+		_, err2 := conn.Write([]byte(msg.(string)))
 		if err2 != nil {
 			log.Fatal(err2)
 		}
