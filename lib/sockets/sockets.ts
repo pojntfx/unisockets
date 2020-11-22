@@ -1,8 +1,11 @@
 import { v4 } from "uuid";
 import { MemoryDoesNotExistError } from "../signaling/errors/memory-does-not-exist";
 import { SocketDoesNotExistError } from "../signaling/errors/socket-does-not-exist";
+import { getUint2 } from "../utils/getUint2";
 import { htons } from "../utils/htons";
 import { getLogger } from "../utils/logger";
+
+const AF_INET = 2;
 
 export class Sockets {
   private logger = getLogger();
@@ -39,23 +42,67 @@ export class Sockets {
               addressPointer + addressLength
             );
 
-            const sin_addr = sockaddrInMemory.slice(4, 8);
-            const sin_port = sockaddrInMemory.slice(2, 4);
+            const addressInMemory = sockaddrInMemory.slice(4, 8);
+            const portInMemory = sockaddrInMemory.slice(2, 4);
 
-            const addr = sin_addr.join(".");
-            const port = htons(new Uint16Array(sin_port)[0]);
+            const address = addressInMemory.join(".");
+            const port = htons(new Uint16Array(portInMemory)[0]);
 
-            await this.bind(fd, `${addr}:${port}`);
+            await this.bind(fd, `${address}:${port}`);
 
             return 0;
           } catch (e) {
-            this.logger.error("Bind failed", e);
+            this.logger.error("Bind failed", { e });
 
             return -1;
           }
         },
         berkeley_sockets_listen: async () => {
           return 0;
+        },
+        berkeley_sockets_accept: async (
+          fd: number,
+          addressPointer: number,
+          addressLengthPointer: number
+        ) => {
+          try {
+            const memory = await this.accessMemory(memoryId);
+
+            const { clientFd, clientAlias } = await this.accept(fd);
+
+            const addressLength = new Int32Array(
+              new Uint8Array(memory).slice(
+                addressLengthPointer,
+                addressLengthPointer + 4
+              )
+            )[0];
+
+            const parts = clientAlias.split(":");
+
+            const familyInMemory = getUint2(AF_INET);
+            const portInMemory = getUint2(parseInt(parts[1]));
+            const addressInMemory = parts[0]
+              .split(".")
+              .map((e) => Uint8Array.from([parseInt(e)])[0]);
+
+            for (let i = 0; i < addressLength; i++) {
+              const index = addressPointer + i;
+
+              if (i >= 0 && i < 2) {
+                memory[index] = familyInMemory[i];
+              } else if (i >= 2 && i < 4) {
+                memory[index] = portInMemory[i - 2];
+              } else if (i >= 4 && i < 8) {
+                memory[index] = addressInMemory[i - 4];
+              }
+            }
+
+            return clientFd;
+          } catch (e) {
+            this.logger.error("Accept failed", { e });
+
+            return -1;
+          }
         },
       },
     };
