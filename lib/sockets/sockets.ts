@@ -37,13 +37,13 @@ export class Sockets {
           try {
             const memory = await this.accessMemory(memoryId);
 
-            const sockaddrInMemory = new Uint8Array(memory).slice(
+            const socketInMemory = new Uint8Array(memory).slice(
               addressPointer,
               addressPointer + addressLength
             );
 
-            const addressInMemory = sockaddrInMemory.slice(4, 8);
-            const portInMemory = sockaddrInMemory.slice(2, 4);
+            const addressInMemory = socketInMemory.slice(4, 8);
+            const portInMemory = socketInMemory.slice(2, 4);
 
             const address = addressInMemory.join(".");
             const port = htons(new Uint16Array(portInMemory)[0]);
@@ -100,6 +100,34 @@ export class Sockets {
             return clientFd;
           } catch (e) {
             this.logger.error("Accept failed", { e });
+
+            return -1;
+          }
+        },
+        berkeley_sockets_connect: async (
+          fd: number,
+          addressPointer: number,
+          addressLength: number
+        ) => {
+          try {
+            const memory = await this.accessMemory(memoryId);
+
+            const socketInMemory = new Uint8Array(memory).slice(
+              addressPointer,
+              addressPointer + addressLength
+            );
+
+            const addressInMemory = socketInMemory.slice(4, 8);
+            const portInMemory = socketInMemory.slice(2, 4);
+
+            const address = addressInMemory.join(".");
+            const port = htons(new Uint16Array(portInMemory)[0]);
+
+            await this.connect(fd, `${address}:${port}`);
+
+            return 0;
+          } catch (e) {
+            this.logger.error("Connect failed", { e });
 
             return -1;
           }
