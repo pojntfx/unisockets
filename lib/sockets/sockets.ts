@@ -132,6 +132,28 @@ export class Sockets {
             return -1;
           }
         },
+        berkeley_sockets_send: async (
+          fd: number,
+          messagePointer: number,
+          messagePointerLength: number
+        ) => {
+          try {
+            const memory = await this.accessMemory(memoryId);
+
+            const msg = new Uint8Array(memory).slice(
+              messagePointer,
+              messagePointer + messagePointerLength
+            );
+
+            await this.send(fd, msg);
+
+            return msg.length;
+          } catch (e) {
+            this.logger.error("Send failed", { e });
+
+            return -1;
+          }
+        },
       },
     };
   }
