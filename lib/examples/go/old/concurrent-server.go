@@ -26,6 +26,9 @@ func newTCPServer(laddr string) *TCPServer {
 }
 
 func (s TCPServer) open() error {
+	ionCount := 0
+	//inputArray := [3]int{1, 1, 3}
+
 	tcpAddr, err := net.ResolveTCPAddr("tcp", s.laddr)
 	if err != nil {
 		log.Fatal(err)
@@ -36,7 +39,8 @@ func (s TCPServer) open() error {
 		log.Fatal(err)
 	}
 
-	go startCalc()
+	messages := make(chan string)
+	go startCalc(messages)
 
 	for {
 		conn, err := ln.Accept()
@@ -44,12 +48,14 @@ func (s TCPServer) open() error {
 			log.Fatal(err)
 		}
 
-		go handleConnection(conn)
+		ionCount++
+
+		go handleConnection(conn, ionCount, messages)
 	}
 
 }
 
-func startCalc() {
+func startCalc(messages chan string) {
 	for {
 		reader := bufio.NewReader(os.Stdin)
 
@@ -60,11 +66,14 @@ func startCalc() {
 		// Instead of printing username, take array of all users so far and put the information for each node to their channel
 		// Code receiving channel
 
+		// send jsonString with necessary information
+		messages <- "Hi"
+
 		break
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, myCount int, messages chan string) {
 	var input [512]byte
 	for {
 		n, err := conn.Read(input[0:])
@@ -74,12 +83,17 @@ func handleConnection(conn net.Conn) {
 			}
 		}
 
+		// Print "Connected"
 		fmt.Println(string(input[0:n]))
 
-		// _, err2 := conn.Write(input)
-		// if err2 != nil {
-		// 	log.Fatal(err2)
-		// }
+		data := <-messages
+
+		fmt.Println(data)
+
+		_, err2 := conn.Write([]byte(data))
+		if err2 != nil {
+			log.Fatal(err2)
+		}
 	}
 
 }
