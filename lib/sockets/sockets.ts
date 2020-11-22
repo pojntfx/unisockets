@@ -1,10 +1,13 @@
 import { v4 } from "uuid";
 import { MemoryDoesNotExistError } from "../signaling/errors/memory-does-not-exist";
 import { SocketDoesNotExistError } from "../signaling/errors/socket-does-not-exist";
+import { htons } from "../utils/htons";
+import { getLogger } from "../utils/logger";
 
 export class Sockets {
+  private logger = getLogger();
   private binds = new Map<number, string>();
-  private memories = new Map<string, WebAssembly.Memory>();
+  private memories = new Map<string, Uint8Array>();
 
   constructor(
     private externalBind: (alias: string) => Promise<void>,
@@ -17,7 +20,45 @@ export class Sockets {
   async getImports() {
     const memoryId = v4();
 
-    return { memoryId, imports: {} };
+    return {
+      memoryId,
+      imports: {
+        berkeley_sockets_socket: async () => {
+          return await this.socket();
+        },
+        berkeley_sockets_bind: async (
+          fd: number,
+          addressPointer: number,
+          addressLength: number
+        ) => {
+          try {
+            const memory = await this.accessMemory(memoryId);
+
+            const sockaddrInMemory = new Uint8Array(memory).slice(
+              addressPointer,
+              addressPointer + addressLength
+            );
+
+            const sin_addr = sockaddrInMemory.slice(4, 8);
+            const sin_port = sockaddrInMemory.slice(2, 4);
+
+            const addr = sin_addr.join(".");
+            const port = htons(new Uint16Array(sin_port)[0]);
+
+            await this.bind(fd, `${addr}:${port}`);
+
+            return 0;
+          } catch (e) {
+            this.logger.error("Bind failed", e);
+
+            return -1;
+          }
+        },
+        berkeley_sockets_listen: async () => {
+          return 0;
+        },
+      },
+    };
   }
 
   async setMemory(memoryId: string) {
@@ -41,8 +82,6 @@ export class Sockets {
 
     this.binds.set(fd, alias);
   }
-
-  private async listen() {}
 
   private async accept(serverFd: number) {
     await this.ensureBound(serverFd);
@@ -81,6 +120,14 @@ export class Sockets {
   private async ensureBound(fd: number) {
     if (!this.binds.has(fd)) {
       throw new SocketDoesNotExistError();
+    }
+  }
+
+  private async accessMemory(memoryId: string) {
+    if (this.memories.has(memoryId)) {
+      return this.memories.get(memoryId)!; // Checked by .has & we never push undefined
+    } else {
+      throw new MemoryDoesNotExistError();
     }
   }
 }
