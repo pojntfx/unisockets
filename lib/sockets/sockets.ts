@@ -154,6 +154,30 @@ export class Sockets {
             return -1;
           }
         },
+        berkeley_sockets_recv: async (
+          fd: number,
+          messagePointer: number,
+          messagePointerLength: number
+        ) => {
+          try {
+            const memory = await this.accessMemory(memoryId);
+
+            const msg = await this.recv(fd);
+
+            msg.forEach((messagePart, index) => {
+              // Don't write over the boundary
+              if (index <= messagePointerLength) {
+                memory[messagePointer + index] = messagePart;
+              }
+            });
+
+            return msg.length;
+          } catch (e) {
+            this.logger.error("Recv failed", { e });
+
+            return -1;
+          }
+        },
       },
     };
   }
