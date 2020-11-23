@@ -37,7 +37,7 @@ export class Sockets {
           try {
             const memory = await this.accessMemory(memoryId);
 
-            const socketInMemory = new Uint8Array(memory).slice(
+            const socketInMemory = memory.slice(
               addressPointer,
               addressPointer + addressLength
             );
@@ -71,10 +71,7 @@ export class Sockets {
             const { clientFd, clientAlias } = await this.accept(fd);
 
             const addressLength = new Int32Array(
-              new Uint8Array(memory).slice(
-                addressLengthPointer,
-                addressLengthPointer + 4
-              )
+              memory.slice(addressLengthPointer, addressLengthPointer + 4)
             )[0];
 
             const parts = clientAlias.split(":");
@@ -112,7 +109,7 @@ export class Sockets {
           try {
             const memory = await this.accessMemory(memoryId);
 
-            const socketInMemory = new Uint8Array(memory).slice(
+            const socketInMemory = memory.slice(
               addressPointer,
               addressPointer + addressLength
             );
@@ -140,7 +137,7 @@ export class Sockets {
           try {
             const memory = await this.accessMemory(memoryId);
 
-            const msg = new Uint8Array(memory).slice(
+            const msg = memory.slice(
               messagePointer,
               messagePointer + messagePointerLength
             );
@@ -244,7 +241,7 @@ export class Sockets {
 
   private async accessMemory(memoryId: string) {
     if (this.memories.has(memoryId)) {
-      return this.memories.get(memoryId)!; // Checked by .has & we never push undefined
+      return new Uint8Array(this.memories.get(memoryId)!.buffer); // Checked by .has & we never push undefined
     } else {
       throw new MemoryDoesNotExistError();
     }

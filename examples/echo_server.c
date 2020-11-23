@@ -13,8 +13,8 @@
 #include "berkeley_sockets.h"
 #endif
 
-#define LISTEN_ADDR "127.0.0.1"
-#define LISTEN_PORT 8888
+#define LISTEN_ADDR "10.0.0.240"
+#define LISTEN_PORT 42069
 #define LISTEN_MAX_CLIENTS 5
 
 #define RECEIVED_MESSAGE_MAX_LENGTH 1024
@@ -114,7 +114,7 @@ int main() {
             send(client_sock, sent_message, SENT_MESSAGE_MAX_LENGTH, 0);
         sent_message[SENT_MESSAGE_MAX_LENGTH - 1] = '\0';
 
-        printf("Set %zd bytes to %s\n", sent_message_length, client_addr_log);
+        printf("Sent %zd bytes to %s\n", sent_message_length, client_addr_log);
       }
     }
 
