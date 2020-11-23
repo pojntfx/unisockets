@@ -7,20 +7,21 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-// If we're on WASM, use the custom implementation, else stick to the
-// default includes
-#ifdef IS_WASM
-#include "berkeley_sockets.h"
-#endif
-
-#define LISTEN_ADDR "10.0.0.240"
-#define LISTEN_PORT 42069
+#define LISTEN_ADDR "127.0.0.1"
+#define LISTEN_PORT 1234
 #define LISTEN_MAX_CLIENTS 5
 
 #define RECEIVED_MESSAGE_MAX_LENGTH 1024
 #define SENT_MESSAGE_PREFIX "You've sent: "
 #define SENT_MESSAGE_MAX_LENGTH                                                \
   RECEIVED_MESSAGE_MAX_LENGTH + sizeof(SENT_MESSAGE_PREFIX)
+
+// If we're on WASM, use the custom implementation, else stick to the
+// default includes
+#ifdef IS_WASM
+#include "berkeley_sockets.h"
+#define REMOTE_ADDR "10.0.0.240"
+#endif
 
 int main() {
   // Variables
@@ -36,7 +37,7 @@ int main() {
   char received_message[RECEIVED_MESSAGE_MAX_LENGTH];
   ssize_t sent_message_length;
   char sent_message[SENT_MESSAGE_MAX_LENGTH];
-  char client_addr_log[sizeof(client_addr.sin_addr) + client_addr.sin_port];
+  char client_addr_log[sizeof(client_addr.sin_addr) + client_addr.sin_port + 1];
   char client_addr_human_readable[INET_ADDRSTRLEN];
 
   memset(&server_addr, 0, sizeof(server_addr));
