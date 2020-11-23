@@ -1,4 +1,4 @@
-export const getUint2 = (val: number) => {
+export const getAsBinary = (val: number) => {
   const valInMemory = new ArrayBuffer(4);
 
   new Int32Array(valInMemory)[0] = val;

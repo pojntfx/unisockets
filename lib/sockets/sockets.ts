@@ -1,7 +1,7 @@
 import { v4 } from "uuid";
 import { MemoryDoesNotExistError } from "../signaling/errors/memory-does-not-exist";
 import { SocketDoesNotExistError } from "../signaling/errors/socket-does-not-exist";
-import { getUint2 } from "../utils/getUint2";
+import { getAsBinary } from "../utils/getAsBinary";
 import { htons } from "../utils/htons";
 import { getLogger } from "../utils/logger";
 
@@ -76,8 +76,8 @@ export class Sockets {
 
             const parts = clientAlias.split(":");
 
-            const familyInMemory = getUint2(AF_INET);
-            const portInMemory = getUint2(parseInt(parts[1]));
+            const familyInMemory = getAsBinary(AF_INET);
+            const portInMemory = getAsBinary(parseInt(parts[1]));
             const addressInMemory = parts[0]
               .split(".")
               .map((e) => Uint8Array.from([parseInt(e)])[0]);

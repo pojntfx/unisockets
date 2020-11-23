@@ -224,12 +224,7 @@ ready.once("ready", async () => {
     await WebAssembly.compile(
       testBind
         ? fs.readFileSync("./examples/echo_server.wasm")
-        : await new Promise((res) =>
-            setTimeout(
-              () => res(fs.readFileSync("./examples/echo_client.wasm")),
-              5000
-            )
-          )
+        : fs.readFileSync("./examples/echo_client.wasm")
     ),
     {
       wasi_snapshot_preview1: wasi.wasiImport,
