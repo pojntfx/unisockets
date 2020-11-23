@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -8,6 +9,12 @@ import (
 
 type TCPClient struct {
 	laddr string
+}
+
+type JSONInput struct {
+	IonCount   int       `json:"ionCount"`
+	InputArray []float64 `json:"inputArray"`
+	MyCount    int       `json:"myCount"`
 }
 
 func main() {
@@ -49,6 +56,20 @@ func (s *TCPClient) Open() error {
 	}
 
 	fmt.Println(string(buf[0:n]))
+
+	// Here we have the string with the json
+	rawIn := json.RawMessage(string(buf[0:n]))
+
+	bytes, err := rawIn.MarshalJSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Hier drunter ist ein Error
+	var j JSONInput
+	err = json.Unmarshal(bytes, &j)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
