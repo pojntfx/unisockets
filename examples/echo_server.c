@@ -20,8 +20,8 @@
 // default includes
 #ifdef IS_WASM
 #include "berkeley_sockets.h"
-#undef REMOTE_ADDR
-#define REMOTE_ADDR "10.0.0.240"
+#undef LISTEN_ADDR
+#define LISTEN_ADDR "10.0.0.240"
 #endif
 
 int main() {
