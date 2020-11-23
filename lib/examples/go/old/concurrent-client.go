@@ -18,6 +18,11 @@ type JSONInput struct {
 	MyCount    int       `json:"myCount"`
 }
 
+type JSONOutput struct {
+	Result  []float64 `json:"result"`
+	MyCount int       `json:"myCount"`
+}
+
 func main() {
 	tcpClient := NewTCPClient("0.0.0.0:3333")
 
@@ -80,6 +85,19 @@ func (s *TCPClient) Open() error {
 	}
 
 	fmt.Println(result)
+	// Send that Array back to server with myCount
+	res := JSONOutput{result, j.MyCount}
+
+	bytes2, err := json.Marshal(res)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err3 := conn.Write(bytes2)
+	if err3 != nil {
+		log.Fatal(err2)
+	}
+
 	return nil
 }
 
