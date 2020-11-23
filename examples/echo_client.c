@@ -18,6 +18,7 @@
 // default includes
 #ifdef IS_WASM
 #include "berkeley_sockets.h"
+#undef REMOTE_ADDR
 #define REMOTE_ADDR "10.0.0.240"
 #endif
 
@@ -35,6 +36,7 @@ int main() {
 
   memset(&remote_addr, 0, sizeof(remote_addr));
 
+  // Logging
   char remote_addr_log[sizeof(REMOTE_ADDR) + sizeof(REMOTE_PORT) + 1];
   sprintf(remote_addr_log, "%s:%d", REMOTE_ADDR, REMOTE_PORT);
 
@@ -54,9 +56,9 @@ int main() {
     exit(-1);
   }
 
-  printf("[INFO] Connecting to server %s\n", remote_addr_log);
-
   while (1) {
+    printf("[INFO] Connecting to server %s\n", remote_addr_log);
+
     // Connect
     if ((connect(remote_sock, (struct sockaddr *)&remote_addr,
                  remote_addr_length)) == -1) {
@@ -72,9 +74,12 @@ int main() {
 
     printf("[INFO] Connected to server %s\n", remote_addr_log);
 
-    while (1) {
+    received_message_length = 1;
+    while (received_message_length) {
       memset(&received_message, 0, RECEIVED_MESSAGE_MAX_LENGTH);
       memset(&sent_message, 0, SENT_MESSAGE_MAX_LENGTH);
+
+      printf("[DEBUG] Waiting for input from user\n");
 
       fgets(sent_message, SENT_MESSAGE_MAX_LENGTH, stdin);
 
@@ -89,11 +94,15 @@ int main() {
       received_message_length =
           recv(remote_sock, &received_message, RECEIVED_MESSAGE_MAX_LENGTH, 0);
 
-      printf("[DEBUG] Received %zd bytes to %s\n", received_message_length,
+      printf("[DEBUG] Received %zd bytes from %s\n", received_message_length,
              remote_addr_log);
 
       printf("%s", received_message);
     }
+
+    printf("[INFO] Disconnected from server %s\n", remote_addr_log);
+
+    shutdown(remote_sock, SHUT_RDWR);
   }
 
   return 0;
