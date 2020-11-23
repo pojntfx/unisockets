@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -22,6 +23,12 @@ type Messenger struct {
 type OutputJSON struct {
 	ionCount   int       `json:"ionCount"`
 	inputArray []float64 `json:"inputArray"`
+}
+
+type InputJSON struct {
+	IonCount   int
+	InputArray []float64
+	MyCount    int
 }
 
 var (
@@ -76,8 +83,7 @@ func startCalc(m *messenger.Messenger) {
 
 		fmt.Println("Press ENTER to start calculation")
 		username, _ := reader.ReadString('\n')
-		fmt.Println(username)
-
+		_ = username
 		var i interface{}
 		i = fmt.Sprintf(`{"ionCount": %v, "inputArray": %v}`, count, inputArray)
 
@@ -90,42 +96,26 @@ func startCalc(m *messenger.Messenger) {
 func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 	var input [512]byte
 	for {
-		n, err := conn.Read(input[0:])
+		_, err := conn.Read(input[0:])
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 		}
 
-		fmt.Println(string(input[0:n]))
-
 		data, err := m.Sub()
 
 		msg := <-data
+		_ = msg
 
-		fmt.Println(msg)
+		res := InputJSON{count, inputArray, myCount}
 
-		// append myCount to Message
-		// Convert string to json
-		// create new json
-		// rawIn := json.RawMessage(msg.(string))
+		bytes, err := json.Marshal(res)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-		// bytes, err := rawIn.MarshalJSON()
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// var j OutputJSON
-		// err = json.Unmarshal(bytes, &j)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		//ionCount := j.ionCount
-		//inputArray := j.inputArray
-		// myCount
-
-		_, err2 := conn.Write([]byte(fmt.Sprintf(`{"ionCount": %v, "inputArray": %v, "myCount": %v}`, count, inputArray, myCount)))
+		_, err2 := conn.Write(bytes)
 		if err2 != nil {
 			log.Fatal(err2)
 		}
