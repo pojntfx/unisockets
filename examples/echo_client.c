@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 // If we're on WASM, use the custom implementation, else stick to the
 // default includes
@@ -12,6 +13,7 @@
 
 #define REMOTE_ADDR "10.0.0.240"
 #define REMOTE_PORT 42069
+#define RECONNECT_TIMEOUT 2
 
 #define SENT_MESSAGE_MAX_LENGTH 1024
 #define RECEIVED_MESSAGE_PREFIX "You've sent: "
@@ -48,29 +50,38 @@ int main() {
     exit(-1);
   }
 
-  // Connect
-  if ((connect(remote_sock, (struct sockaddr *)&remote_addr,
-               remote_addr_length)) == -1) {
-    perror("connect");
-
-    exit(-1);
-  }
+  printf("Connecting to server %s:%d\n", REMOTE_ADDR, REMOTE_PORT);
 
   while (1) {
-    memset(&received_message, 0, RECEIVED_MESSAGE_MAX_LENGTH);
-    memset(&sent_message, 0, SENT_MESSAGE_MAX_LENGTH);
+    // Connect
+    if ((connect(remote_sock, (struct sockaddr *)&remote_addr,
+                 remote_addr_length)) == -1) {
+      perror("connect");
 
-    fgets(sent_message, SENT_MESSAGE_MAX_LENGTH, stdin);
+      printf("Could not connect to server %s:%d, retrying in %d seconds\n",
+             REMOTE_ADDR, REMOTE_PORT, RECONNECT_TIMEOUT);
 
-    // Send
-    sent_message_length =
-        send(remote_sock, sent_message, strlen(sent_message), 0);
+      sleep(RECONNECT_TIMEOUT);
 
-    // Receive
-    received_message_length =
-        recv(remote_sock, &received_message, RECEIVED_MESSAGE_MAX_LENGTH, 0);
+      continue;
+    }
 
-    printf("%s", received_message);
+    while (1) {
+      memset(&received_message, 0, RECEIVED_MESSAGE_MAX_LENGTH);
+      memset(&sent_message, 0, SENT_MESSAGE_MAX_LENGTH);
+
+      fgets(sent_message, SENT_MESSAGE_MAX_LENGTH, stdin);
+
+      // Send
+      sent_message_length =
+          send(remote_sock, sent_message, strlen(sent_message), 0);
+
+      // Receive
+      received_message_length =
+          recv(remote_sock, &received_message, RECEIVED_MESSAGE_MAX_LENGTH, 0);
+
+      printf("%s", received_message);
+    }
   }
 
   return 0;
