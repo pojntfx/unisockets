@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net"
 )
 
@@ -71,5 +72,17 @@ func (s *TCPClient) Open() error {
 		log.Fatal(err)
 	}
 
+	var result []float64
+	// Got access to all values now
+	for i := ((len(j.InputArray) / (j.IonCount)) * j.MyCount); i < ((len(j.InputArray)/(j.IonCount))*j.MyCount+(len(j.InputArray)/j.IonCount)) && i < len(j.InputArray); i++ {
+
+		result = append(result, softmaxSum(j.InputArray[i]))
+	}
+
+	fmt.Println(result)
 	return nil
+}
+
+func softmaxSum(input float64) float64 {
+	return math.Exp(input)
 }

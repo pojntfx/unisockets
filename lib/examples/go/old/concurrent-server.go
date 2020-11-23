@@ -71,8 +71,10 @@ func (s TCPServer) open() error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		count++
+
 		go handleConnection(conn, count, m)
+
+		count++
 	}
 
 }
