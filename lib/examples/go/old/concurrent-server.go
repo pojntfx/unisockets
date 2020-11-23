@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 	"os"
 
@@ -31,8 +32,14 @@ type InputJSON struct {
 	MyCount    int
 }
 
+type SumResults struct {
+	Result  []float64
+	MyCount int
+}
+
 var (
 	count      int
+	resultSum  []float64
 	inputArray []float64
 )
 
@@ -63,6 +70,8 @@ func (s TCPServer) open() error {
 	m := messenger.New(0, false)
 
 	inputArray = []float64{1, 1, 3}
+
+	resultSum = make([]float64, len(inputArray))
 
 	go startCalc(m)
 
@@ -130,7 +139,16 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 			}
 		}
 
-		fmt.Println(string(inputSum[0:n]))
+		var l SumResults
+		err = json.Unmarshal(inputSum[0:n], &l)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for i := 0; i < len(l.Result); i++ {
+			resultSum[i+(int(math.Ceil(float64(len(inputArray))/float64(count)))*myCount)] = l.Result[i]
+		}
+
 	}
 
 }
