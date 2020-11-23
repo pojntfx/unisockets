@@ -97,6 +97,7 @@ func startCalc(m *messenger.Messenger) {
 
 func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 	var input [512]byte
+	var inputSum [512]byte
 	for {
 		_, err := conn.Read(input[0:])
 		if err != nil {
@@ -121,6 +122,15 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 		if err2 != nil {
 			log.Fatal(err2)
 		}
+
+		n, err := conn.Read(inputSum[0:])
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+
+		fmt.Println(string(inputSum[0:n]))
 	}
 
 }
