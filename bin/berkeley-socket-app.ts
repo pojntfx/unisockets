@@ -1,9 +1,10 @@
 import * as Asyncify from "asyncify-wasm";
+import { EventEmitter } from "events";
 import fs from "fs";
 import { WASI } from "wasi";
 import { ExtendedRTCConfiguration } from "wrtc";
 import yargs from "yargs";
-import { ClientDoesNotExistError } from "../lib/signaling/errors/client-does-not-exist";
+import { AliasDoesNotExistError } from "../lib/signaling/errors/alias-does-not-exist";
 import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { Sockets } from "../lib/sockets/sockets";
 import { Transporter } from "../lib/transport/transporter";
@@ -52,6 +53,8 @@ const handleTransporterChannelClose = async (id: string) => {
   logger.info("Handling transporter connection close", { id });
 };
 
+const ready = new EventEmitter();
+
 const aliases = new Map<string, string>();
 const transporter = new Transporter(
   transporterConfig,
@@ -70,120 +73,14 @@ const handleDisconnect = async () => {
 const handleAcknowledgement = async (id: string, rejected: boolean) => {
   logger.debug("Handling acknowledgement", { id, rejected });
 
-  if (!rejected) {
-    if (testBind) {
-      try {
-        logger.info("Binding", { id, alias: TEST_ALIAS });
-
-        await client.bind(TEST_ALIAS);
-
-        logger.info("Bind accepted", { id, alias: TEST_ALIAS });
-
-        try {
-          while (true) {
-            logger.info("Starting to accept", { id, alias: TEST_ALIAS });
-
-            const clientAlias = await client.accept(TEST_ALIAS);
-
-            const clientId = aliases.get(clientAlias);
-            if (clientId === undefined) {
-              throw new ClientDoesNotExistError();
-            }
-
-            (async () => {
-              logger.info("Accepted", {
-                id,
-                alias: TEST_ALIAS,
-                clientAlias,
-                clientId,
-              });
-
-              while (true) {
-                await transporter.send(
-                  clientId,
-                  new TextEncoder().encode("Hello, client!")
-                );
-
-                await new Promise((res) => setTimeout(() => res(), 1000));
-              }
-            })();
-          }
-        } catch (e) {
-          logger.error("Accept rejected", { id, alias: TEST_ALIAS, error: e });
-
-          try {
-            await client.shutdown(TEST_ALIAS);
-
-            logger.info("Shutdown accepted", { id, alias: TEST_ALIAS });
-          } catch (e) {
-            logger.error("Shutdown rejected", {
-              id,
-              alias: TEST_ALIAS,
-              error: e,
-            });
-          }
-        }
-      } catch (e) {
-        logger.error("Bind rejected", { id, alias: TEST_ALIAS, error: e });
-      }
-    } else {
-      try {
-        logger.info("Connecting", { id, remoteAlias: TEST_ALIAS });
-
-        const clientAlias = await client.connect(TEST_ALIAS);
-
-        const serverId = aliases.get(TEST_ALIAS);
-        if (serverId === undefined) {
-          throw new ClientDoesNotExistError();
-        }
-
-        logger.info("Connect accepted", {
-          id,
-          remoteAlias: TEST_ALIAS,
-          clientAlias,
-        });
-
-        while (true) {
-          const msg = await transporter.recv(serverId);
-
-          logger.info("Received", {
-            id,
-            remoteAlias: TEST_ALIAS,
-            clientAlias,
-            msg,
-          });
-
-          await new Promise((res) => setTimeout(() => res(), 1000));
-        }
-      } catch (e) {
-        logger.error("Connect rejected", {
-          id,
-          remoteAlias: TEST_ALIAS,
-          error: e,
-        });
-
-        try {
-          await client.shutdown(TEST_ALIAS);
-
-          logger.info("Shutdown accepted", {
-            id,
-            remoteAlias: TEST_ALIAS,
-          });
-        } catch (e) {
-          logger.error("Shutdown rejected", {
-            id,
-            remoteAlias: TEST_ALIAS,
-            error: e,
-          });
-        }
-      }
-    }
-  } else {
+  if (rejected) {
     logger.error("Knock rejected", {
       id,
       remoteAlias: TEST_ALIAS,
     });
   }
+
+  ready.emit("ready", true);
 };
 const getOffer = async (
   answererId: string,
@@ -255,7 +152,7 @@ const handleAlias = async (id: string, alias: string, set: boolean) => {
   }
 };
 
-const client = new SignalingClient(
+const signalingClient = new SignalingClient(
   raddr,
   reconnectDuration,
   TEST_SUBNET,
@@ -272,30 +169,42 @@ const client = new SignalingClient(
 
 const handleExternalBind = async (alias: string) => {
   logger.info("Handling external bind", { alias });
+
+  await signalingClient.bind(alias);
 };
 
 const handleExternalAccept = async (alias: string) => {
   logger.info("Handling external accept", { alias });
 
-  return `${TEST_SUBNET}.1:0`;
+  return await signalingClient.accept(alias);
 };
 
 const handleExternalConnect = async (alias: string) => {
   logger.info("Handling external connect", { alias });
+
+  await signalingClient.connect(alias);
 };
 
 const handleExternalSend = async (alias: string, msg: Uint8Array) => {
   logger.info("Handling external send", { alias, msg });
+
+  if (aliases.has(alias)) {
+    return await transporter.send(aliases.get(alias)!, msg); // .has
+  } else {
+    logger.error("Could not find alias", { alias });
+  }
 };
 
 const handleExternalRecv = async (alias: string) => {
-  const msg = new TextEncoder().encode("Hello from client!");
+  if (aliases.has(alias)) {
+    const msg = await transporter.recv(aliases.get(alias)!); // .has
 
-  logger.info("Handling external rev", { alias, msg });
+    logger.info("Handling external rev", { alias, msg });
 
-  return new Promise((res) =>
-    setTimeout(() => res(msg), 1000)
-  ) as Promise<Uint8Array>;
+    return msg;
+  } else {
+    throw new AliasDoesNotExistError();
+  }
 };
 
 const sockets = new Sockets(
@@ -308,14 +217,19 @@ const sockets = new Sockets(
 
 const wasi = new WASI();
 
-(async () => {
+ready.once("ready", async () => {
   const { memoryId, imports } = await sockets.getImports();
 
   const instance = await Asyncify.instantiate(
     await WebAssembly.compile(
       testBind
         ? fs.readFileSync("./examples/echo_server.wasm")
-        : fs.readFileSync("./examples/echo_client.wasm")
+        : await new Promise((res) =>
+            setTimeout(
+              () => res(fs.readFileSync("./examples/echo_client.wasm")),
+              5000
+            )
+          )
     ),
     {
       wasi_snapshot_preview1: wasi.wasiImport,
@@ -326,6 +240,6 @@ const wasi = new WASI();
   sockets.setMemory(memoryId, instance.exports.memory);
 
   wasi.start(instance);
-})();
+});
 
-// client.open();
+signalingClient.open();

@@ -260,7 +260,10 @@ export class Transporter {
   async recv(id: string) {
     this.logger.debug("Handling receive", { id });
 
-    if (this.queuedMessages.has(id) && this.queuedMessages.size !== 0) {
+    if (
+      this.queuedMessages.has(id) &&
+      this.queuedMessages.get(id)?.length !== 0 // Checked by .has
+    ) {
       return this.queuedMessages.get(id)?.shift()!; // size !== 0 and undefined is ever pushed
     } else {
       const [msg] = await once(this.asyncResolver, this.getMessageKey(id));
