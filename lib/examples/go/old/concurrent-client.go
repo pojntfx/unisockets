@@ -74,7 +74,7 @@ func (s *TCPClient) Open() error {
 
 	var result []float64
 	// Got access to all values now
-	for i := ((len(j.InputArray) / (j.IonCount)) * j.MyCount); i < ((len(j.InputArray)/(j.IonCount))*j.MyCount+(len(j.InputArray)/j.IonCount)) && i < len(j.InputArray); i++ {
+	for i := int(math.Ceil(float64(len(j.InputArray))/float64(j.IonCount))) * j.MyCount; i < int(math.Ceil(float64(len(j.InputArray))/float64(j.IonCount)))*j.MyCount+int(math.Ceil(float64(len(j.InputArray))/float64(j.IonCount))) && i < len(j.InputArray); i++ {
 
 		result = append(result, softmaxSum(j.InputArray[i]))
 	}
