@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"net"
 )
 
@@ -21,4 +22,12 @@ func main() {
 	if err2 != nil {
 		log.Fatal(err)
 	}
+}
+
+func softmaxSum(input float64) float64 {
+	return math.Exp(input)
+}
+
+func softmaxResult(sum float64, input float64) float64 {
+	return math.Exp(input) / sum
 }
