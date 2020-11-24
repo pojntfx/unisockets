@@ -7,7 +7,8 @@ build: \
 	build-c-echo_client-wasm \
 	build-c-echo_client-native \
 	build-c-echo_server-wasm \
-	build-c-echo_server-native
+	build-c-echo_server-native \
+	build-go-echo_client-native
 
 build-container-wasi-sdk:
 	@docker build -t pojntfx/wasi-sdk examples/c
@@ -22,12 +23,16 @@ build-c-echo_server-wasm: build-container-wasi-sdk
 build-c-echo_server-native:
 	@docker run -v ${PWD}/examples/c:/examples/c:Z silkeh/clang sh -c 'cd /examples/c && clang echo_server.c -o echo_server'
 
+build-go-echo_client-native:
+	@docker run -v ${PWD}/examples/go:/examples/go:Z tinygo/tinygo sh -c 'cd /examples/go && tinygo build -o echo_client echo_client.go'
+
 # Clean
 clean: \
 	clean-c-echo_client-wasm \
 	clean-c-echo_client-native \
 	clean-c-echo_server-wasm \
-	clean-c-echo_server-native
+	clean-c-echo_server-native \
+	clean-go-echo_client-native
 
 clean-c-echo_client-wasm:
 	@rm -f examples/c/echo_client*.wasm
@@ -39,12 +44,19 @@ clean-c-echo_server-wasm:
 clean-c-echo_server-native:
 	@rm -f examples/c/echo_server
 
+clean-go-echo_client-native:
+	@rm -f examples/go/echo_client
+
 # Test
 test: \
 	test-c-echo_client-native \
-	test-c-echo_server-native
+	test-c-echo_server-native \
+	test-c-echo_client-native
 
 test-c-echo_client-native:
-	./examples/c/echo_client
+	@./examples/c/echo_client
 test-c-echo_server-native:
-	./examples/c/echo_server
+	@./examples/c/echo_server
+
+test-go-echo_client-native:
+	@./examples/go/echo_client
