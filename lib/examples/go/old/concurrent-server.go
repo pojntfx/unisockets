@@ -44,10 +44,20 @@ type WriteSum struct {
 	IonCount   int       `json:"ionCount"`
 }
 
+type SoftmaxResults struct {
+	Result []float64 `json:"finalResult"`
+}
+
+type FinalOutput struct {
+	Result []float64 `json:"result"`
+}
+
 var (
-	count      int
-	resultSum  []float64
-	inputArray []float64
+	count       int
+	resultSum   []float64
+	inputArray  []float64
+	sum         float64
+	finalResult []float64
 )
 
 func main() {
@@ -75,10 +85,12 @@ func (s TCPServer) open() error {
 	}
 
 	m := messenger.New(0, false)
+	m2 := messenger.New(0, false)
 
 	inputArray = []float64{1, 1, 3}
 
 	resultSum = make([]float64, len(inputArray))
+	finalResult = make([]float64, len(inputArray))
 
 	go startCalc(m)
 
@@ -88,7 +100,7 @@ func (s TCPServer) open() error {
 			log.Fatal(err)
 		}
 
-		go handleConnection(conn, count, m)
+		go handleConnection(conn, count, m, m2)
 
 		count++
 	}
@@ -111,10 +123,9 @@ func startCalc(m *messenger.Messenger) {
 	}
 }
 
-func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
+func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger, m2 *messenger.Messenger) {
 	var input [512]byte
 	var inputSum [512]byte
-	var finalResult [512]byte
 
 	for {
 		_, err := conn.Read(input[0:])
@@ -159,14 +170,41 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 		}
 
 		fmt.Println(resultSum)
-		// Drueber loopen und Summe addieren
-		sum := 0.
 
-		for i := 0; i < len(resultSum); i++ {
-			sum += resultSum[i]
+		if myCount == count-1 {
+
+			zero := false
+
+			for {
+				// check if Array only 0
+				for i := 0; i < len(resultSum); i++ {
+					if resultSum[i] == 0 {
+						zero = true
+					}
+				}
+				if zero == true {
+					zero = false
+					continue
+				} else {
+					break
+				}
+
+			}
+			//calculate sum
+			// hier noch ne waitgroup mit allen nodes
+			for i := 0; i < len(resultSum); i++ {
+				sum += resultSum[i]
+			}
+			fmt.Println(sum)
+			var i interface{}
+
+			i = fmt.Sprintf("Hello")
+
+			m2.Broadcast(i)
+		} else {
+			m2.Sub()
 		}
 
-		// Send resultSum and myCount to client
 		res2 := WriteSum{sum, myCount, inputArray, count}
 
 		bytes2, err4 := json.Marshal(res2)
@@ -179,14 +217,65 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 			log.Fatal(err2)
 		}
 
-		y, err := conn.Read(finalResult[0:])
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
+		var buf4 [523]byte
+		q, err7 := conn.Read(buf4[0:])
+		if err7 != nil {
+			log.Fatal(err7)
 		}
 
-		fmt.Println(string(finalResult[0:y]))
+		fmt.Println(string(buf4[0:q]))
+
+		rawIn3 := json.RawMessage(string(buf4[0:q]))
+
+		bytes4, err := rawIn3.MarshalJSON()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var z SoftmaxResults
+		err = json.Unmarshal(bytes4, &z)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(z.Result)
+
+		for i := 0; i < len(z.Result); i++ {
+			finalResult[i+(int(math.Ceil(float64(len(inputArray))/float64(count)))*myCount)] = z.Result[i]
+		}
+
+		if myCount == count-1 {
+
+			zero := false
+
+			for {
+				// check if Array only 0
+				for i := 0; i < len(finalResult); i++ {
+					if finalResult[i] == 0 {
+						zero = true
+					}
+				}
+				if zero == true {
+					zero = false
+					continue
+				} else {
+					break
+				}
+
+			}
+			//calculate sum
+			// hier noch ne waitgroup mit allen nodes
+			fmt.Println(finalResult)
+
+			res3 := FinalOutput{finalResult}
+
+			bytes3, err6 := json.Marshal(res3)
+			if err6 != nil {
+				log.Fatal(err6)
+			}
+
+			fmt.Println(string(bytes3))
+		}
 
 	}
 
