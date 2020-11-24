@@ -14,7 +14,7 @@ func main() {
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
 	checkError(err)
 
-	_, err = conn.Write([]byte("Connected"))
+	_, err = conn.Write([]byte(`{"inputArray": [1,1,3], "ionCount": 3, "myCount": 0}`))
 	checkError(err)
 
 }
