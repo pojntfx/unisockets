@@ -46,7 +46,7 @@ export class Sockets {
             const portInMemory = socketInMemory.slice(2, 4);
 
             const address = addressInMemory.join(".");
-            const port = htons(new Uint16Array(portInMemory)[0]);
+            const port = htons(new Uint16Array(portInMemory.buffer)[0]);
 
             await this.bind(fd, `${address}:${port}`);
 
@@ -118,7 +118,7 @@ export class Sockets {
             const portInMemory = socketInMemory.slice(2, 4);
 
             const address = addressInMemory.join(".");
-            const port = htons(new Uint16Array(portInMemory)[0]);
+            const port = htons(new Uint16Array(portInMemory.buffer)[0]);
 
             await this.connect(fd, `${address}:${port}`);
 
