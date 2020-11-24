@@ -3,6 +3,7 @@ package main
 /*
 #include <berkeley_sockets.h>
 
+typedef struct sockaddr sockaddr;
 typedef struct sockaddr_in sockaddr_in;
 typedef struct in_addr in_addr;
 */
@@ -10,10 +11,14 @@ import "C"
 import (
 	"encoding/binary"
 	"fmt"
+	"log"
+	"time"
+	"unsafe"
 )
 
 const (
-	remotePort = 1234
+	remotePort       = 1234
+	reconnectTimeout = time.Second
 )
 
 var (
@@ -28,8 +33,25 @@ func main() {
 			s_addr: C.uint(binary.LittleEndian.Uint32(remoteHost)),
 		},
 	}
+	remoteAddressReadable := fmt.Sprintf("%v:%v", remoteHost, remotePort)
 
 	remoteSocket := C.socket(C.PF_INET, C.SOCK_STREAM, 0)
 
-	fmt.Println(remoteSocket, remoteAddress)
+	for {
+		log.Printf("[INFO] Connecting to server %v\n", remoteAddressReadable)
+
+		if err := C.connect(remoteSocket, (*C.sockaddr)(unsafe.Pointer(&remoteAddress)), C.uint(unsafe.Sizeof(remoteAddress))); err == -1 {
+			C.perror(C.CString("connect"))
+
+			log.Printf("[ERROR] Could not connect to server %v, retrying in %v seconds\n", remoteAddressReadable, reconnectTimeout)
+
+			time.Sleep(reconnectTimeout)
+
+			continue
+		}
+
+		log.Printf("[INFO] Connected to server %v\n", remoteAddressReadable)
+
+		break
+	}
 }
