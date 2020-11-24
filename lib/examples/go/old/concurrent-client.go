@@ -23,6 +23,18 @@ type JSONOutput struct {
 	MyCount int       `json:"myCount"`
 }
 
+type InputSum struct {
+	Result     float64   `json:"resultSum"`
+	MyCount    int       `json:"myCount"`
+	InputArray []float64 `json:"inputArray"`
+	IonCount   int       `json:"IonCount`
+}
+
+type FinalOutput struct {
+	FinalResult []float64 `json:"finalResult"`
+	MyCount     int       `json:"myCount"`
+}
+
 func main() {
 	tcpClient := NewTCPClient("0.0.0.0:3333")
 
@@ -98,9 +110,63 @@ func (s *TCPClient) Open() error {
 		log.Fatal(err2)
 	}
 
+	var buf2 [512]byte
+	l, err4 := conn.Read(buf2[0:])
+	if err4 != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(string(buf2[0:l]))
+
+	rawIn2 := json.RawMessage(string(buf2[0:l]))
+
+	bytes3, err := rawIn2.MarshalJSON()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Hier drunter ist ein Error
+	var o InputSum
+	err = json.Unmarshal(bytes3, &o)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(o.Result)
+	fmt.Println(o.MyCount)
+	fmt.Println(o.InputArray)
+	fmt.Println(o.IonCount)
+	// Wir haben zugriff auf alle variablen. Nun wieder berechnen und zuruecksenden.
+
+	// Now we have all the necessary Data, calculate the values from our part and send back the values and myCount
+
+	var finalResult []float64
+
+	for i := int(math.Ceil(float64(len(o.InputArray))/float64(o.IonCount))) * o.MyCount; i < int(math.Ceil(float64(len(o.InputArray))/float64(o.IonCount)))*o.MyCount+int(math.Ceil(float64(len(o.InputArray))/float64(o.IonCount))) && i < len(o.InputArray); i++ {
+
+		finalResult = append(finalResult, softmaxResult(o.Result, o.InputArray[i]))
+	}
+
+	fmt.Println(finalResult)
+	// Send that Array back to server with myCount
+	res3 := FinalOutput{finalResult, o.MyCount}
+
+	bytes3, err6 := json.Marshal(res3)
+	if err6 != nil {
+		log.Fatal(err6)
+	}
+
+	_, err7 := conn.Write(bytes3)
+	if err7 != nil {
+		log.Fatal(err7)
+	}
+
 	return nil
 }
 
 func softmaxSum(input float64) float64 {
 	return math.Exp(input)
+}
+
+func softmaxResult(sum float64, input float64) float64 {
+	return math.Exp(input) / sum
 }
