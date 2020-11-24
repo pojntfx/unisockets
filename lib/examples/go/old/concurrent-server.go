@@ -37,6 +37,13 @@ type SumResults struct {
 	MyCount int
 }
 
+type WriteSum struct {
+	ResultSum  float64   `json:"resultSum"`
+	MyCount    int       `json:"myCount"`
+	InputArray []float64 `json:"inputArray"`
+	IonCount   int       `json:"ionCount"`
+}
+
 var (
 	count      int
 	resultSum  []float64
@@ -107,6 +114,8 @@ func startCalc(m *messenger.Messenger) {
 func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 	var input [512]byte
 	var inputSum [512]byte
+	var finalResult [512]byte
+
 	for {
 		_, err := conn.Read(input[0:])
 		if err != nil {
@@ -148,6 +157,36 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger) {
 		for i := 0; i < len(l.Result); i++ {
 			resultSum[i+(int(math.Ceil(float64(len(inputArray))/float64(count)))*myCount)] = l.Result[i]
 		}
+
+		fmt.Println(resultSum)
+		// Drueber loopen und Summe addieren
+		sum := 0.
+
+		for i := 0; i < len(resultSum); i++ {
+			sum += resultSum[i]
+		}
+
+		// Send resultSum and myCount to client
+		res2 := WriteSum{sum, myCount, inputArray, count}
+
+		bytes2, err4 := json.Marshal(res2)
+		if err4 != nil {
+			log.Fatal(err)
+		}
+
+		_, err3 := conn.Write(bytes2)
+		if err3 != nil {
+			log.Fatal(err2)
+		}
+
+		y, err := conn.Read(finalResult[0:])
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+
+		fmt.Println(string(finalResult[0:y]))
 
 	}
 
