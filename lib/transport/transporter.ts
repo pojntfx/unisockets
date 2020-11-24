@@ -124,6 +124,8 @@ export class Transporter {
       channel.onopen = async () => {
         this.logger.debug("Channel opened", { id });
 
+        this.asyncResolver.emit(this.getChannelKey(id), true);
+
         await this.onChannelOpen(id);
       };
       channel.onmessage = async (msg) => {
@@ -175,7 +177,10 @@ export class Transporter {
   async handleCandidate(id: string, candidate: string) {
     this.logger.debug("Handling candidate", { id, candidate });
 
-    if (this.connections.has(id)) {
+    if (
+      this.connections.has(id) &&
+      this.connections.get(id)!.remoteDescription // We check with `.has` and never push undefined
+    ) {
       const connection = this.connections.get(id);
 
       await connection?.addIceCandidate(
@@ -245,16 +250,18 @@ export class Transporter {
   async send(id: string, msg: Uint8Array) {
     this.logger.debug("Handling send", { id, msg });
 
-    if (this.channels.has(id)) {
-      const channel = this.channels.get(id);
+    let channel = this.channels.get(id);
 
-      channel?.readyState !== "open" &&
-        (await once(this.asyncResolver, this.getChannelKey(id)));
+    while (
+      !channel ||
+      channel!.readyState !== "open" // Checked by !channel
+    ) {
+      await once(this.asyncResolver, this.getChannelKey(id));
 
-      channel?.send(msg);
-    } else {
-      throw new ChannelDoesNotExistError();
+      channel = this.channels.get(id);
     }
+
+    channel!.send(msg); // We check above
   }
 
   async recv(id: string) {
