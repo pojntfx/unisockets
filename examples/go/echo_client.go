@@ -43,7 +43,7 @@ func main() {
 		if err := C.connect(remoteSocket, (*C.sockaddr)(unsafe.Pointer(&remoteAddress)), C.uint(unsafe.Sizeof(remoteAddress))); err == -1 {
 			C.perror(C.CString("connect"))
 
-			log.Printf("[ERROR] Could not connect to server %v, retrying in %v seconds\n", remoteAddressReadable, reconnectTimeout)
+			log.Printf("[ERROR] Could not connect to server %v, retrying in %v\n", remoteAddressReadable, reconnectTimeout)
 
 			time.Sleep(reconnectTimeout)
 
@@ -51,6 +51,18 @@ func main() {
 		}
 
 		log.Printf("[INFO] Connected to server %v\n", remoteAddressReadable)
+
+		receivedMessageLength := 1
+		for receivedMessageLength != 0 {
+			log.Println("[DEBUG] Waiting for input from user")
+
+			var input string
+			fmt.Scanln(&input)
+
+			sentMessageLength := C.send(remoteSocket, unsafe.Pointer(C.CString(input)), C.ulong(len(input)), 0)
+
+			log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, remoteAddressReadable)
+		}
 
 		break
 	}
