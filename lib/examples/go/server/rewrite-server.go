@@ -7,10 +7,9 @@ import (
 	"net"
 )
 
-type JSONSum struct {
-	InputArray []float64 `json:"inputArray"`
-	IonCount   int       `json:"ionCount"`
-	MyCount    int       `json:"myCount"`
+// DecodeJSONSumResult decodes JSON sum results
+type DecodeJSONSumResult struct {
+	SumResult []float64 `json:"sumResult"`
 }
 
 func main() {
@@ -36,9 +35,15 @@ func handleConnection(conn *net.TCPConn) {
 
 	fmt.Println(string(input[0:n]))
 
-	a := encodeJSONSum(string(input[0:n]))
-	fmt.Println(a.IonCount)
+	_, err = conn.Write([]byte(`{"inputArray": [1,1,3], "ionCount": 3, "myCount": 0}`))
+	checkError(err)
 
+	n, err = conn.Read(input[0:])
+	checkError(err)
+
+	a := decodeJSONSumResult(string(input[0:n]))
+
+	fmt.Println(a.SumResult)
 }
 
 func checkError(err error) {
@@ -47,21 +52,21 @@ func checkError(err error) {
 	}
 }
 
-func encodeJSONSum(input string) JSONSum {
+func decodeJSONSumResult(input string) DecodeJSONSumResult {
 	rawIn := json.RawMessage(input)
 
 	bytes, err := rawIn.MarshalJSON()
 	checkError(err)
 
-	var j JSONSum
+	var d DecodeJSONSumResult
 
-	err = json.Unmarshal(bytes, &j)
+	err = json.Unmarshal(bytes, &d)
 	checkError(err)
 
-	return j
+	return d
 }
 
-func decodeJSONSum() {}
+func encodeJSONSum() {}
 
 func encodeJSONResult() {}
 
