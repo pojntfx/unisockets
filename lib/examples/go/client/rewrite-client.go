@@ -9,19 +9,14 @@ import (
 func main() {
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", "0.0.0.0:3333")
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 
 	conn, err := net.DialTCP("tcp", nil, tcpAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 
-	_, err2 := conn.Write([]byte("Connected"))
-	if err2 != nil {
-		log.Fatal(err)
-	}
+	_, err = conn.Write([]byte("Connected"))
+	checkError(err)
+
 }
 
 func softmaxSum(input float64) float64 {
@@ -30,4 +25,10 @@ func softmaxSum(input float64) float64 {
 
 func softmaxResult(sum float64, input float64) float64 {
 	return math.Exp(input) / sum
+}
+
+func checkError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }

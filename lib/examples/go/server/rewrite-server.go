@@ -2,38 +2,37 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 )
 
 func main() {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", "0.0.0.0:3333")
-	if err != nil {
-		fmt.Println(err)
-	}
+	checkError(err)
 
 	ln, err := net.ListenTCP("tcp", tcpAddr)
-	if err != nil {
-		fmt.Println(err)
-	}
+	checkError(err)
 
 	for {
 		conn, err := ln.Accept()
-		if err != nil {
-			fmt.Println(err)
-		}
+		checkError(err)
 
-		go handleConnection(conn)
+		go handleConnection(conn.(*net.TCPConn))
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn *net.TCPConn) {
 	var input [512]byte
 
 	n, err := conn.Read(input[0:])
-	if err != nil {
-		fmt.Println(err)
-	}
+	checkError(err)
 
 	fmt.Println(string(input[0:n]))
 
+}
+
+func checkError(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }
