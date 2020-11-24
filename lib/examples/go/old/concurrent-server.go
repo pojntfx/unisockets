@@ -9,6 +9,7 @@ import (
 	"math"
 	"net"
 	"os"
+	"time"
 
 	"github.com/ugjka/messenger"
 )
@@ -169,8 +170,6 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger, m2 *me
 			resultSum[i+(int(math.Ceil(float64(len(inputArray))/float64(count)))*myCount)] = l.Result[i]
 		}
 
-		fmt.Println(resultSum)
-
 		if myCount == count-1 {
 
 			zero := false
@@ -205,6 +204,11 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger, m2 *me
 			m2.Sub()
 		}
 
+		//It works with the timer
+		time.Sleep(time.Second)
+
+		//m2.Sub()
+		fmt.Println(sum)
 		res2 := WriteSum{sum, myCount, inputArray, count}
 
 		bytes2, err4 := json.Marshal(res2)
@@ -223,8 +227,6 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger, m2 *me
 			log.Fatal(err7)
 		}
 
-		fmt.Println(string(buf4[0:q]))
-
 		rawIn3 := json.RawMessage(string(buf4[0:q]))
 
 		bytes4, err := rawIn3.MarshalJSON()
@@ -237,8 +239,6 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger, m2 *me
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		fmt.Println(z.Result)
 
 		for i := 0; i < len(z.Result); i++ {
 			finalResult[i+(int(math.Ceil(float64(len(inputArray))/float64(count)))*myCount)] = z.Result[i]
@@ -265,7 +265,6 @@ func handleConnection(conn net.Conn, myCount int, m *messenger.Messenger, m2 *me
 			}
 			//calculate sum
 			// hier noch ne waitgroup mit allen nodes
-			fmt.Println(finalResult)
 
 			res3 := FinalOutput{finalResult}
 
