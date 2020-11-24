@@ -19,6 +19,18 @@ type EncodeJSONSumInput struct {
 	MyCount    int       `json:"myCount"`
 }
 
+type EncodeJSONSoftmaxInput struct {
+	InputArray []float64 `json:"inputArray"`
+	IonCount   int       `json:"ionCount"`
+	MyCount    int       `json:"myCount"`
+	Sum        int       `json:"sum"`
+}
+
+type DecodeJSONSoftmaxResult struct {
+	SoftmaxResult []float64 `json:"softmaxResult"`
+	MyCount       int       `json:"myCount"`
+}
+
 func main() {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", "0.0.0.0:3333")
 	checkError(err)
@@ -37,6 +49,7 @@ func main() {
 func handleConnection(conn *net.TCPConn) {
 	var input [512]byte
 	var jsonSumInput = []float64{1, 1, 3}
+	var jsonSoftmaxInput = []float64{1, 1, 3}
 
 	n, err := conn.Read(input[0:])
 	checkError(err)
@@ -53,8 +66,23 @@ func handleConnection(conn *net.TCPConn) {
 
 	a := decodeJSONSumResult(string(input[0:n]))
 
+	// calculate sum
+
+	bytes2 := encodeJSONSoftmaxInput(EncodeJSONSoftmaxInput{jsonSoftmaxInput, 3, 0, 25})
+
+	_, err = conn.Write(bytes2)
+	checkError(err)
+
+	o, err := conn.Read(input[0:])
+	checkError(err)
+
+	b := decodeJSONSoftmaxResult(string(input[0:o]))
+
+	// calculate result
+
 	fmt.Println(a.SumResult)
 	fmt.Println(a.MyCount)
+	fmt.Println(b.SoftmaxResult)
 }
 
 func checkError(err error) {
@@ -85,6 +113,25 @@ func encodeJSONSumInput(s EncodeJSONSumInput) []byte {
 	return bytes
 }
 
-func encodeJSONResult() {}
+func encodeJSONSoftmaxInput(s EncodeJSONSoftmaxInput) []byte {
 
-func decodeJSONResult() {}
+	bytes, err := json.Marshal(s)
+	checkError(err)
+
+	return bytes
+}
+
+func decodeJSONSoftmaxResult(input string) DecodeJSONSoftmaxResult {
+
+	rawIn := json.RawMessage(input)
+
+	bytes, err := rawIn.MarshalJSON()
+	checkError(err)
+
+	var d DecodeJSONSoftmaxResult
+
+	err = json.Unmarshal(bytes, &d)
+	checkError(err)
+
+	return d
+}
