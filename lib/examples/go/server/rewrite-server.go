@@ -31,7 +31,7 @@ type EncodeJSONSoftmaxInput struct {
 	InputArray []float64 `json:"inputArray"`
 	IonCount   int       `json:"ionCount"`
 	MyCount    int       `json:"myCount"`
-	Sum        int       `json:"sum"`
+	Sum        float64   `json:"sum"`
 }
 
 // DecodeJSONSoftmaxResult decodes JSON softmax result
@@ -41,11 +41,11 @@ type DecodeJSONSoftmaxResult struct {
 }
 
 var (
-	//ionCount           int
 	sumResultArray     []float64
 	softmaxResultArray []float64
 	sumResult          float64
 	inputArray         []float64
+	ionCount           int
 )
 
 func main() {
@@ -63,14 +63,12 @@ func main() {
 
 	var wgSum sync.WaitGroup
 	var wgSoftmax sync.WaitGroup
-	ionCount := 0
-	//wgSum.Add(1)
-	//wgSoftmax.Add(1)
+	id := 0
 
 	sumResultArray = make([]float64, len(inputArray))
 	softmaxResultArray = make([]float64, len(inputArray))
 
-	go manager(mSum, mSoftmax, &wgSum, &wgSoftmax, &ionCount)
+	go manager(mSum, mSoftmax, &wgSum, &wgSoftmax)
 
 	for {
 		conn, err := ln.Accept()
@@ -79,15 +77,16 @@ func main() {
 		wgSum.Add(1)
 		wgSoftmax.Add(1)
 
-		go handleConnection(conn.(*net.TCPConn), mSum, mSoftmax, &wgSum, &wgSoftmax, &ionCount)
+		go handleConnection(conn.(*net.TCPConn), mSum, mSoftmax, &wgSum, &wgSoftmax, id)
 
+		id++
 		ionCount++
 
 	}
 
 }
 
-func manager(mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup, ionCount *int) {
+func manager(mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup) {
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -101,30 +100,29 @@ func manager(mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sy
 	wgSum.Wait()
 
 	for i := 0; i < len(sumResultArray); i++ {
-		sumResult = sumResultArray[i]
+		sumResult += sumResultArray[i]
 	}
-
-	fmt.Println(sumResult)
 
 	mSoftmax.Broadcast(i)
 
 	wgSoftmax.Wait()
 
 	fmt.Println(softmaxResultArray)
+
 }
 
-func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup, ionCount *int) {
+func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup, id int) {
 	var input [512]byte
 
 	n, err := conn.Read(input[0:])
 	checkError(err)
 
-	fmt.Println(string(input[0:n]))
-
 	start, err := mSum.Sub()
-	_ = start
 
-	bytes := encodeJSONSumInput(EncodeJSONSumInput{inputArray, 1, 0})
+	msg := <-start
+	_ = msg
+
+	bytes := encodeJSONSumInput(EncodeJSONSumInput{inputArray, ionCount, id})
 
 	_, err = conn.Write(bytes)
 	checkError(err)
@@ -134,18 +132,18 @@ func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *me
 
 	sumResultChunk := decodeJSONSumResult(string(input[0:n]))
 
-	fmt.Println(sumResultChunk.SumResult)
-
 	for i := 0; i < len(sumResultChunk.SumResult); i++ {
-		sumResultArray[i+(int(math.Ceil(float64(len(inputArray))/float64(*ionCount)))*sumResultChunk.MyCount)] = sumResultChunk.SumResult[i]
+		sumResultArray[i+(int(math.Ceil(float64(len(inputArray))/float64(ionCount)))*sumResultChunk.MyCount)] = sumResultChunk.SumResult[i]
 	}
 
 	wgSum.Done()
 
 	start, err = mSoftmax.Sub()
-	_ = start
 
-	bytes2 := encodeJSONSoftmaxInput(EncodeJSONSoftmaxInput{inputArray, 1, 0, 25})
+	msg = <-start
+	_ = msg
+
+	bytes2 := encodeJSONSoftmaxInput(EncodeJSONSoftmaxInput{inputArray, ionCount, id, sumResult})
 
 	_, err = conn.Write(bytes2)
 	checkError(err)
@@ -155,16 +153,11 @@ func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *me
 
 	softmaxResultChunk := decodeJSONSoftmaxResult(string(input[0:o]))
 
-	fmt.Println(softmaxResultChunk.SoftmaxResult)
-
 	for i := 0; i < len(softmaxResultChunk.SoftmaxResult); i++ {
-		softmaxResultArray[i+(int(math.Ceil(float64(len(inputArray))/float64(*ionCount)))*softmaxResultChunk.MyCount)] = softmaxResultChunk.SoftmaxResult[i]
+		softmaxResultArray[i+(int(math.Ceil(float64(len(inputArray))/float64(ionCount)))*softmaxResultChunk.MyCount)] = softmaxResultChunk.SoftmaxResult[i]
 	}
 
 	wgSoftmax.Done()
-
-	fmt.Println(sumResultChunk.SumResult)
-	fmt.Println(softmaxResultChunk.SoftmaxResult)
 }
 
 func checkError(err error) {
