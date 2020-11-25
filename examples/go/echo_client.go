@@ -1,22 +1,13 @@
 package main
 
 /*
-#include <arpa/inet.h>
-#include <netinet/in.h>
+#cgo CFLAGS: -DBERKELEY_SOCKETS_WITH_INVERSE_ALIAS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-// If we're on WASM, use the custom implementation, else stick to the
-// default includes
-#ifdef IS_WASM
 #include "berkeley_sockets.h"
-#endif
-
-typedef struct sockaddr sockaddr;
-typedef struct sockaddr_in sockaddr_in;
-typedef struct in_addr in_addr;
 */
 import "C"
 import (

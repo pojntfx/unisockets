@@ -9,6 +9,7 @@ import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { Sockets } from "../lib/sockets/sockets";
 import { Transporter } from "../lib/transport/transporter";
 import { getLogger } from "../lib/utils/logger";
+const Go = require("../vendor/tinygo/wasm_exec");
 
 const TEST_SUBNET = "10.0.0";
 const TEST_ALIAS = `${TEST_SUBNET}.240:42069`;
@@ -21,7 +22,7 @@ const transporterConfig: ExtendedRTCConfiguration = {
   ],
 };
 
-const { raddr, reconnectDuration, testBind } = yargs(
+const { raddr, reconnectDuration, testBind, testTinyGo } = yargs(
   process.argv.slice(2)
 ).options({
   raddr: {
@@ -34,6 +35,11 @@ const { raddr, reconnectDuration, testBind } = yargs(
   },
   testBind: {
     description: `Bind to ${TEST_ALIAS} alias for testing purposes; all clients will try to connect to this test alias`,
+    default: false,
+  },
+  testTinyGo: {
+    description:
+      "Use the TinyGo example server/client implementations instead of the C implementations",
     default: false,
   },
 }).argv;
@@ -218,23 +224,48 @@ const sockets = new Sockets(
 const wasi = new WASI();
 
 ready.once("ready", async () => {
-  const { memoryId, imports } = await sockets.getImports();
+  const { memoryId, imports: socketEnvImports } = await sockets.getImports();
 
-  const instance = await Asyncify.instantiate(
-    await WebAssembly.compile(
-      testBind
-        ? fs.readFileSync("./examples/echo_server.wasm")
-        : fs.readFileSync("./examples/echo_client.wasm")
-    ),
-    {
-      wasi_snapshot_preview1: wasi.wasiImport,
-      env: imports,
-    }
-  );
+  if (testTinyGo) {
+    const go = new Go();
+    const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
 
-  sockets.setMemory(memoryId, instance.exports.memory);
+    const instance = await Asyncify.instantiate(
+      await WebAssembly.compile(
+        testBind
+          ? fs.readFileSync("./examples/c/echo_server.wasm") // TODO: Replace with TinyGo implementation once ready
+          : fs.readFileSync("./examples/tinygo/echo_client.wasm")
+      ),
+      {
+        wasi_snapshot_preview1: wasi.wasiImport,
+        ...tinyGoImports,
+        env: {
+          ...tinyGoEnvImports,
+          ...socketEnvImports,
+        },
+      }
+    );
 
-  wasi.start(instance);
+    sockets.setMemory(memoryId, instance.exports.memory);
+
+    go.run(instance);
+  } else {
+    const instance = await Asyncify.instantiate(
+      await WebAssembly.compile(
+        testBind
+          ? fs.readFileSync("./examples/c/echo_server.wasm")
+          : fs.readFileSync("./examples/c/echo_client.wasm")
+      ),
+      {
+        wasi_snapshot_preview1: wasi.wasiImport,
+        env: socketEnvImports,
+      }
+    );
+
+    sockets.setMemory(memoryId, instance.exports.memory);
+
+    wasi.start(instance);
+  }
 });
 
 signalingClient.open();
