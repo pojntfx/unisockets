@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "berkeley_sockets.h"
 
 #define REMOTE_ADDR "127.0.0.1"
 #define REMOTE_PORT 1234
@@ -14,10 +15,7 @@
 #define RECEIVED_MESSAGE_MAX_LENGTH                                            \
   SENT_MESSAGE_MAX_LENGTH + sizeof(RECEIVED_MESSAGE_PREFIX)
 
-// If we're on WASM, use the custom implementation, else stick to the
-// default includes
 #ifdef IS_WASM
-#include "berkeley_sockets.h"
 #undef REMOTE_ADDR
 #define REMOTE_ADDR "10.0.0.240"
 #endif

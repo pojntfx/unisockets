@@ -6,6 +6,7 @@
 #include <strings.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include "berkeley_sockets.h"
 
 #define LISTEN_ADDR "127.0.0.1"
 #define LISTEN_PORT 1234
@@ -16,10 +17,7 @@
 #define SENT_MESSAGE_MAX_LENGTH                                                \
   RECEIVED_MESSAGE_MAX_LENGTH + sizeof(SENT_MESSAGE_PREFIX)
 
-// If we're on WASM, use the custom implementation, else stick to the
-// default includes
 #ifdef IS_WASM
-#include "berkeley_sockets.h"
 #undef LISTEN_ADDR
 #define LISTEN_ADDR "10.0.0.240"
 #endif
