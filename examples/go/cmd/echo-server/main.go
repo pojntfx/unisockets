@@ -56,4 +56,26 @@ func main() {
 	}
 
 	log.Println("[INFO] Listening on", serverAddressReadable)
+
+	for {
+		log.Println("[DEBUG] Accepting on", serverAddressReadable)
+
+		clientAddress := C.sockaddr_in{}
+		clientAddressLength := C.uint(unsafe.Sizeof(clientAddress))
+
+		// Accept
+		_, err := C.accept(serverSocket, (*C.sockaddr)(unsafe.Pointer(&clientAddress)), &clientAddressLength)
+		if err != nil {
+			log.Println("[ERROR] Could not accept, continuing:", err)
+
+			continue
+		}
+
+		clientHost := make([]byte, 4) // xxx.xxx.xxx.xxx
+		binary.LittleEndian.PutUint32(clientHost, uint32(clientAddress.sin_addr.s_addr))
+
+		clientAddressReadable := fmt.Sprintf("%v:%v", clientHost, clientAddress.sin_port)
+
+		log.Println("[INFO] Accepted client", clientAddressReadable)
+	}
 }
