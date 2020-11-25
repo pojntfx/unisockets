@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math"
 	"net"
@@ -59,7 +60,9 @@ func main() {
 		jsonSumResult = append(jsonSumResult, softmaxSum(a.InputArray[i]))
 	}
 
-	bytes := encodeJSONSumResult(EncodeJSONSumResult{jsonSumResult, 0})
+	bytes := encodeJSONSumResult(EncodeJSONSumResult{jsonSumResult, a.MyCount})
+
+	fmt.Println(string(bytes))
 
 	_, err = conn.Write(bytes)
 	checkError(err)
@@ -77,6 +80,8 @@ func main() {
 	}
 
 	bytes2 := encodeJSONSoftmaxResult(EncodeJSONSoftmaxResult{jsonSoftmaxResult, b.MyCount})
+
+	fmt.Println(string(bytes2))
 
 	_, err = conn.Write(bytes2)
 	checkError(err)
