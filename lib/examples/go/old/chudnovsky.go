@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math"
-	"math/big"
 )
 
 func main() {
@@ -17,10 +16,6 @@ func main() {
 
 	result := 4270934400. / (math.Sqrt(10005.) * sum)
 
-	a := big.NewInt(2)
-	b := big.NewInt(3)
-
-	fmt.Println(a.Add(a, b))
 	fmt.Println(result)
 }
 
