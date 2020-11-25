@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"math"
 	"net"
@@ -21,13 +20,15 @@ type EncodeJSONSumResult struct {
 	MyCount   int       `json:"myCount"`
 }
 
+// DecodeJSONSoftmaxInput decodes JSON softmax input
 type DecodeJSONSoftmaxInput struct {
 	InputArray []float64 `json:"inputArray"`
 	IonCount   int       `json:"ionCount"`
 	MyCount    int       `json:"myCount"`
-	Sum        int       `json:"sum"`
+	Sum        float64   `json:"sum"`
 }
 
+// EncodeJSONSoftmaxResult encodes JSON softmax  result
 type EncodeJSONSoftmaxResult struct {
 	SoftmaxResult []float64 `json:"softmaxResult"`
 	MyCount       int       `json:"myCount"`
@@ -36,7 +37,6 @@ type EncodeJSONSoftmaxResult struct {
 func main() {
 	var jsonSumInput [512]byte
 	var jsonSoftmaxInput [512]byte
-	var jsonSumResult = []float64{2.7, 2.7, 20.0}
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", "0.0.0.0:3333")
 	checkError(err)
@@ -52,37 +52,34 @@ func main() {
 
 	a := decodeJSONSumInput(string(jsonSumInput[0:n]))
 
-	fmt.Println(a.IonCount)
+	var jsonSumResult []float64
 
-	// process incoming values and set the value in EncodeJSONSumResults
+	for i := int(math.Ceil(float64(len(a.InputArray))/float64(a.IonCount))) * a.MyCount; i < int(math.Ceil(float64(len(a.InputArray))/float64(a.IonCount)))*a.MyCount+int(math.Ceil(float64(len(a.InputArray))/float64(a.IonCount))) && i < len(a.InputArray); i++ {
+
+		jsonSumResult = append(jsonSumResult, softmaxSum(a.InputArray[i]))
+	}
 
 	bytes := encodeJSONSumResult(EncodeJSONSumResult{jsonSumResult, 0})
-
-	fmt.Println(string(bytes))
 
 	_, err = conn.Write(bytes)
 	checkError(err)
 
-	// Read actual jsonSoftmaxInput
-	//jsonSoftmaxInput := `{"inputArray": [1,1,3], "ionCount": 3, "myCount": 0, "sum": 25}`
 	o, err := conn.Read(jsonSoftmaxInput[0:])
 	checkError(err)
 
 	b := decodeJSONSoftmaxInput(string(jsonSoftmaxInput[0:o]))
 
-	fmt.Println(b.InputArray)
+	var jsonSoftmaxResult []float64
 
-	//  calculate jsonSoftmaxResult
+	for i := int(math.Ceil(float64(len(b.InputArray))/float64(b.IonCount))) * b.MyCount; i < int(math.Ceil(float64(len(b.InputArray))/float64(b.IonCount)))*b.MyCount+int(math.Ceil(float64(len(b.InputArray))/float64(b.IonCount))) && i < len(b.InputArray); i++ {
 
-	var jsonSoftmaxResult = []float64{0.1, 0.1, 0.78}
+		jsonSoftmaxResult = append(jsonSoftmaxResult, softmaxResult(b.Sum, b.InputArray[i]))
+	}
 
-	bytes2 := encodeJSONSoftmaxResult(EncodeJSONSoftmaxResult{jsonSoftmaxResult, 0})
+	bytes2 := encodeJSONSoftmaxResult(EncodeJSONSoftmaxResult{jsonSoftmaxResult, b.MyCount})
 
 	_, err = conn.Write(bytes2)
 	checkError(err)
-
-	fmt.Println(string(bytes2))
-	fmt.Println(b)
 }
 
 func softmaxSum(input float64) float64 {
