@@ -10,7 +10,6 @@ func main() {
 	result.SetPrec(1024)
 	sum := big.NewFloat(0)
 	sum.SetPrec(1024)
-	fmt.Println(sum.Acc())
 
 	k := 100
 	for i := 0; i <= k; i++ {
@@ -27,7 +26,6 @@ func main() {
 
 	result = Div(a, Mul(Root(b, 2), sum))
 	fmt.Println(result)
-	fmt.Println(result.Acc())
 }
 
 func sumElement(i *big.Float) *big.Float {
@@ -74,6 +72,7 @@ func sumElement(i *big.Float) *big.Float {
 	)
 }
 
+// Pow returns a to the power of e
 func Pow(a *big.Float, e uint64) *big.Float {
 	result := Zero().Copy(a)
 	if e == 0 {
@@ -87,6 +86,7 @@ func Pow(a *big.Float, e uint64) *big.Float {
 	return result
 }
 
+// Root returns the n-th root of a
 func Root(a *big.Float, n uint64) *big.Float {
 	limit := Pow(New(2), 1024)
 	n1 := n - 1
@@ -109,42 +109,51 @@ func Root(a *big.Float, n uint64) *big.Float {
 	return x
 }
 
+// Abs returns the absolute value of a
 func Abs(a *big.Float) *big.Float {
 	return Zero().Abs(a)
 }
 
+// New creates a new "bigFloat"
 func New(f float64) *big.Float {
 	r := big.NewFloat(f)
 	r.SetPrec(1024)
 	return r
 }
 
+// Div divides a and b
 func Div(a, b *big.Float) *big.Float {
 	return Zero().Quo(a, b)
 }
 
+// Zero creates a new "bigFloat" with the value 0.0
 func Zero() *big.Float {
 	r := big.NewFloat(0.0)
 	r.SetPrec(1024)
 	return r
 }
 
+// Mul multiplies a and b
 func Mul(a, b *big.Float) *big.Float {
 	return Zero().Mul(a, b)
 }
 
+// Add adds a and b
 func Add(a, b *big.Float) *big.Float {
 	return Zero().Add(a, b)
 }
 
+// Sub substracts a and b
 func Sub(a, b *big.Float) *big.Float {
 	return Zero().Sub(a, b)
 }
 
+// Lesser returns if x is lesser than y
 func Lesser(x, y *big.Float) bool {
 	return x.Cmp(y) == -1
 }
 
+// Factorial returns the factorial of n
 func Factorial(n *big.Float) *big.Float {
 
 	twoFloat := big.NewFloat(2)
