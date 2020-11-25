@@ -40,13 +40,14 @@ type DecodeJSONSoftmaxResult struct {
 	MyCount       int       `json:"myCount"`
 }
 
-var (
+// Softmax provides variables for the softmax calculation
+type Softmax struct {
 	sumResultArray     []float64
 	softmaxResultArray []float64
 	sumResult          float64
 	inputArray         []float64
 	ionCount           int
-)
+}
 
 func main() {
 
@@ -59,16 +60,15 @@ func main() {
 	mSum := messenger.New(0, false)
 	mSoftmax := messenger.New(0, false)
 
-	inputArray = []float64{1, 1, 3}
+	inputArray := []float64{1, 1, 3}
+
+	var data = Softmax{make([]float64, len(inputArray)), make([]float64, len(inputArray)), 0, inputArray, 0}
 
 	var wgSum sync.WaitGroup
 	var wgSoftmax sync.WaitGroup
 	id := 0
 
-	sumResultArray = make([]float64, len(inputArray))
-	softmaxResultArray = make([]float64, len(inputArray))
-
-	go manager(mSum, mSoftmax, &wgSum, &wgSoftmax)
+	go manager(mSum, mSoftmax, &wgSum, &wgSoftmax, &data)
 
 	for {
 		conn, err := ln.Accept()
@@ -77,16 +77,16 @@ func main() {
 		wgSum.Add(1)
 		wgSoftmax.Add(1)
 
-		go handleConnection(conn.(*net.TCPConn), mSum, mSoftmax, &wgSum, &wgSoftmax, id)
+		go handleConnection(conn.(*net.TCPConn), mSum, mSoftmax, &wgSum, &wgSoftmax, id, &data)
 
 		id++
-		ionCount++
+		data.ionCount++
 
 	}
 
 }
 
-func manager(mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup) {
+func manager(mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup, data *Softmax) {
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -99,19 +99,19 @@ func manager(mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sy
 
 	wgSum.Wait()
 
-	for i := 0; i < len(sumResultArray); i++ {
-		sumResult += sumResultArray[i]
+	for i := 0; i < len(data.sumResultArray); i++ {
+		data.sumResult += data.sumResultArray[i]
 	}
 
 	mSoftmax.Broadcast(i)
 
 	wgSoftmax.Wait()
 
-	fmt.Println(softmaxResultArray)
+	fmt.Println(data.softmaxResultArray)
 
 }
 
-func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup, id int) {
+func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *messenger.Messenger, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup, id int, data *Softmax) {
 	var input [512]byte
 
 	n, err := conn.Read(input[0:])
@@ -122,7 +122,7 @@ func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *me
 	msg := <-start
 	_ = msg
 
-	bytes := encodeJSONSumInput(EncodeJSONSumInput{inputArray, ionCount, id})
+	bytes := encodeJSONSumInput(EncodeJSONSumInput{data.inputArray, data.ionCount, id})
 
 	_, err = conn.Write(bytes)
 	checkError(err)
@@ -133,7 +133,7 @@ func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *me
 	sumResultChunk := decodeJSONSumResult(string(input[0:n]))
 
 	for i := 0; i < len(sumResultChunk.SumResult); i++ {
-		sumResultArray[i+(int(math.Ceil(float64(len(inputArray))/float64(ionCount)))*sumResultChunk.MyCount)] = sumResultChunk.SumResult[i]
+		data.sumResultArray[i+(int(math.Ceil(float64(len(data.inputArray))/float64(data.ionCount)))*sumResultChunk.MyCount)] = sumResultChunk.SumResult[i]
 	}
 
 	wgSum.Done()
@@ -143,7 +143,7 @@ func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *me
 	msg = <-start
 	_ = msg
 
-	bytes2 := encodeJSONSoftmaxInput(EncodeJSONSoftmaxInput{inputArray, ionCount, id, sumResult})
+	bytes2 := encodeJSONSoftmaxInput(EncodeJSONSoftmaxInput{data.inputArray, data.ionCount, id, data.sumResult})
 
 	_, err = conn.Write(bytes2)
 	checkError(err)
@@ -154,7 +154,7 @@ func handleConnection(conn *net.TCPConn, mSum *messenger.Messenger, mSoftmax *me
 	softmaxResultChunk := decodeJSONSoftmaxResult(string(input[0:o]))
 
 	for i := 0; i < len(softmaxResultChunk.SoftmaxResult); i++ {
-		softmaxResultArray[i+(int(math.Ceil(float64(len(inputArray))/float64(ionCount)))*softmaxResultChunk.MyCount)] = softmaxResultChunk.SoftmaxResult[i]
+		data.softmaxResultArray[i+(int(math.Ceil(float64(len(data.inputArray))/float64(data.ionCount)))*softmaxResultChunk.MyCount)] = softmaxResultChunk.SoftmaxResult[i]
 	}
 
 	wgSoftmax.Done()
