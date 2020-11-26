@@ -82,7 +82,7 @@ export class SignalingClient extends Service {
   async bind(alias: string) {
     this.logger.info("Binding", { id: this.id, alias });
 
-    return new Promise(async (res, rej) => {
+    return new Promise<void>(async (res, rej) => {
       this.asyncResolver.once(
         this.getAliasKey(this.id, alias),
         (set: boolean) =>
@@ -112,7 +112,7 @@ export class SignalingClient extends Service {
   async shutdown(alias: string) {
     this.logger.info("Shutting down", { id: this.id, alias });
 
-    return new Promise(async (res, rej) => {
+    return new Promise<void>(async (res, rej) => {
       this.asyncResolver.once(
         this.getAliasKey(this.id, alias),
         (set: boolean) =>
