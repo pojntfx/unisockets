@@ -30,10 +30,10 @@ func main() {
 		"int": 123,
 		"float": 1.23,
 		"bool": true,
-		"arr": [1, "foo", {}]
+		"arr": [1.2, 2.0, 1.3]
 }`)
 	fmt.Println(newJSON.GetStringBytes("str"))
-	fmt.Println(newJSON.GetInt("int"))
+	fmt.Println((newJSON.GetFloat64("arr", fmt.Sprintf("%v", 0))))
 
 }
 
