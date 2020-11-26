@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"math"
 	"net"
+
+	"github.com/valyala/fastjson"
 )
 
 // DecodeJSONSumInput decodes JSON sum input
@@ -38,6 +39,7 @@ type EncodeJSONSoftmaxResult struct {
 func main() {
 	var jsonSumInput [512]byte
 	var jsonSoftmaxInput [512]byte
+	var JSONArena fastjson.Arena
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp", "0.0.0.0:3333")
 	checkError(err)
@@ -52,39 +54,65 @@ func main() {
 	checkError(err)
 
 	fmt.Println(string(jsonSumInput[0:n]))
-	a := decodeJSONSumInput(string(jsonSumInput[0:n]))
+
+	a := decodeJSON(string(jsonSumInput[0:n]))
 
 	var jsonSumResult []float64
 
-	for i := int(math.Ceil(float64(len(a.InputArray))/float64(a.IonCount))) * a.MyCount; i < int(math.Ceil(float64(len(a.InputArray))/float64(a.IonCount)))*a.MyCount+int(math.Ceil(float64(len(a.InputArray))/float64(a.IonCount))) && i < len(a.InputArray); i++ {
+	for i := int(math.Ceil(float64(len(a.GetArray("inputArray")))/float64(a.GetInt("ionCount")))) * a.GetInt("myCount"); i < int(math.Ceil(float64(len(a.GetArray("inputArray")))/float64(a.GetInt("ionCount"))))*a.GetInt("myCount")+int(math.Ceil(float64(len(a.GetArray("inputArray")))/float64(a.GetInt("ionCount")))) && i < len(a.GetArray("inputArray")); i++ {
 
-		jsonSumResult = append(jsonSumResult, softmaxSum(a.InputArray[i]))
+		jsonSumResult = append(jsonSumResult, softmaxSum(a.GetFloat64("inputArray", fmt.Sprintf("%v", i))))
 	}
 
-	bytes := encodeJSONSumResult(EncodeJSONSumResult{jsonSumResult, a.MyCount})
+	//bytes := encodeJSONSumResult(EncodeJSONSumResult{jsonSumResult, a.MyCount})
+	output := JSONArena.NewObject()
 
-	fmt.Println(string(bytes))
+	jsonSumResultArray := JSONArena.NewArray()
 
-	_, err = conn.Write(bytes)
+	for i := 0; i < len(jsonSumResult); i++ {
+		jsonSumResultArray.SetArrayItem(i, JSONArena.NewNumberFloat64(jsonSumResult[i]))
+	}
+
+	// Hier noch output setten
+	output.Set("sumResult", jsonSumResultArray)
+	output.Set("myCount", JSONArena.NewNumberInt(a.GetInt("myCount")))
+
+	outputDecoded := output.MarshalTo([]byte{})
+
+	fmt.Println(string(outputDecoded))
+
+	_, err = conn.Write(outputDecoded)
 	checkError(err)
 
 	o, err := conn.Read(jsonSoftmaxInput[0:])
 	checkError(err)
 
-	b := decodeJSONSoftmaxInput(string(jsonSoftmaxInput[0:o]))
+	b := decodeJSON(string(jsonSoftmaxInput[0:o]))
 
 	var jsonSoftmaxResult []float64
 
-	for i := int(math.Ceil(float64(len(b.InputArray))/float64(b.IonCount))) * b.MyCount; i < int(math.Ceil(float64(len(b.InputArray))/float64(b.IonCount)))*b.MyCount+int(math.Ceil(float64(len(b.InputArray))/float64(b.IonCount))) && i < len(b.InputArray); i++ {
+	for i := int(math.Ceil(float64(len(b.GetArray("inputArray")))/float64(b.GetInt("ionCount")))) * b.GetInt("myCount"); i < int(math.Ceil(float64(len(b.GetArray("inputArray")))/float64(b.GetInt("ionCount"))))*b.GetInt("myCount")+int(math.Ceil(float64(len(b.GetArray("inputArray")))/float64(b.GetInt("ionCount")))) && i < len(b.GetArray("inputArray")); i++ {
 
-		jsonSoftmaxResult = append(jsonSoftmaxResult, softmaxResult(b.Sum, b.InputArray[i]))
+		jsonSoftmaxResult = append(jsonSoftmaxResult, softmaxResult(b.GetFloat64("sum"), a.GetFloat64("inputArray", fmt.Sprintf("%v", i))))
 	}
 
-	bytes2 := encodeJSONSoftmaxResult(EncodeJSONSoftmaxResult{jsonSoftmaxResult, b.MyCount})
+	//bytes2 := encodeJSONSoftmaxResult(EncodeJSONSoftmaxResult{jsonSoftmaxResult, b.MyCount})
+	output2 := JSONArena.NewObject()
 
-	fmt.Println(string(bytes2))
+	jsonSoftmaxResultArray := JSONArena.NewArray()
 
-	_, err = conn.Write(bytes2)
+	for i := 0; i < len(jsonSoftmaxResult); i++ {
+		jsonSoftmaxResultArray.SetArrayItem(i, JSONArena.NewNumberFloat64(jsonSoftmaxResult[i]))
+	}
+
+	output2.Set("softmaxResult", jsonSoftmaxResultArray)
+	output2.Set("myCount", JSONArena.NewNumberInt(a.GetInt("myCount")))
+
+	outputDecoded2 := output2.MarshalTo([]byte{})
+
+	fmt.Println(string(outputDecoded2))
+
+	_, err = conn.Write(outputDecoded2)
 	checkError(err)
 }
 
@@ -102,48 +130,57 @@ func checkError(err error) {
 	}
 }
 
-func decodeJSONSumInput(input string) DecodeJSONSumInput {
+// func decodeJSONSumInput(input string) DecodeJSONSumInput {
 
-	rawIn := json.RawMessage(input)
+// 	rawIn := json.RawMessage(input)
 
-	bytes, err := rawIn.MarshalJSON()
+// 	bytes, err := rawIn.MarshalJSON()
+// 	checkError(err)
+
+// 	var d DecodeJSONSumInput
+
+// 	err = json.Unmarshal(bytes, &d)
+// 	checkError(err)
+
+// 	return d
+// }
+
+// func encodeJSONSumResult(s EncodeJSONSumResult) []byte {
+
+// 	bytes, err := json.Marshal(s)
+// 	checkError(err)
+
+// 	return bytes
+// }
+
+// func decodeJSONSoftmaxInput(input string) DecodeJSONSoftmaxInput {
+
+// 	rawIn := json.RawMessage(input)
+
+// 	bytes, err := rawIn.MarshalJSON()
+// 	checkError(err)
+
+// 	var d DecodeJSONSoftmaxInput
+
+// 	err = json.Unmarshal(bytes, &d)
+// 	checkError(err)
+
+// 	return d
+// }
+
+// func encodeJSONSoftmaxResult(s EncodeJSONSoftmaxResult) []byte {
+
+// 	bytes, err := json.Marshal(s)
+// 	checkError(err)
+
+// 	return bytes
+// }
+
+func decodeJSON(input string) *fastjson.Value {
+
+	var p fastjson.Parser
+	v, err := p.Parse(input)
 	checkError(err)
 
-	var d DecodeJSONSumInput
-
-	err = json.Unmarshal(bytes, &d)
-	checkError(err)
-
-	return d
-}
-
-func encodeJSONSumResult(s EncodeJSONSumResult) []byte {
-
-	bytes, err := json.Marshal(s)
-	checkError(err)
-
-	return bytes
-}
-
-func decodeJSONSoftmaxInput(input string) DecodeJSONSoftmaxInput {
-
-	rawIn := json.RawMessage(input)
-
-	bytes, err := rawIn.MarshalJSON()
-	checkError(err)
-
-	var d DecodeJSONSoftmaxInput
-
-	err = json.Unmarshal(bytes, &d)
-	checkError(err)
-
-	return d
-}
-
-func encodeJSONSoftmaxResult(s EncodeJSONSoftmaxResult) []byte {
-
-	bytes, err := json.Marshal(s)
-	checkError(err)
-
-	return bytes
+	return v
 }
