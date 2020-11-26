@@ -51,6 +51,7 @@ func main() {
 	n, err := conn.Read(jsonSumInput[0:])
 	checkError(err)
 
+	fmt.Println(string(jsonSumInput[0:n]))
 	a := decodeJSONSumInput(string(jsonSumInput[0:n]))
 
 	var jsonSumResult []float64

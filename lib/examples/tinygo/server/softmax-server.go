@@ -2,13 +2,14 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math"
 	"net"
 	"os"
 	"sync"
+
+	"github.com/valyala/fastjson"
 )
 
 // DecodeJSONSumResult decodes JSON sum results
@@ -56,7 +57,7 @@ func main() {
 	checkError(err)
 
 	inputArray := []float64{1, 1, 3}
-
+	fmt.Println(inputArray)
 	var data = Softmax{make([]float64, len(inputArray)), make([]float64, len(inputArray)), 0, inputArray, 0}
 
 	var wgSum sync.WaitGroup
@@ -118,37 +119,41 @@ func handleConnection(conn *net.TCPConn, wgSum *sync.WaitGroup, wgSoftmax *sync.
 	checkError(err)
 
 	wgStart.Wait()
-
-	bytes := encodeJSONSumInput(EncodeJSONSumInput{data.inputArray, data.ionCount, id})
-
-	_, err = conn.Write(bytes)
+	fmt.Println(data.inputArray)
+	//bytes := encodeJSONSumInput(EncodeJSONSumInput{data.inputArray, data.ionCount, id})
+	str := fmt.Sprintf(`{"inputArray": %v, "ionCount": %v, "myCount": %v}`, data.inputArray, data.ionCount, id)
+	fmt.Println(str)
+	_, err = conn.Write([]byte(str))
 	checkError(err)
 
 	n, err = conn.Read(input[0:])
 	checkError(err)
 
-	sumResultChunk := decodeJSONSumResult(string(input[0:n]))
+	sumResultChunk := decodeJSON(string(input[0:n]))
 
-	for i := 0; i < len(sumResultChunk.SumResult); i++ {
-		data.sumResultArray[i+(int(math.Ceil(float64(len(data.inputArray))/float64(data.ionCount)))*sumResultChunk.MyCount)] = sumResultChunk.SumResult[i]
+	fmt.Println(sumResultChunk)
+
+	for i := 0; i < len(sumResultChunk.GetArray("sumResult")); i++ {
+		data.sumResultArray[i+(int(math.Ceil(float64(len(data.inputArray))/float64(data.ionCount)))*sumResultChunk.GetInt("myCount"))] = sumResultChunk.GetFloat64("sumResult", fmt.Sprintf("%v", i))
 	}
 
 	wgSum.Done()
 
 	wgStart2.Wait()
 
-	bytes2 := encodeJSONSoftmaxInput(EncodeJSONSoftmaxInput{data.inputArray, data.ionCount, id, data.sumResult})
+	//bytes2 := encodeJSONSoftmaxInput(EncodeJSONSoftmaxInput{data.inputArray, data.ionCount, id, data.sumResult})
+	str2 := fmt.Sprintf(`{"inputArray": %v, "ionCount": %v, "myCount": %v, "sum": %v}`, data.inputArray, data.ionCount, id, data.sumResult)
 
-	_, err = conn.Write(bytes2)
+	_, err = conn.Write([]byte(str2))
 	checkError(err)
 
 	o, err := conn.Read(input[0:])
 	checkError(err)
 
-	softmaxResultChunk := decodeJSONSoftmaxResult(string(input[0:o]))
+	softmaxResultChunk := decodeJSON(string(input[0:o]))
 
-	for i := 0; i < len(softmaxResultChunk.SoftmaxResult); i++ {
-		data.softmaxResultArray[i+(int(math.Ceil(float64(len(data.inputArray))/float64(data.ionCount)))*softmaxResultChunk.MyCount)] = softmaxResultChunk.SoftmaxResult[i]
+	for i := 0; i < len(softmaxResultChunk.GetArray("softmaxResult")); i++ {
+		data.softmaxResultArray[i+(int(math.Ceil(float64(len(data.inputArray))/float64(data.ionCount)))*softmaxResultChunk.GetInt("myCount"))] = softmaxResultChunk.GetFloat64("softmaxResult", fmt.Sprintf("%v", i))
 	}
 
 	wgSoftmax.Done()
@@ -160,47 +165,41 @@ func checkError(err error) {
 	}
 }
 
-func decodeJSONSumResult(input string) DecodeJSONSumResult {
-	rawIn := json.RawMessage(input)
+// func decodeJSONSumResult(input string) DecodeJSONSumResult {
+// 	rawIn := json.RawMessage(input)
 
-	bytes, err := rawIn.MarshalJSON()
+// 	bytes, err := rawIn.MarshalJSON()
+// 	checkError(err)
+
+// 	var d DecodeJSONSumResult
+
+// 	err = json.Unmarshal(bytes, &d)
+// 	checkError(err)
+
+// 	return d
+// }
+
+// func encodeJSONSumInput(s EncodeJSONSumInput) []byte {
+
+// 	bytes, err := json.Marshal(s)
+// 	checkError(err)
+
+// 	return bytes
+// }
+
+// func encodeJSONSoftmaxInput(s EncodeJSONSoftmaxInput) []byte {
+
+// 	bytes, err := json.Marshal(s)
+// 	checkError(err)
+
+// 	return bytes
+// }
+
+func decodeJSON(input string) *fastjson.Value {
+
+	var p fastjson.Parser
+	v, err := p.Parse(input)
 	checkError(err)
 
-	var d DecodeJSONSumResult
-
-	err = json.Unmarshal(bytes, &d)
-	checkError(err)
-
-	return d
-}
-
-func encodeJSONSumInput(s EncodeJSONSumInput) []byte {
-
-	bytes, err := json.Marshal(s)
-	checkError(err)
-
-	return bytes
-}
-
-func encodeJSONSoftmaxInput(s EncodeJSONSoftmaxInput) []byte {
-
-	bytes, err := json.Marshal(s)
-	checkError(err)
-
-	return bytes
-}
-
-func decodeJSONSoftmaxResult(input string) DecodeJSONSoftmaxResult {
-
-	rawIn := json.RawMessage(input)
-
-	bytes, err := rawIn.MarshalJSON()
-	checkError(err)
-
-	var d DecodeJSONSoftmaxResult
-
-	err = json.Unmarshal(bytes, &d)
-	checkError(err)
-
-	return d
+	return v
 }
