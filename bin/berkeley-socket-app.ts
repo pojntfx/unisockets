@@ -203,7 +203,7 @@ const handleExternalRecv = async (alias: string) => {
   if (aliases.has(alias)) {
     const msg = await transporter.recv(aliases.get(alias)!); // .has
 
-    logger.info("Handling external rev", { alias, msg });
+    logger.info("Handling external recv", { alias, msg });
 
     return msg;
   } else {
@@ -240,6 +240,34 @@ ready.once("ready", async () => {
         env: {
           ...tinyGoEnvImports,
           ...socketEnvImports,
+          berkeley_sockets_accept: async (
+            fd: number,
+            addressPointer: number,
+            addressLengthPointer: number
+          ) => {
+            instance.exports.go_scheduler();
+
+            const res = await socketEnvImports.berkeley_sockets_accept(
+              fd,
+              addressPointer,
+              addressLengthPointer
+            );
+
+            return res;
+          },
+          berkeley_sockets_recv: async (
+            fd: number,
+            messagePointer: number,
+            messagePointerLength: number
+          ) => {
+            instance.exports.go_scheduler();
+
+            return await socketEnvImports.berkeley_sockets_recv(
+              fd,
+              messagePointer,
+              messagePointerLength
+            );
+          },
         },
       }
     );

@@ -12,6 +12,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
+	"time"
 	"unsafe"
 )
 
@@ -25,6 +26,13 @@ const (
 	SENT_MESSAGE_MAX_LENGTH     = 1038
 	MAX_CLIENTS                 = 5
 )
+
+type Client struct {
+	Socket          C.int
+	Address         C.sockaddr_in
+	AddressLength   C.uint
+	AddressReadable string
+}
 
 func main() {
 	// Create address
@@ -55,6 +63,7 @@ func main() {
 
 	log.Println("[INFO] Listening on", serverAddressReadable)
 
+	// Accept loop
 	for {
 		log.Println("[DEBUG] Accepting on", serverAddressReadable)
 
@@ -69,8 +78,6 @@ func main() {
 			continue
 		}
 
-		// TODO: Make asynchronous like in Go
-		// go func() {
 		clientHost := make([]byte, 4) // xxx.xxx.xxx.xxx
 		binary.LittleEndian.PutUint32(clientHost, uint32(clientAddress.sin_addr.s_addr))
 
@@ -78,42 +85,19 @@ func main() {
 
 		log.Println("[INFO] Accepted client", clientAddressReadable)
 
-		for {
-			log.Println("[DEBUG] Waiting for client to send")
+		go func(innerClient Client) {
+			// Receive loop
+			for {
+				log.Printf("[DEBUG] Waiting for client %v to send\n", innerClient.AddressReadable)
 
-			// Receive
-			receivedMessage := CString(string(make([]byte, RECEIVED_MESSAGE_MAX_LENGTH)))
-			defer C.free(unsafe.Pointer(receivedMessage))
-
-			receivedMessageLength := C.berkeley_sockets_recv(clientSocket, unsafe.Pointer(receivedMessage), C.ulong(RECEIVED_MESSAGE_MAX_LENGTH), 0)
-			if receivedMessageLength == -1 {
-				log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, receivedMessageLength)
-
-				continue
+				time.Sleep(time.Second)
 			}
-
-			if receivedMessageLength == 0 {
-				break
-			}
-
-			log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
-
-			// Send
-			sentMessage := CString(fmt.Sprintf("You've sent: %v", GoString(receivedMessage)))
-			defer C.free(unsafe.Pointer(sentMessage))
-
-			sentMessageLength := C.berkeley_sockets_send(clientSocket, unsafe.Pointer(sentMessage), C.strlen(sentMessage), 0)
-			if sentMessageLength == -1 {
-				log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, sentMessageLength)
-
-				continue
-			}
-
-			log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, clientAddressReadable)
-		}
-
-		log.Println("[INFO] Disconnected from client", clientAddressReadable)
-		// }()
+		}(Client{
+			Socket:          clientSocket,
+			Address:         clientAddress,
+			AddressLength:   clientAddressLength,
+			AddressReadable: clientAddressReadable,
+		})
 	}
 }
 
