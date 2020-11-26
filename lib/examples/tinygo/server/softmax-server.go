@@ -57,7 +57,7 @@ func main() {
 	checkError(err)
 
 	inputArray := []float64{1, 1, 3}
-	fmt.Println(inputArray)
+	//fmt.Println(inputArray)
 	var data = Softmax{make([]float64, len(inputArray)), make([]float64, len(inputArray)), 0, inputArray, 0}
 
 	var wgSum sync.WaitGroup
@@ -114,16 +114,38 @@ func manager(wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup, data *Softmax, wg
 
 func handleConnection(conn *net.TCPConn, wgSum *sync.WaitGroup, wgSoftmax *sync.WaitGroup, id int, data *Softmax, wgStart *sync.WaitGroup, wgStart2 *sync.WaitGroup) {
 	var input [512]byte
+	//var JSONParser fastjson.Parser
+	var JSONArena fastjson.Arena
 
 	n, err := conn.Read(input[0:])
 	checkError(err)
 
 	wgStart.Wait()
-	fmt.Println(data.inputArray)
+	//fmt.Println(data.inputArray)
+
+	output := JSONArena.NewObject()
+
+	inputArray := JSONArena.NewArray()
+
+	for i := 0; i < len(data.inputArray); i++ {
+		inputArray.SetArrayItem(i, JSONArena.NewNumberFloat64(data.inputArray[i]))
+	}
+
+	output.Set("inputArray", inputArray)
+	output.Set("ionCount", JSONArena.NewNumberInt(data.ionCount))
+	output.Set("myCount", JSONArena.NewNumberInt(id))
+
+	outputEncoded := output.MarshalTo([]byte{})
+	// Hier sollte optimalerweise der normale Array irgendwie eingebracht werden
+	//newJSON := decodeJSON(`{"arr": [1,1,3]}`)
+	//fmt.Println(string(newJSON.Get("arr").MarshalTo(nil)))
 	//bytes := encodeJSONSumInput(EncodeJSONSumInput{data.inputArray, data.ionCount, id})
-	str := fmt.Sprintf(`{"inputArray": %v, "ionCount": %v, "myCount": %v}`, data.inputArray, data.ionCount, id)
-	fmt.Println(str)
-	_, err = conn.Write([]byte(str))
+	//str := fmt.Sprintf(`{"inputArray": %v, "ionCount": %v, "myCount": %v}`, string(newJSON.Get("arr").MarshalTo(nil)), data.ionCount, id)
+	//fmt.Println(str)
+
+	fmt.Println(string(outputEncoded))
+
+	_, err = conn.Write(outputEncoded)
 	checkError(err)
 
 	n, err = conn.Read(input[0:])
@@ -131,7 +153,7 @@ func handleConnection(conn *net.TCPConn, wgSum *sync.WaitGroup, wgSoftmax *sync.
 
 	sumResultChunk := decodeJSON(string(input[0:n]))
 
-	fmt.Println(sumResultChunk)
+	//fmt.Println(sumResultChunk)
 
 	for i := 0; i < len(sumResultChunk.GetArray("sumResult")); i++ {
 		data.sumResultArray[i+(int(math.Ceil(float64(len(data.inputArray))/float64(data.ionCount)))*sumResultChunk.GetInt("myCount"))] = sumResultChunk.GetFloat64("sumResult", fmt.Sprintf("%v", i))
@@ -142,15 +164,28 @@ func handleConnection(conn *net.TCPConn, wgSum *sync.WaitGroup, wgSoftmax *sync.
 	wgStart2.Wait()
 
 	//bytes2 := encodeJSONSoftmaxInput(EncodeJSONSoftmaxInput{data.inputArray, data.ionCount, id, data.sumResult})
-	str2 := fmt.Sprintf(`{"inputArray": %v, "ionCount": %v, "myCount": %v, "sum": %v}`, data.inputArray, data.ionCount, id, data.sumResult)
+	//str2 := fmt.Sprintf(`{"inputArray": %v, "ionCount": %v, "myCount": %v, "sum": %v}`, string(newJSON.Get("arr").MarshalTo(nil)), data.ionCount, id, data.sumResult)
 
-	_, err = conn.Write([]byte(str2))
+	output2 := JSONArena.NewObject()
+
+	output2.Set("inputArray", inputArray)
+	output2.Set("ionCount", JSONArena.NewNumberInt(data.ionCount))
+	output2.Set("myCount", JSONArena.NewNumberInt(id))
+	output2.Set("sum", JSONArena.NewNumberFloat64(data.sumResult))
+
+	outputDecoded2 := output2.MarshalTo([]byte{})
+
+	fmt.Println(string(outputDecoded2))
+
+	_, err = conn.Write([]byte(outputDecoded2))
 	checkError(err)
 
 	o, err := conn.Read(input[0:])
 	checkError(err)
 
 	softmaxResultChunk := decodeJSON(string(input[0:o]))
+
+	fmt.Println(string(input[0:o]))
 
 	for i := 0; i < len(softmaxResultChunk.GetArray("softmaxResult")); i++ {
 		data.softmaxResultArray[i+(int(math.Ceil(float64(len(data.inputArray))/float64(data.ionCount)))*softmaxResultChunk.GetInt("myCount"))] = softmaxResultChunk.GetFloat64("softmaxResult", fmt.Sprintf("%v", i))
