@@ -71,32 +71,54 @@ func main() {
 			continue
 		}
 
-		clientHost := make([]byte, 4) // xxx.xxx.xxx.xxx
-		binary.LittleEndian.PutUint32(clientHost, uint32(clientAddress.sin_addr.s_addr))
+		go func() {
+			clientHost := make([]byte, 4) // xxx.xxx.xxx.xxx
+			binary.LittleEndian.PutUint32(clientHost, uint32(clientAddress.sin_addr.s_addr))
 
-		clientAddressReadable := fmt.Sprintf("%v:%v", clientHost, clientAddress.sin_port)
+			clientAddressReadable := fmt.Sprintf("%v:%v", clientHost, clientAddress.sin_port)
 
-		log.Println("[INFO] Accepted client", clientAddressReadable)
+			log.Println("[INFO] Accepted client", clientAddressReadable)
 
-		for {
-			log.Println("[DEBUG] Waiting for client to send")
+			for {
+				log.Println("[DEBUG] Waiting for client to send")
 
-			// Receive
-			receivedMessage := C.CString(string(make([]byte, RECEIVED_MESSAGE_MAX_LENGTH)))
-			defer C.free(unsafe.Pointer(receivedMessage))
+				// Receive
+				receivedMessage := C.CString(string(make([]byte, RECEIVED_MESSAGE_MAX_LENGTH)))
+				defer C.free(unsafe.Pointer(receivedMessage))
 
-			receivedMessageLength, err := C.recv(clientSocket, unsafe.Pointer(receivedMessage), C.ulong(RECEIVED_MESSAGE_MAX_LENGTH), 0)
-			if err != nil {
-				log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, err)
+				receivedMessageLength, err := C.recv(clientSocket, unsafe.Pointer(receivedMessage), C.ulong(RECEIVED_MESSAGE_MAX_LENGTH), 0)
+				if err != nil {
+					log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, err)
 
-				continue
+					continue
+				}
+
+				if receivedMessageLength == 0 {
+					break
+				}
+
+				log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
+
+				// Send
+				sentMessage := C.CString(fmt.Sprintf("You've sent: %v", C.GoString(receivedMessage)))
+				defer C.free(unsafe.Pointer(sentMessage))
+
+				sentMessageLength, err := C.send(clientSocket, unsafe.Pointer(sentMessage), C.strlen(sentMessage), 0)
+				if err != nil {
+					log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, err)
+
+					continue
+				}
+
+				log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, clientAddressReadable)
 			}
 
-			if receivedMessageLength == 0 {
-				break
-			}
+			log.Println("[INFO] Disconnected from client", clientAddressReadable)
 
-			log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
-		}
+			// Shutdown
+			if _, err := C.shutdown(clientSocket, C.SHUT_RDWR); err != nil {
+				log.Println("[ERROR] Could not shutdown client socket, continuing:", err)
+			}
+		}()
 	}
 }
