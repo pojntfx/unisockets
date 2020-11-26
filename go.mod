@@ -2,4 +2,7 @@ module github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/lib/examples/g
 
 go 1.15
 
-require github.com/ugjka/messenger v1.1.3
+require (
+	github.com/ugjka/messenger v1.1.3
+	github.com/valyala/fastjson v1.6.3
+)
