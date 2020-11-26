@@ -64,7 +64,7 @@ func main() {
 		clientAddressLength := C.uint(unsafe.Sizeof(clientAddress))
 
 		// Accept
-		_, err := C.accept(serverSocket, (*C.sockaddr)(unsafe.Pointer(&clientAddress)), &clientAddressLength)
+		clientSocket, err := C.accept(serverSocket, (*C.sockaddr)(unsafe.Pointer(&clientAddress)), &clientAddressLength)
 		if err != nil {
 			log.Println("[ERROR] Could not accept, continuing:", err)
 
@@ -77,5 +77,26 @@ func main() {
 		clientAddressReadable := fmt.Sprintf("%v:%v", clientHost, clientAddress.sin_port)
 
 		log.Println("[INFO] Accepted client", clientAddressReadable)
+
+		for {
+			log.Println("[DEBUG] Waiting for client to send")
+
+			// Receive
+			receivedMessage := C.CString(string(make([]byte, RECEIVED_MESSAGE_MAX_LENGTH)))
+			defer C.free(unsafe.Pointer(receivedMessage))
+
+			receivedMessageLength, err := C.recv(clientSocket, unsafe.Pointer(receivedMessage), C.ulong(RECEIVED_MESSAGE_MAX_LENGTH), 0)
+			if err != nil {
+				log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, err)
+
+				continue
+			}
+
+			if receivedMessageLength == 0 {
+				break
+			}
+
+			log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
+		}
 	}
 }
