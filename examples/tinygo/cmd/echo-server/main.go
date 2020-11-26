@@ -12,7 +12,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
-	"time"
 	"unsafe"
 )
 
@@ -90,8 +89,42 @@ func main() {
 			for {
 				log.Printf("[DEBUG] Waiting for client %v to send\n", innerClient.AddressReadable)
 
-				time.Sleep(time.Second)
+				// Receive
+				// TODO: Prevent problematic async unwind
+				receivedMessage := CString(string(make([]byte, RECEIVED_MESSAGE_MAX_LENGTH)))
+				defer C.free(unsafe.Pointer(receivedMessage))
+
+				receivedMessageLength := C.berkeley_sockets_recv(innerClient.Socket, unsafe.Pointer(receivedMessage), C.ulong(RECEIVED_MESSAGE_MAX_LENGTH), 0)
+				if receivedMessageLength == -1 {
+					log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", innerClient.AddressReadable, receivedMessageLength)
+
+					continue
+				}
+
+				if receivedMessageLength == 0 {
+					break
+				}
+
+				log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, innerClient.AddressReadable)
+
+				// Send routine
+				go func(nestedClient Client, nestedReceivedMessage string) {
+					// Send
+					sentMessage := CString(fmt.Sprintf("You've sent: %v", nestedReceivedMessage))
+					defer C.free(unsafe.Pointer(sentMessage))
+
+					sentMessageLength := C.berkeley_sockets_send(nestedClient.Socket, unsafe.Pointer(sentMessage), C.strlen(sentMessage), 0)
+					if sentMessageLength == -1 {
+						log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", nestedClient.AddressReadable, sentMessageLength)
+
+						return
+					}
+
+					log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, nestedClient.AddressReadable)
+				}(innerClient, GoString(receivedMessage))
 			}
+
+			log.Println("[INFO] Disconnected from client", innerClient.AddressReadable)
 		}(Client{
 			Socket:          clientSocket,
 			Address:         clientAddress,
