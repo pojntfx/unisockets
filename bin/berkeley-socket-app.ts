@@ -12,7 +12,6 @@ import { getLogger } from "../lib/utils/logger";
 const Go = require("../vendor/tinygo/wasm_exec");
 
 const TEST_SUBNET = "10.0.0";
-const TEST_ALIAS = `${TEST_SUBNET}.240:42069`;
 
 const transporterConfig: ExtendedRTCConfiguration = {
   iceServers: [
@@ -34,7 +33,7 @@ const { raddr, reconnectDuration, testBind, testTinyGo } = yargs(
     default: 1000,
   },
   testBind: {
-    description: `Bind to ${TEST_ALIAS} alias for testing purposes; all clients will try to connect to this test alias`,
+    description: "Run the server implementation",
     default: false,
   },
   testTinyGo: {
@@ -82,7 +81,6 @@ const handleAcknowledgement = async (id: string, rejected: boolean) => {
   if (rejected) {
     logger.error("Knock rejected", {
       id,
-      remoteAlias: TEST_ALIAS,
     });
   }
 
@@ -233,7 +231,7 @@ ready.once("ready", async () => {
     const instance = await Asyncify.instantiate(
       await WebAssembly.compile(
         testBind
-          ? fs.readFileSync("./examples/c/echo_server.wasm") // TODO: Replace with TinyGo implementation once ready
+          ? fs.readFileSync("./examples/tinygo/echo_server.wasm") // TODO: Replace with TinyGo implementation once ready
           : fs.readFileSync("./examples/tinygo/echo_client.wasm")
       ),
       {
