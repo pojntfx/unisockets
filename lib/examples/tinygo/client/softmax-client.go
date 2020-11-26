@@ -53,8 +53,6 @@ func main() {
 	n, err := conn.Read(jsonSumInput[0:])
 	checkError(err)
 
-	fmt.Println(string(jsonSumInput[0:n]))
-
 	a := decodeJSON(string(jsonSumInput[0:n]))
 
 	var jsonSumResult []float64
@@ -64,7 +62,6 @@ func main() {
 		jsonSumResult = append(jsonSumResult, softmaxSum(a.GetFloat64("inputArray", fmt.Sprintf("%v", i))))
 	}
 
-	//bytes := encodeJSONSumResult(EncodeJSONSumResult{jsonSumResult, a.MyCount})
 	output := JSONArena.NewObject()
 
 	jsonSumResultArray := JSONArena.NewArray()
@@ -73,7 +70,6 @@ func main() {
 		jsonSumResultArray.SetArrayItem(i, JSONArena.NewNumberFloat64(jsonSumResult[i]))
 	}
 
-	// Hier noch output setten
 	output.Set("sumResult", jsonSumResultArray)
 	output.Set("myCount", JSONArena.NewNumberInt(a.GetInt("myCount")))
 
@@ -96,7 +92,6 @@ func main() {
 		jsonSoftmaxResult = append(jsonSoftmaxResult, softmaxResult(b.GetFloat64("sum"), a.GetFloat64("inputArray", fmt.Sprintf("%v", i))))
 	}
 
-	//bytes2 := encodeJSONSoftmaxResult(EncodeJSONSoftmaxResult{jsonSoftmaxResult, b.MyCount})
 	output2 := JSONArena.NewObject()
 
 	jsonSoftmaxResultArray := JSONArena.NewArray()
@@ -129,52 +124,6 @@ func checkError(err error) {
 		log.Fatal(err)
 	}
 }
-
-// func decodeJSONSumInput(input string) DecodeJSONSumInput {
-
-// 	rawIn := json.RawMessage(input)
-
-// 	bytes, err := rawIn.MarshalJSON()
-// 	checkError(err)
-
-// 	var d DecodeJSONSumInput
-
-// 	err = json.Unmarshal(bytes, &d)
-// 	checkError(err)
-
-// 	return d
-// }
-
-// func encodeJSONSumResult(s EncodeJSONSumResult) []byte {
-
-// 	bytes, err := json.Marshal(s)
-// 	checkError(err)
-
-// 	return bytes
-// }
-
-// func decodeJSONSoftmaxInput(input string) DecodeJSONSoftmaxInput {
-
-// 	rawIn := json.RawMessage(input)
-
-// 	bytes, err := rawIn.MarshalJSON()
-// 	checkError(err)
-
-// 	var d DecodeJSONSoftmaxInput
-
-// 	err = json.Unmarshal(bytes, &d)
-// 	checkError(err)
-
-// 	return d
-// }
-
-// func encodeJSONSoftmaxResult(s EncodeJSONSoftmaxResult) []byte {
-
-// 	bytes, err := json.Marshal(s)
-// 	checkError(err)
-
-// 	return bytes
-// }
 
 func decodeJSON(input string) *fastjson.Value {
 
