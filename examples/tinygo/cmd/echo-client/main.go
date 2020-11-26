@@ -24,7 +24,7 @@ const (
 	REMOTE_PORT                 = 1234
 	RECONNECT_TIMEOUT           = time.Second
 	RECEIVED_MESSAGE_MAX_LENGTH = 1038
-	TEST_MESSAGE                = "Test Message" // No stdin support yet
+	TEST_MESSAGE                = "Test Message\n" // No stdin support yet
 )
 
 func main() {

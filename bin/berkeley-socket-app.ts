@@ -247,13 +247,11 @@ ready.once("ready", async () => {
           ) => {
             instance.exports.go_scheduler();
 
-            const res = await socketEnvImports.berkeley_sockets_accept(
+            return await socketEnvImports.berkeley_sockets_accept(
               fd,
               addressPointer,
               addressLengthPointer
             );
-
-            return res;
           },
           berkeley_sockets_recv: async (
             fd: number,
