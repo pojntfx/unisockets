@@ -225,18 +225,36 @@ const sockets = new Sockets(
 
 const wasi = new WASI();
 
+let acceptCount = 0;
+
 if (testAsync) {
   (async () => {
+    const go = new Go();
+    const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
+
     const instance = await WebAssembly.instantiate(
       await WebAssembly.compile(
         fs.readFileSync("./examples/tinygo/async_echo_server.wasm")
       ),
       {
         wasi_unstable: wasi.wasiImport,
+        ...tinyGoImports,
+        env: {
+          ...tinyGoEnvImports,
+          "command-line-arguments.triggerAccept": () => {
+            (async () => {
+              await new Promise((res) => setTimeout(res, 1000));
+
+              acceptCount++;
+
+              (instance.exports as any).resolveAccept(acceptCount);
+            })();
+          },
+        },
       }
     );
 
-    wasi.start(instance);
+    go.run(instance);
   })();
 } else {
   ready.once("ready", async () => {
