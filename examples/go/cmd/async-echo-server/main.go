@@ -1,8 +1,19 @@
 package main
 
 import (
+	"encoding/binary"
+	"fmt"
 	"log"
 	"syscall/js"
+	"unsafe"
+)
+
+var (
+	LOCAL_HOST = []byte{10, 0, 0, 240}
+)
+
+const (
+	LOCAL_PORT = 1234
 )
 
 var (
@@ -13,6 +24,14 @@ const (
 	PF_INET     = 2
 	SOCK_STREAM = 1
 )
+
+type sockaddrIn struct {
+	sinFamily uint16
+	sinPort   uint16
+	sinAddr   struct {
+		sAddr uint32
+	}
+}
 
 func socket(socketDomain int, socketType int, socketProtocol int) int {
 	rvChan := make(chan int)
@@ -28,14 +47,47 @@ func socket(socketDomain int, socketType int, socketProtocol int) int {
 	return rv
 }
 
+func bind(socketFd int, socketAddr *sockaddrIn) int {
+	rvChan := make(chan int)
+
+	go berkeley_sockets.Call("berkeley_sockets_bind", socketFd, unsafe.Pointer(socketAddr), uint32(unsafe.Sizeof(socketAddr))).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		rvChan <- args[0].Int()
+
+		return nil
+	}))
+
+	rv := <-rvChan
+
+	return rv
+}
+
+func htons(v uint16) uint16 {
+	return (v >> 8) | (v << 8)
+}
+
 func main() {
 	// Create address
+	serverAddress := sockaddrIn{
+		sinFamily: PF_INET,
+		sinPort:   htons(LOCAL_PORT),
+		sinAddr: struct{ sAddr uint32 }{
+			sAddr: uint32(binary.LittleEndian.Uint32(LOCAL_HOST)),
+		},
+	}
+	serverAddressReadable := fmt.Sprintf("%v:%v", LOCAL_HOST, LOCAL_PORT)
+
+	// Create socket
 	serverSocket := socket(PF_INET, SOCK_STREAM, 0)
 	if serverSocket == -1 {
-		log.Fatal("[ERROR] Could not create socket:", serverSocket)
+		log.Fatalf("[ERROR] Could not create socket %v:", serverAddressReadable, serverSocket)
 	}
 
-	log.Println("fd", serverSocket)
+	// Bind
+	if err := bind(serverSocket, &serverAddress); err == -1 {
+		log.Fatalf("[ERROR] Could not bind socket %v:", serverAddressReadable, err)
+	}
+
+	log.Println(serverAddressReadable)
 
 	select {}
 }
