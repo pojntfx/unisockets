@@ -10,6 +10,7 @@ build: \
 	build-c-echo_server-native \
 	build-go-echo_client-native \
 	build-go-echo_server-native \
+	build-go-async_echo_server-wasm \
     build-tinygo-echo_client-wasm \
 	build-tinygo-echo_server-wasm \
 	build-tinygo-async_echo_server-wasm
@@ -32,6 +33,9 @@ build-go-echo_client-native:
 build-go-echo_server-native:
 	@docker run -v ${PWD}/examples/go:/examples/go:z golang sh -c 'cd /examples/go && go build -o echo_server ./cmd/echo-server/main.go'
 
+build-go-async_echo_server-wasm:
+	@docker run -v ${PWD}/examples/go:/examples/go:z -e GOOS=js -e GOARCH=wasm golang sh -c 'cd /examples/go && go build -o async_echo_server.wasm ./cmd/async-echo-server/main.go'
+
 build-tinygo-echo_client-wasm: build-container-wasi-sdk
 	@docker run -v ${PWD}/examples/tinygo:/examples/tinygo:z tinygo/tinygo sh -c 'cd /examples/tinygo && tinygo build -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o echo_client_original.wasm ./cmd/echo-client/main.go'
 	@docker run -v ${PWD}/examples/tinygo:/examples/tinygo:z pojntfx/wasi-sdk sh -c 'cd /examples/tinygo && wasm-opt --asyncify -O echo_client_original.wasm -o echo_client.wasm'
@@ -50,6 +54,7 @@ clean: \
 	clean-c-echo_server-native \
 	clean-go-echo_client-native \
 	clean-go-echo_server-native \
+	clean-go-async_echo_server-wasm \
 	clean-tinygo-echo_client-wasm \
 	clean-tinygo-echo_server-wasm \
 	clean-tinygo-async_echo_server-wasm
@@ -68,6 +73,9 @@ clean-go-echo_client-native:
 	@rm -f examples/go/echo_client
 clean-go-echo_server-native:
 	@rm -f examples/go/echo_server
+
+clean-go-async_echo_server-wasm:
+	@rm -f examples/go/async_echo_server*.wasm
 
 clean-tinygo-echo_client-wasm:
 	@rm -f examples/tinygo/echo_client*.wasm
