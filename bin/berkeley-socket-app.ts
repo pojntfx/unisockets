@@ -277,17 +277,6 @@ if (testAsync) {
       );
 
       go.run(instance);
-    } else if (testGo) {
-      const go = new Go();
-
-      const instance = await WebAssembly.instantiate(
-        await WebAssembly.compile(
-          fs.readFileSync("./examples/go/async_echo_server.wasm")
-        ),
-        go.importObject
-      );
-
-      go.run(instance);
     }
   })();
 } else {
@@ -343,6 +332,23 @@ if (testAsync) {
       sockets.setMemory(memoryId, instance.exports.memory);
 
       go.run(instance);
+    } else if (testGo) {
+      const go = new Go();
+
+      const instance = await WebAssembly.instantiate(
+        await WebAssembly.compile(
+          fs.readFileSync("./examples/go/async_echo_server.wasm")
+        ),
+        go.importObject
+      );
+
+      (global as any).berkeleySockets = socketEnvImports;
+
+      sockets.setMemory(memoryId, (instance.exports as any).memory);
+
+      go.run(instance);
+
+      (global as any).berkeleySockets = undefined;
     } else {
       const instance = await Asyncify.instantiate(
         await WebAssembly.compile(
