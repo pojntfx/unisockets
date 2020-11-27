@@ -226,6 +226,7 @@ const sockets = new Sockets(
 const wasi = new WASI();
 
 let acceptCount = 0;
+let receiveCount = 0;
 
 if (testAsync) {
   (async () => {
@@ -248,6 +249,15 @@ if (testAsync) {
               acceptCount++;
 
               (instance.exports as any).resolveAccept(acceptCount);
+            })();
+          },
+          "command-line-arguments.triggerReceive": (fd: number) => {
+            (async () => {
+              await new Promise((res) => setTimeout(res, 500));
+
+              receiveCount++;
+
+              (instance.exports as any).resolveReceive(fd, receiveCount);
             })();
           },
         },
