@@ -14,6 +14,7 @@ var (
 
 const (
 	LOCAL_PORT = 1234
+	BACKLOG    = 1
 )
 
 var (
@@ -61,6 +62,20 @@ func bind(socketFd int, socketAddr *sockaddrIn) int {
 	return rv
 }
 
+func listen(socketFd int, backlog int) int {
+	rvChan := make(chan int)
+
+	go berkeley_sockets.Call("berkeley_sockets_listen", socketFd, backlog).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		rvChan <- args[0].Int()
+
+		return nil
+	}))
+
+	rv := <-rvChan
+
+	return rv
+}
+
 func htons(v uint16) uint16 {
 	return (v >> 8) | (v << 8)
 }
@@ -87,7 +102,12 @@ func main() {
 		log.Fatalf("[ERROR] Could not bind socket %v:", serverAddressReadable, err)
 	}
 
-	log.Println(serverAddressReadable)
+	// Listen
+	if err := listen(serverSocket, BACKLOG); err == -1 {
+		log.Fatalf("[ERROR] Could not listen on socket %v:", serverAddressReadable, err)
+	}
+
+	log.Println("[INFO] Listening on", serverAddressReadable)
 
 	select {}
 }
