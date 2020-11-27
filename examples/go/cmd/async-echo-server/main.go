@@ -76,6 +76,22 @@ func listen(socketFd int32, backlog int32) int32 {
 	return rv
 }
 
+func accept(socketFd int32, socketAddr *sockaddrIn) int32 {
+	rvChan := make(chan int32)
+
+	socketAddressLength := uint32(unsafe.Sizeof(socketAddr))
+
+	go berkeley_sockets.Call("berkeley_sockets_accept", socketFd, unsafe.Pointer(socketAddr), unsafe.Pointer(&socketAddressLength)).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		rvChan <- int32(args[0].Int())
+
+		return nil
+	}))
+
+	rv := <-rvChan
+
+	return rv
+}
+
 func htons(v uint16) uint16 {
 	return (v >> 8) | (v << 8)
 }
@@ -94,20 +110,46 @@ func main() {
 	// Create socket
 	serverSocket := socket(PF_INET, SOCK_STREAM, 0)
 	if serverSocket == -1 {
-		log.Fatalf("[ERROR] Could not create socket %v:", serverAddressReadable, serverSocket)
+		log.Fatalf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, serverSocket)
 	}
 
 	// Bind
 	if err := bind(serverSocket, &serverAddress); err == -1 {
-		log.Fatalf("[ERROR] Could not bind socket %v:", serverAddressReadable, err)
+		log.Fatalf("[ERROR] Could not bind socket %v: %v\n", serverAddressReadable, err)
 	}
 
 	// Listen
 	if err := listen(serverSocket, BACKLOG); err == -1 {
-		log.Fatalf("[ERROR] Could not listen on socket %v:", serverAddressReadable, err)
+		log.Fatalf("[ERROR] Could not listen on socket %v: %v\n", serverAddressReadable, err)
 	}
 
 	log.Println("[INFO] Listening on", serverAddressReadable)
 
-	select {}
+	// Accept loop
+	for {
+		log.Println("[DEBUG] Accepting on", serverAddressReadable)
+
+		clientAddress := sockaddrIn{}
+
+		// Accept
+		clientSocket := accept(serverSocket, &clientAddress)
+		if clientSocket == -1 {
+			log.Println("[ERROR] Could not accept, continuing:", clientSocket)
+
+			continue
+		}
+
+		go func(innerClientSocket int32, innerClientAddress sockaddrIn) {
+			clientHost := make([]byte, 4) // xxx.xxx.xxx.xxx
+			binary.LittleEndian.PutUint32(clientHost, uint32(innerClientAddress.sinAddr.sAddr))
+
+			clientAddressReadable := fmt.Sprintf("%v:%v", clientHost, innerClientAddress.sinPort)
+
+			log.Println("[INFO] Accepted client", clientAddressReadable)
+
+			// for {
+			log.Printf("[DEBUG] Waiting for client %v to send\n", clientAddressReadable)
+			// }
+		}(clientSocket, clientAddress)
+	}
 }
