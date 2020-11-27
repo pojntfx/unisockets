@@ -344,7 +344,7 @@ if (testAsync) {
 
       (global as any).berkeleySockets = socketEnvImports;
 
-      sockets.setMemory(memoryId, (instance.exports as any).memory);
+      sockets.setMemory(memoryId, (instance.exports as any).mem);
 
       go.run(instance);
 
