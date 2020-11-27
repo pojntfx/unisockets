@@ -34,11 +34,11 @@ type sockaddrIn struct {
 	}
 }
 
-func socket(socketDomain int, socketType int, socketProtocol int) int {
-	rvChan := make(chan int)
+func socket(socketDomain int32, socketType int32, socketProtocol int32) int32 {
+	rvChan := make(chan int32)
 
 	go berkeley_sockets.Call("berkeley_sockets_socket", socketDomain, socketType, socketProtocol).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- args[0].Int()
+		rvChan <- int32(args[0].Int())
 
 		return nil
 	}))
@@ -48,11 +48,11 @@ func socket(socketDomain int, socketType int, socketProtocol int) int {
 	return rv
 }
 
-func bind(socketFd int, socketAddr *sockaddrIn) int {
-	rvChan := make(chan int)
+func bind(socketFd int32, socketAddr *sockaddrIn) int32 {
+	rvChan := make(chan int32)
 
 	go berkeley_sockets.Call("berkeley_sockets_bind", socketFd, unsafe.Pointer(socketAddr), uint32(unsafe.Sizeof(socketAddr))).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- args[0].Int()
+		rvChan <- int32(args[0].Int())
 
 		return nil
 	}))
@@ -62,11 +62,11 @@ func bind(socketFd int, socketAddr *sockaddrIn) int {
 	return rv
 }
 
-func listen(socketFd int, backlog int) int {
-	rvChan := make(chan int)
+func listen(socketFd int32, backlog int32) int32 {
+	rvChan := make(chan int32)
 
 	go berkeley_sockets.Call("berkeley_sockets_listen", socketFd, backlog).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- args[0].Int()
+		rvChan <- int32(args[0].Int())
 
 		return nil
 	}))
