@@ -9,7 +9,8 @@ import { SignalingClient } from "../lib/signaling/services/signaling-client";
 import { Sockets } from "../lib/sockets/sockets";
 import { Transporter } from "../lib/transport/transporter";
 import { getLogger } from "../lib/utils/logger";
-const Go = require("../vendor/tinygo/wasm_exec");
+const TinyGo = require("../vendor/tinygo/wasm_exec");
+const Go = require("../vendor/go/wasm_exec");
 
 const TEST_SUBNET = "10.0.0";
 
@@ -21,9 +22,14 @@ const transporterConfig: ExtendedRTCConfiguration = {
   ],
 };
 
-const { raddr, reconnectDuration, testBind, testTinyGo, testAsync } = yargs(
-  process.argv.slice(2)
-).options({
+const {
+  raddr,
+  reconnectDuration,
+  testBind,
+  testTinyGo,
+  testGo,
+  testAsync,
+} = yargs(process.argv.slice(2)).options({
   raddr: {
     description: "Remote address",
     default: "ws://localhost:6999",
@@ -39,6 +45,11 @@ const { raddr, reconnectDuration, testBind, testTinyGo, testAsync } = yargs(
   testTinyGo: {
     description:
       "Use the TinyGo example server/client implementations instead of the C implementations",
+    default: false,
+  },
+  testGo: {
+    description:
+      "Use the Go example server/client implementations instead of the C implementations",
     default: false,
   },
   testAsync: {
@@ -230,48 +241,61 @@ let receiveCount = 0;
 
 if (testAsync) {
   (async () => {
-    const go = new Go();
-    const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
+    if (testTinyGo) {
+      const go = new TinyGo();
+      const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
 
-    const instance = await WebAssembly.instantiate(
-      await WebAssembly.compile(
-        fs.readFileSync("./examples/tinygo/async_echo_server.wasm")
-      ),
-      {
-        wasi_unstable: wasi.wasiImport,
-        ...tinyGoImports,
-        env: {
-          ...tinyGoEnvImports,
-          "command-line-arguments.triggerAccept": () => {
-            (async () => {
-              await new Promise((res) => setTimeout(res, 1000));
+      const instance = await WebAssembly.instantiate(
+        await WebAssembly.compile(
+          fs.readFileSync("./examples/tinygo/async_echo_server.wasm")
+        ),
+        {
+          wasi_unstable: wasi.wasiImport,
+          ...tinyGoImports,
+          env: {
+            ...tinyGoEnvImports,
+            "command-line-arguments.triggerAccept": () => {
+              (async () => {
+                await new Promise((res) => setTimeout(res, 1000));
 
-              acceptCount++;
+                acceptCount++;
 
-              (instance.exports as any).resolveAccept(acceptCount);
-            })();
+                (instance.exports as any).resolveAccept(acceptCount);
+              })();
+            },
+            "command-line-arguments.triggerReceive": (fd: number) => {
+              (async () => {
+                await new Promise((res) => setTimeout(res, 500));
+
+                receiveCount++;
+
+                (instance.exports as any).resolveReceive(fd, receiveCount);
+              })();
+            },
           },
-          "command-line-arguments.triggerReceive": (fd: number) => {
-            (async () => {
-              await new Promise((res) => setTimeout(res, 500));
+        }
+      );
 
-              receiveCount++;
+      go.run(instance);
+    } else if (testGo) {
+      const go = new Go();
 
-              (instance.exports as any).resolveReceive(fd, receiveCount);
-            })();
-          },
-        },
-      }
-    );
+      const instance = await WebAssembly.instantiate(
+        await WebAssembly.compile(
+          fs.readFileSync("./examples/go/async_echo_server.wasm")
+        ),
+        go.importObject
+      );
 
-    go.run(instance);
+      go.run(instance);
+    }
   })();
 } else {
   ready.once("ready", async () => {
     const { memoryId, imports: socketEnvImports } = await sockets.getImports();
 
     if (testTinyGo) {
-      const go = new Go();
+      const go = new TinyGo();
       const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
 
       const instance = await Asyncify.instantiate(
