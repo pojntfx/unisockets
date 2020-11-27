@@ -21,7 +21,7 @@ const transporterConfig: ExtendedRTCConfiguration = {
   ],
 };
 
-const { raddr, reconnectDuration, testBind, testTinyGo } = yargs(
+const { raddr, reconnectDuration, testBind, testTinyGo, testAsync } = yargs(
   process.argv.slice(2)
 ).options({
   raddr: {
@@ -39,6 +39,10 @@ const { raddr, reconnectDuration, testBind, testTinyGo } = yargs(
   testTinyGo: {
     description:
       "Use the TinyGo example server/client implementations instead of the C implementations",
+    default: false,
+  },
+  testAsync: {
+    description: "Use the async import API",
     default: false,
   },
 }).argv;
@@ -221,75 +225,90 @@ const sockets = new Sockets(
 
 const wasi = new WASI();
 
-ready.once("ready", async () => {
-  const { memoryId, imports: socketEnvImports } = await sockets.getImports();
-
-  if (testTinyGo) {
-    const go = new Go();
-    const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
-
-    const instance = await Asyncify.instantiate(
+if (testAsync) {
+  (async () => {
+    const instance = await WebAssembly.instantiate(
       await WebAssembly.compile(
-        testBind
-          ? fs.readFileSync("./examples/tinygo/echo_server.wasm") // TODO: Replace with TinyGo implementation once ready
-          : fs.readFileSync("./examples/tinygo/echo_client.wasm")
+        fs.readFileSync("./examples/tinygo/async_echo_server.wasm")
       ),
       {
-        wasi_snapshot_preview1: wasi.wasiImport,
-        ...tinyGoImports,
-        env: {
-          ...tinyGoEnvImports,
-          ...socketEnvImports,
-          berkeley_sockets_accept: async (
-            fd: number,
-            addressPointer: number,
-            addressLengthPointer: number
-          ) => {
-            instance.exports.go_scheduler();
-
-            return await socketEnvImports.berkeley_sockets_accept(
-              fd,
-              addressPointer,
-              addressLengthPointer
-            );
-          },
-          berkeley_sockets_recv: async (
-            fd: number,
-            messagePointer: number,
-            messagePointerLength: number
-          ) => {
-            instance.exports.go_scheduler();
-
-            return await socketEnvImports.berkeley_sockets_recv(
-              fd,
-              messagePointer,
-              messagePointerLength
-            );
-          },
-        },
+        wasi_unstable: wasi.wasiImport,
       }
     );
-
-    sockets.setMemory(memoryId, instance.exports.memory);
-
-    go.run(instance);
-  } else {
-    const instance = await Asyncify.instantiate(
-      await WebAssembly.compile(
-        testBind
-          ? fs.readFileSync("./examples/c/echo_server.wasm")
-          : fs.readFileSync("./examples/c/echo_client.wasm")
-      ),
-      {
-        wasi_snapshot_preview1: wasi.wasiImport,
-        env: socketEnvImports,
-      }
-    );
-
-    sockets.setMemory(memoryId, instance.exports.memory);
 
     wasi.start(instance);
-  }
-});
+  })();
+} else {
+  ready.once("ready", async () => {
+    const { memoryId, imports: socketEnvImports } = await sockets.getImports();
 
-signalingClient.open();
+    if (testTinyGo) {
+      const go = new Go();
+      const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
+
+      const instance = await Asyncify.instantiate(
+        await WebAssembly.compile(
+          testBind
+            ? fs.readFileSync("./examples/tinygo/echo_server.wasm") // TODO: Replace with TinyGo implementation once ready
+            : fs.readFileSync("./examples/tinygo/echo_client.wasm")
+        ),
+        {
+          wasi_snapshot_preview1: wasi.wasiImport,
+          ...tinyGoImports,
+          env: {
+            ...tinyGoEnvImports,
+            ...socketEnvImports,
+            berkeley_sockets_accept: async (
+              fd: number,
+              addressPointer: number,
+              addressLengthPointer: number
+            ) => {
+              instance.exports.go_scheduler();
+
+              return await socketEnvImports.berkeley_sockets_accept(
+                fd,
+                addressPointer,
+                addressLengthPointer
+              );
+            },
+            berkeley_sockets_recv: async (
+              fd: number,
+              messagePointer: number,
+              messagePointerLength: number
+            ) => {
+              instance.exports.go_scheduler();
+
+              return await socketEnvImports.berkeley_sockets_recv(
+                fd,
+                messagePointer,
+                messagePointerLength
+              );
+            },
+          },
+        }
+      );
+
+      sockets.setMemory(memoryId, instance.exports.memory);
+
+      go.run(instance);
+    } else {
+      const instance = await Asyncify.instantiate(
+        await WebAssembly.compile(
+          testBind
+            ? fs.readFileSync("./examples/c/echo_server.wasm")
+            : fs.readFileSync("./examples/c/echo_client.wasm")
+        ),
+        {
+          wasi_snapshot_preview1: wasi.wasiImport,
+          env: socketEnvImports,
+        }
+      );
+
+      sockets.setMemory(memoryId, instance.exports.memory);
+
+      wasi.start(instance);
+    }
+  });
+
+  signalingClient.open();
+}
