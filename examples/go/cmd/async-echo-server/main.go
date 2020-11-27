@@ -15,6 +15,9 @@ var (
 const (
 	LOCAL_PORT = 1234
 	BACKLOG    = 1
+
+	RECEIVED_MESSAGE_MAX_LENGTH = 1024
+	SENT_MESSAGE_MAX_LENGTH     = 1038
 )
 
 var (
@@ -92,6 +95,20 @@ func accept(socketFd int32, socketAddr *sockaddrIn) int32 {
 	return rv
 }
 
+func recv(socketFd int32, receivedMessage *[]byte, receivedMessageLength uint32, flags int32) int32 {
+	rvChan := make(chan int32)
+
+	go berkeley_sockets.Call("berkeley_sockets_recv", socketFd, unsafe.Pointer(receivedMessage), receivedMessageLength, flags).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		rvChan <- int32(args[0].Int())
+
+		return nil
+	}))
+
+	rv := <-rvChan
+
+	return rv
+}
+
 func htons(v uint16) uint16 {
 	return (v >> 8) | (v << 8)
 }
@@ -147,9 +164,24 @@ func main() {
 
 			log.Println("[INFO] Accepted client", clientAddressReadable)
 
-			// for {
-			log.Printf("[DEBUG] Waiting for client %v to send\n", clientAddressReadable)
-			// }
+			for {
+				log.Printf("[DEBUG] Waiting for client %v to send\n", clientAddressReadable)
+
+				receivedMessage := make([]byte, RECEIVED_MESSAGE_MAX_LENGTH)
+
+				receivedMessageLength := recv(innerClientSocket, &receivedMessage, RECEIVED_MESSAGE_MAX_LENGTH, 0)
+				if receivedMessageLength == -1 {
+					log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, receivedMessageLength)
+
+					continue
+				}
+
+				if receivedMessageLength == 0 {
+					break
+				}
+
+				log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
+			}
 		}(clientSocket, clientAddress)
 	}
 }
