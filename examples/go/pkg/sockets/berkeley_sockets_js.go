@@ -16,14 +16,6 @@ const (
 	SOCK_STREAM = 1
 )
 
-type SockaddrIn struct {
-	SinFamily uint16
-	SinPort   uint16
-	SinAddr   struct {
-		SAddr uint32
-	}
-}
-
 func Socket(socketDomain int32, socketType int32, socketProtocol int32) int32 {
 	rvChan := make(chan int32)
 
