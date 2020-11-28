@@ -21,11 +21,13 @@ const (
 	SOCK_STREAM = int32(C.SOCK_STREAM)
 )
 
-func Socket(socketDomain uint16, socketType int32, socketProtocol int32) int32 {
-	return int32(C.socket(C.int(socketDomain), C.int(socketType), C.int(socketProtocol)))
+func Socket(socketDomain uint16, socketType int32, socketProtocol int32) (int32, error) {
+	rv, err := C.socket(C.int(socketDomain), C.int(socketType), C.int(socketProtocol))
+
+	return int32(rv), err
 }
 
-func Bind(socketFd int32, socketAddr *SockaddrIn) int32 {
+func Bind(socketFd int32, socketAddr *SockaddrIn) error {
 	addr := C.sockaddr_in{
 		sin_family: C.ushort(socketAddr.SinFamily),
 		sin_port:   C.ushort(socketAddr.SinPort),
@@ -34,14 +36,18 @@ func Bind(socketFd int32, socketAddr *SockaddrIn) int32 {
 		},
 	}
 
-	return int32(C.bind(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), C.uint(unsafe.Sizeof(addr))))
+	_, err := C.bind(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), C.uint(unsafe.Sizeof(addr)))
+
+	return err
 }
 
-func Listen(socketFd int32, socketBacklog int32) int32 {
-	return int32(C.listen(C.int(socketFd), C.int(socketBacklog)))
+func Listen(socketFd int32, socketBacklog int32) error {
+	_, err := C.listen(C.int(socketFd), C.int(socketBacklog))
+
+	return err
 }
 
-func Accept(socketFd int32, socketAddr *SockaddrIn) int32 {
+func Accept(socketFd int32, socketAddr *SockaddrIn) (int32, error) {
 	addr := C.sockaddr_in{
 		sin_family: C.ushort(socketAddr.SinFamily),
 		sin_port:   C.ushort(socketAddr.SinPort),
@@ -52,20 +58,26 @@ func Accept(socketFd int32, socketAddr *SockaddrIn) int32 {
 
 	addrLen := C.uint(unsafe.Sizeof(socketAddr))
 
-	rv := C.accept(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), &addrLen)
+	rv, err := C.accept(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), &addrLen)
+	if err != nil {
+		return int32(rv), err
+	}
 
 	socketAddr.SinFamily = uint16(addr.sin_family)
 	socketAddr.SinPort = uint16(addr.sin_port)
 	socketAddr.SinAddr.SAddr = uint32(addr.sin_addr.s_addr)
 
-	return int32(rv)
+	return int32(rv), err
 }
 
-func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint32, socketFlags int32) int32 {
+func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint32, socketFlags int32) (int32, error) {
 	receivedMessage := C.CString(string(make([]byte, socketBufferLength)))
 	defer C.free(unsafe.Pointer(receivedMessage))
 
-	rv := int32(C.recv(C.int(socketFd), unsafe.Pointer(receivedMessage), C.ulong(socketBufferLength), C.int(socketFlags)))
+	rv, err := C.recv(C.int(socketFd), unsafe.Pointer(receivedMessage), C.ulong(socketBufferLength), C.int(socketFlags))
+	if err != nil {
+		return int32(rv), err
+	}
 
 	// TODO: Make sure that received message is converted properly
 
@@ -73,14 +85,16 @@ func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint
 
 	socketReceivedMessage = &outReceivedMessage
 
-	return rv
+	return int32(rv), err
 }
 
-func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) int32 {
+func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32, error) {
 	messageToSend := C.CString(string(socketMessageToSend))
 	defer C.free(unsafe.Pointer(messageToSend))
 
-	return int32(C.send(C.int(socketFd), unsafe.Pointer(messageToSend), C.strlen(messageToSend), C.int(socketFlags)))
+	rv, err := C.send(C.int(socketFd), unsafe.Pointer(messageToSend), C.strlen(messageToSend), C.int(socketFlags))
+
+	return int32(rv), err
 }
 
 func Htons(v uint16) uint16 {
