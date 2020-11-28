@@ -4,8 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
-	"syscall/js"
-	"unsafe"
+
+	"github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/examples/go/pkg/sockets"
 )
 
 var (
@@ -19,137 +19,30 @@ const (
 	BUFFER_LENGTH = 1024
 )
 
-var (
-	berkeley_sockets = js.Global().Get("berkeleySockets")
-)
-
-const (
-	PF_INET     = 2
-	SOCK_STREAM = 1
-)
-
-type sockaddrIn struct {
-	sinFamily uint16
-	sinPort   uint16
-	sinAddr   struct {
-		sAddr uint32
-	}
-}
-
-func socket(socketDomain int32, socketType int32, socketProtocol int32) int32 {
-	rvChan := make(chan int32)
-
-	go berkeley_sockets.Call("berkeley_sockets_socket", socketDomain, socketType, socketProtocol).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- int32(args[0].Int())
-
-		return nil
-	}))
-
-	rv := <-rvChan
-
-	return rv
-}
-
-func bind(socketFd int32, socketAddr *sockaddrIn) int32 {
-	rvChan := make(chan int32)
-
-	go berkeley_sockets.Call("berkeley_sockets_bind", socketFd, unsafe.Pointer(socketAddr), uint32(unsafe.Sizeof(socketAddr))).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- int32(args[0].Int())
-
-		return nil
-	}))
-
-	rv := <-rvChan
-
-	return rv
-}
-
-func listen(socketFd int32, backlog int32) int32 {
-	rvChan := make(chan int32)
-
-	go berkeley_sockets.Call("berkeley_sockets_listen", socketFd, backlog).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- int32(args[0].Int())
-
-		return nil
-	}))
-
-	rv := <-rvChan
-
-	return rv
-}
-
-func accept(socketFd int32, socketAddr *sockaddrIn) int32 {
-	rvChan := make(chan int32)
-
-	socketAddressLength := uint32(unsafe.Sizeof(socketAddr))
-
-	go berkeley_sockets.Call("berkeley_sockets_accept", socketFd, unsafe.Pointer(socketAddr), unsafe.Pointer(&socketAddressLength)).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- int32(args[0].Int())
-
-		return nil
-	}))
-
-	rv := <-rvChan
-
-	return rv
-}
-
-func recv(socketFd int32, receivedMessage *[]byte, bufferLength uint32, flags int32) int32 {
-	rvChan := make(chan int32)
-
-	go berkeley_sockets.Call("berkeley_sockets_recv", socketFd, unsafe.Pointer(&(*receivedMessage)[0]), bufferLength, flags).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- int32(args[0].Int())
-
-		return nil
-	}))
-
-	rv := <-rvChan
-
-	return rv
-}
-
-func send(socketFd int32, sentMessage []byte, flags int32) int32 {
-	rvChan := make(chan int32)
-
-	go berkeley_sockets.Call("berkeley_sockets_send", socketFd, unsafe.Pointer(&sentMessage[0]), uint32(len(sentMessage)), flags).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		rvChan <- int32(args[0].Int())
-
-		return nil
-	}))
-
-	rv := <-rvChan
-
-	return rv
-}
-
-func htons(v uint16) uint16 {
-	return (v >> 8) | (v << 8)
-}
-
 func main() {
 	// Create address
-	serverAddress := sockaddrIn{
-		sinFamily: PF_INET,
-		sinPort:   htons(LOCAL_PORT),
-		sinAddr: struct{ sAddr uint32 }{
-			sAddr: uint32(binary.LittleEndian.Uint32(LOCAL_HOST)),
+	serverAddress := sockets.SockaddrIn{
+		SinFamily: sockets.PF_INET,
+		SinPort:   sockets.Htons(LOCAL_PORT),
+		SinAddr: struct{ SAddr uint32 }{
+			SAddr: uint32(binary.LittleEndian.Uint32(LOCAL_HOST)),
 		},
 	}
 	serverAddressReadable := fmt.Sprintf("%v:%v", LOCAL_HOST, LOCAL_PORT)
 
 	// Create socket
-	serverSocket := socket(PF_INET, SOCK_STREAM, 0)
+	serverSocket := sockets.Socket(sockets.PF_INET, sockets.SOCK_STREAM, 0)
 	if serverSocket == -1 {
 		log.Fatalf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, serverSocket)
 	}
 
 	// Bind
-	if err := bind(serverSocket, &serverAddress); err == -1 {
+	if err := sockets.Bind(serverSocket, &serverAddress); err == -1 {
 		log.Fatalf("[ERROR] Could not bind socket %v: %v\n", serverAddressReadable, err)
 	}
 
 	// Listen
-	if err := listen(serverSocket, BACKLOG); err == -1 {
+	if err := sockets.Listen(serverSocket, BACKLOG); err == -1 {
 		log.Fatalf("[ERROR] Could not listen on socket %v: %v\n", serverAddressReadable, err)
 	}
 
@@ -159,21 +52,21 @@ func main() {
 	for {
 		log.Println("[DEBUG] Accepting on", serverAddressReadable)
 
-		clientAddress := sockaddrIn{}
+		clientAddress := sockets.SockaddrIn{}
 
 		// Accept
-		clientSocket := accept(serverSocket, &clientAddress)
+		clientSocket := sockets.Accept(serverSocket, &clientAddress)
 		if clientSocket == -1 {
 			log.Println("[ERROR] Could not accept, continuing:", clientSocket)
 
 			continue
 		}
 
-		go func(innerClientSocket int32, innerClientAddress sockaddrIn) {
+		go func(innerClientSocket int32, innerClientAddress sockets.SockaddrIn) {
 			clientHost := make([]byte, 4) // xxx.xxx.xxx.xxx
-			binary.LittleEndian.PutUint32(clientHost, uint32(innerClientAddress.sinAddr.sAddr))
+			binary.LittleEndian.PutUint32(clientHost, uint32(innerClientAddress.SinAddr.SAddr))
 
-			clientAddressReadable := fmt.Sprintf("%v:%v", clientHost, innerClientAddress.sinPort)
+			clientAddressReadable := fmt.Sprintf("%v:%v", clientHost, innerClientAddress.SinPort)
 
 			log.Println("[INFO] Accepted client", clientAddressReadable)
 
@@ -184,7 +77,7 @@ func main() {
 				// Receive
 				receivedMessage := make([]byte, BUFFER_LENGTH)
 
-				receivedMessageLength := recv(innerClientSocket, &receivedMessage, BUFFER_LENGTH, 0)
+				receivedMessageLength := sockets.Recv(innerClientSocket, &receivedMessage, BUFFER_LENGTH, 0)
 				if receivedMessageLength == -1 {
 					log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, receivedMessageLength)
 
@@ -200,7 +93,7 @@ func main() {
 				// Send
 				sentMessage := []byte(fmt.Sprintf("You've sent: %v", string(receivedMessage))) // TODO: Access the received message here
 
-				sentMessageLength := send(innerClientSocket, sentMessage, 0)
+				sentMessageLength := sockets.Send(innerClientSocket, sentMessage, 0)
 				if sentMessageLength == -1 {
 					log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, sentMessageLength)
 
