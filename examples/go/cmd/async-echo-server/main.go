@@ -25,7 +25,7 @@ func main() {
 		SinFamily: sockets.PF_INET,
 		SinPort:   sockets.Htons(LOCAL_PORT),
 		SinAddr: struct{ SAddr uint32 }{
-			SAddr: uint32(binary.LittleEndian.Uint32(LOCAL_HOST)),
+			SAddr: binary.LittleEndian.Uint32(LOCAL_HOST),
 		},
 	}
 	serverAddressReadable := fmt.Sprintf("%v:%v", LOCAL_HOST, LOCAL_PORT)
