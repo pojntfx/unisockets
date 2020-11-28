@@ -17,7 +17,6 @@ const (
 	BACKLOG    = 1
 
 	RECEIVED_MESSAGE_MAX_LENGTH = 1024
-	SENT_MESSAGE_MAX_LENGTH     = 1038
 )
 
 var (
@@ -109,6 +108,20 @@ func recv(socketFd int32, receivedMessage *[]byte, receivedMessageLength uint32,
 	return rv
 }
 
+func send(socketFd int32, sentMessage *[]byte, flags int32) int32 {
+	rvChan := make(chan int32)
+
+	go berkeley_sockets.Call("berkeley_sockets_send", socketFd, unsafe.Pointer(sentMessage), uint32(len(*sentMessage)), flags).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		rvChan <- int32(args[0].Int())
+
+		return nil
+	}))
+
+	rv := <-rvChan
+
+	return rv
+}
+
 func htons(v uint16) uint16 {
 	return (v >> 8) | (v << 8)
 }
@@ -164,9 +177,11 @@ func main() {
 
 			log.Println("[INFO] Accepted client", clientAddressReadable)
 
+			// Receive loop
 			for {
 				log.Printf("[DEBUG] Waiting for client %v to send\n", clientAddressReadable)
 
+				// Receive
 				receivedMessage := make([]byte, RECEIVED_MESSAGE_MAX_LENGTH)
 
 				receivedMessageLength := recv(innerClientSocket, &receivedMessage, RECEIVED_MESSAGE_MAX_LENGTH, 0)
@@ -181,6 +196,18 @@ func main() {
 				}
 
 				log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
+
+				// Send
+				sentMessage := []byte(fmt.Sprintf("You've sent: %v", "Yeah!")) // TODO: Access the received message here
+
+				sentMessageLength := send(innerClientSocket, &sentMessage, 0)
+				if sentMessageLength == -1 {
+					log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, sentMessageLength)
+
+					return
+				}
+
+				log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, clientAddressReadable)
 			}
 		}(clientSocket, clientAddress)
 	}
