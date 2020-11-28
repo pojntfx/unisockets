@@ -102,6 +102,13 @@ func main() {
 
 				log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, clientAddressReadable)
 			}
+
+			log.Println("[INFO] Disconnected from client", clientAddressReadable)
+
+			// Shutdown
+			if _, err := sockets.Shutdown(innerClientSocket, sockets.SHUT_RDWR); err != nil {
+				log.Printf("[ERROR] Could not shutdown client socket %v, continuing: %v\n", clientAddressReadable, err)
+			}
 		}(clientSocket, clientAddress)
 	}
 }

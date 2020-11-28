@@ -15,6 +15,7 @@ var (
 const (
 	PF_INET     = 2
 	SOCK_STREAM = 1
+	SHUT_RDWR   = 2
 )
 
 func Socket(socketDomain int32, socketType int32, socketProtocol int32) (int32, error) {
@@ -121,6 +122,12 @@ func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32,
 	}
 
 	return rv, nil
+}
+
+func Shutdown(socketFd int32, socketFlags int32) (int32, error) {
+	// Not necessary on WASM
+
+	return 0, nil
 }
 
 func Htons(v uint16) uint16 {
