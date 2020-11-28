@@ -31,18 +31,18 @@ func main() {
 	serverAddressReadable := fmt.Sprintf("%v:%v", LOCAL_HOST, LOCAL_PORT)
 
 	// Create socket
-	serverSocket := sockets.Socket(sockets.PF_INET, sockets.SOCK_STREAM, 0)
-	if serverSocket == -1 {
-		log.Fatalf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, serverSocket)
+	serverSocket, err := sockets.Socket(sockets.PF_INET, sockets.SOCK_STREAM, 0)
+	if err != nil {
+		log.Fatalf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, err)
 	}
 
 	// Bind
-	if err := sockets.Bind(serverSocket, &serverAddress); err == -1 {
+	if err := sockets.Bind(serverSocket, &serverAddress); err != nil {
 		log.Fatalf("[ERROR] Could not bind socket %v: %v\n", serverAddressReadable, err)
 	}
 
 	// Listen
-	if err := sockets.Listen(serverSocket, BACKLOG); err == -1 {
+	if err := sockets.Listen(serverSocket, BACKLOG); err != nil {
 		log.Fatalf("[ERROR] Could not listen on socket %v: %v\n", serverAddressReadable, err)
 	}
 
@@ -55,9 +55,9 @@ func main() {
 		clientAddress := sockets.SockaddrIn{}
 
 		// Accept
-		clientSocket := sockets.Accept(serverSocket, &clientAddress)
-		if clientSocket == -1 {
-			log.Println("[ERROR] Could not accept, continuing:", clientSocket)
+		clientSocket, err := sockets.Accept(serverSocket, &clientAddress)
+		if err != nil {
+			log.Println("[ERROR] Could not accept, continuing:", err)
 
 			continue
 		}
@@ -77,9 +77,9 @@ func main() {
 				// Receive
 				receivedMessage := make([]byte, BUFFER_LENGTH)
 
-				receivedMessageLength := sockets.Recv(innerClientSocket, &receivedMessage, BUFFER_LENGTH, 0)
-				if receivedMessageLength == -1 {
-					log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, receivedMessageLength)
+				receivedMessageLength, err := sockets.Recv(innerClientSocket, &receivedMessage, BUFFER_LENGTH, 0)
+				if err != nil {
+					log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, err)
 
 					continue
 				}
@@ -91,11 +91,11 @@ func main() {
 				log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
 
 				// Send
-				sentMessage := []byte(fmt.Sprintf("You've sent: %v", string(receivedMessage))) // TODO: Access the received message here
+				sentMessage := []byte(fmt.Sprintf("You've sent: %v", string(receivedMessage)))
 
-				sentMessageLength := sockets.Send(innerClientSocket, sentMessage, 0)
-				if sentMessageLength == -1 {
-					log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, sentMessageLength)
+				sentMessageLength, err := sockets.Send(innerClientSocket, sentMessage, 0)
+				if err != nil {
+					log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, err)
 
 					return
 				}

@@ -3,6 +3,7 @@
 package sockets
 
 import (
+	"fmt"
 	"syscall/js"
 	"unsafe"
 )
@@ -16,7 +17,7 @@ const (
 	SOCK_STREAM = 1
 )
 
-func Socket(socketDomain int32, socketType int32, socketProtocol int32) int32 {
+func Socket(socketDomain int32, socketType int32, socketProtocol int32) (int32, error) {
 	rvChan := make(chan int32)
 
 	go berkeley_sockets.Call("berkeley_sockets_socket", socketDomain, socketType, socketProtocol).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -26,11 +27,14 @@ func Socket(socketDomain int32, socketType int32, socketProtocol int32) int32 {
 	}))
 
 	rv := <-rvChan
+	if rv == -1 {
+		return rv, fmt.Errorf("could not create socket, error code %v", rv)
+	}
 
-	return rv
+	return rv, nil
 }
 
-func Bind(socketFd int32, socketAddr *SockaddrIn) int32 {
+func Bind(socketFd int32, socketAddr *SockaddrIn) error {
 	rvChan := make(chan int32)
 
 	go berkeley_sockets.Call("berkeley_sockets_bind", socketFd, unsafe.Pointer(socketAddr), uint32(unsafe.Sizeof(socketAddr))).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -40,11 +44,14 @@ func Bind(socketFd int32, socketAddr *SockaddrIn) int32 {
 	}))
 
 	rv := <-rvChan
+	if rv == -1 {
+		return fmt.Errorf("could not bind socket, error code %v", rv)
+	}
 
-	return rv
+	return nil
 }
 
-func Listen(socketFd int32, socketBacklog int32) int32 {
+func Listen(socketFd int32, socketBacklog int32) error {
 	rvChan := make(chan int32)
 
 	go berkeley_sockets.Call("berkeley_sockets_listen", socketFd, socketBacklog).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -54,11 +61,14 @@ func Listen(socketFd int32, socketBacklog int32) int32 {
 	}))
 
 	rv := <-rvChan
+	if rv == -1 {
+		return fmt.Errorf("could not listen on socket, error code %v", rv)
+	}
 
-	return rv
+	return nil
 }
 
-func Accept(socketFd int32, socketAddr *SockaddrIn) int32 {
+func Accept(socketFd int32, socketAddr *SockaddrIn) (int32, error) {
 	rvChan := make(chan int32)
 
 	socketAddressLength := uint32(unsafe.Sizeof(socketAddr))
@@ -70,11 +80,14 @@ func Accept(socketFd int32, socketAddr *SockaddrIn) int32 {
 	}))
 
 	rv := <-rvChan
+	if rv == -1 {
+		return rv, fmt.Errorf("could not accept on socket, error code %v", rv)
+	}
 
-	return rv
+	return rv, nil
 }
 
-func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint32, socketFlags int32) int32 {
+func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint32, socketFlags int32) (int32, error) {
 	rvChan := make(chan int32)
 
 	go berkeley_sockets.Call("berkeley_sockets_recv", socketFd, unsafe.Pointer(&(*socketReceivedMessage)[0]), socketBufferLength, socketFlags).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -85,10 +98,14 @@ func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint
 
 	rv := <-rvChan
 
-	return rv
+	if rv == -1 {
+		return rv, fmt.Errorf("could not receive from socket, error code %v", rv)
+	}
+
+	return rv, nil
 }
 
-func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) int32 {
+func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32, error) {
 	rvChan := make(chan int32)
 
 	go berkeley_sockets.Call("berkeley_sockets_send", socketFd, unsafe.Pointer(&socketMessageToSend[0]), uint32(len(socketMessageToSend)), socketFlags).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
@@ -99,7 +116,11 @@ func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) int32 {
 
 	rv := <-rvChan
 
-	return rv
+	if rv == -1 {
+		return rv, fmt.Errorf("could not send from socket, error code %v", rv)
+	}
+
+	return rv, nil
 }
 
 func Htons(v uint16) uint16 {
