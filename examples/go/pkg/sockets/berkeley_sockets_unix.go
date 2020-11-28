@@ -79,11 +79,9 @@ func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint
 		return int32(rv), err
 	}
 
-	// TODO: Make sure that received message is converted properly
-
 	outReceivedMessage := []byte(C.GoString(receivedMessage))
 
-	socketReceivedMessage = &outReceivedMessage
+	*socketReceivedMessage = outReceivedMessage
 
 	return int32(rv), err
 }
