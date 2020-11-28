@@ -19,6 +19,7 @@ import (
 const (
 	PF_INET     = uint16(C.PF_INET)
 	SOCK_STREAM = int32(C.SOCK_STREAM)
+	SHUT_RDWR   = int32(C.SHUT_RDWR)
 )
 
 func Socket(socketDomain uint16, socketType int32, socketProtocol int32) (int32, error) {
@@ -91,6 +92,12 @@ func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32,
 	defer C.free(unsafe.Pointer(messageToSend))
 
 	rv, err := C.send(C.int(socketFd), unsafe.Pointer(messageToSend), C.strlen(messageToSend), C.int(socketFlags))
+
+	return int32(rv), err
+}
+
+func Shutdown(socketFd int32, socketFlags int32) (int32, error) {
+	rv, err := C.shutdown(C.int(socketFd), C.int(socketFlags))
 
 	return int32(rv), err
 }
