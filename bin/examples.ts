@@ -335,7 +335,7 @@ const sockets = new Sockets(
         imports: socketEnvImports,
       } = await sockets.getImports();
 
-      const instance = await WebAssembly.instantiate(
+      const instance = await Asyncify.instantiate(
         await WebAssembly.compile(
           runServer
             ? fs.readFileSync("./examples/go/out/tinygo/echo_server_wasi.wasm")
