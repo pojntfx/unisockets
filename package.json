@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files bin/signaling-server.ts",
-    "dev:berkeley-socket-app": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files bin/berkeley-socket-app.ts",
+    "dev:examples": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files bin/examples.ts",
     "dev:diagram": "tplant -p tsconfig.json -i './**/*.ts*' --output 'diagram.svg'",
     "start:signaling-server": "ts-node --files bin/signaling-server.ts",
-    "start:berkeley-socket-app": "ts-node --experimental-wasi-unstable-preview1 --files bin/berkeley-socket-app.ts"
+    "start:examples": "ts-node --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files bin/examples.ts"
   },
   "repository": {
     "type": "git",
