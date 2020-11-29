@@ -96,10 +96,24 @@ func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32,
 	return int32(rv), err
 }
 
-func Shutdown(socketFd int32, socketFlags int32) (int32, error) {
-	rv, err := C.shutdown(C.int(socketFd), C.int(socketFlags))
+func Shutdown(socketFd int32, socketFlags int32) error {
+	_, err := C.shutdown(C.int(socketFd), C.int(socketFlags))
 
-	return int32(rv), err
+	return err
+}
+
+func Connect(socketFd int32, socketAddr *SockaddrIn) error {
+	addr := C.sockaddr_in{
+		sin_family: C.ushort(socketAddr.SinFamily),
+		sin_port:   C.ushort(socketAddr.SinPort),
+		sin_addr: C.in_addr{
+			s_addr: C.uint(socketAddr.SinAddr.SAddr),
+		},
+	}
+
+	_, err := C.connect(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), C.uint(unsafe.Sizeof(addr)))
+
+	return err
 }
 
 func Htons(v uint16) uint16 {

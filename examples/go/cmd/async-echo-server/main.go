@@ -97,7 +97,7 @@ func main() {
 				if err != nil {
 					log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, err)
 
-					return
+					break
 				}
 
 				log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, clientAddressReadable)
@@ -106,7 +106,7 @@ func main() {
 			log.Println("[INFO] Disconnected from client", clientAddressReadable)
 
 			// Shutdown
-			if _, err := sockets.Shutdown(innerClientSocket, sockets.SHUT_RDWR); err != nil {
+			if err := sockets.Shutdown(innerClientSocket, sockets.SHUT_RDWR); err != nil {
 				log.Printf("[ERROR] Could not shutdown client socket %v, continuing: %v\n", clientAddressReadable, err)
 			}
 		}(clientSocket, clientAddress)
