@@ -40,6 +40,7 @@ func main() {
 
 	// Bind
 	if err := sockets.Bind(serverSocket, &serverAddress); err != nil {
+		fmt.Printf("[ERROR] Could not bind to socket %v: %v\n", serverAddressReadable, err)
 
 		os.Exit(1)
 	}
@@ -112,7 +113,9 @@ func main() {
 
 			// Shutdown
 			if err := sockets.Shutdown(innerClientSocket, sockets.SHUT_RDWR); err != nil {
-				fmt.Printf("[ERROR] Could not shutdown client socket %v, continuing: %v\n", clientAddressReadable, err)
+				fmt.Printf("[ERROR] Could not shutdown client socket %v, stopping: %v\n", clientAddressReadable, err)
+
+				return
 			}
 		}(clientSocket, clientAddress)
 	}

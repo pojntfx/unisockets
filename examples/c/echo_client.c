@@ -51,6 +51,8 @@ int main() {
   if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
     perror("[ERROR] Could not create socket:");
 
+    printf("[ERROR] Could not create socket %s\n", server_address_readable);
+
     exit(-1);
   }
 
@@ -104,7 +106,7 @@ int main() {
       // Receive
       received_message_length = recv(server_sock, &received_message,
                                      RECEIVED_MESSAGE_BUFFER_LENGTH, 0);
-      if (sent_message_length == -1) {
+      if (received_message_length == -1) {
         perror("[ERROR] Could not receive from server:");
 
         printf("[ERROR] Could not receive from server %s, dropping message\n",
@@ -135,8 +137,6 @@ int main() {
 
       break;
     };
-
-    break;
   }
 
   return 0;
