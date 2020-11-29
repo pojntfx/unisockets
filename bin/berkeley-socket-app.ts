@@ -283,56 +283,57 @@ if (testAsync) {
   ready.once("ready", async () => {
     const { memoryId, imports: socketEnvImports } = await sockets.getImports();
 
-    if (testTinyGo) {
-      const go = new TinyGo();
-      const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
+    // if (testTinyGo) {
+    //   const go = new TinyGo();
+    //   const { env: tinyGoEnvImports, ...tinyGoImports } = go.importObject;
 
-      const instance = await Asyncify.instantiate(
-        await WebAssembly.compile(
-          testBind
-            ? fs.readFileSync("./examples/tinygo/echo_server.wasm") // TODO: Replace with TinyGo implementation once ready
-            : fs.readFileSync("./examples/tinygo/echo_client.wasm")
-        ),
-        {
-          wasi_snapshot_preview1: wasi.wasiImport,
-          ...tinyGoImports,
-          env: {
-            ...tinyGoEnvImports,
-            ...socketEnvImports,
-            berkeley_sockets_accept: async (
-              fd: number,
-              addressPointer: number,
-              addressLengthPointer: number
-            ) => {
-              instance.exports.go_scheduler();
+    //   const instance = await Asyncify.instantiate(
+    //     await WebAssembly.compile(
+    //       testBind
+    //         ? fs.readFileSync("./examples/tinygo/echo_server.wasm") // TODO: Replace with TinyGo implementation once ready
+    //         : fs.readFileSync("./examples/tinygo/echo_client.wasm")
+    //     ),
+    //     {
+    //       wasi_snapshot_preview1: wasi.wasiImport,
+    //       ...tinyGoImports,
+    //       env: {
+    //         ...tinyGoEnvImports,
+    //         ...socketEnvImports,
+    //         berkeley_sockets_accept: async (
+    //           fd: number,
+    //           addressPointer: number,
+    //           addressLengthPointer: number
+    //         ) => {
+    //           instance.exports.go_scheduler();
 
-              return await socketEnvImports.berkeley_sockets_accept(
-                fd,
-                addressPointer,
-                addressLengthPointer
-              );
-            },
-            berkeley_sockets_recv: async (
-              fd: number,
-              messagePointer: number,
-              messagePointerLength: number
-            ) => {
-              instance.exports.go_scheduler();
+    //           return await socketEnvImports.berkeley_sockets_accept(
+    //             fd,
+    //             addressPointer,
+    //             addressLengthPointer
+    //           );
+    //         },
+    //         berkeley_sockets_recv: async (
+    //           fd: number,
+    //           messagePointer: number,
+    //           messagePointerLength: number
+    //         ) => {
+    //           instance.exports.go_scheduler();
 
-              return await socketEnvImports.berkeley_sockets_recv(
-                fd,
-                messagePointer,
-                messagePointerLength
-              );
-            },
-          },
-        }
-      );
+    //           return await socketEnvImports.berkeley_sockets_recv(
+    //             fd,
+    //             messagePointer,
+    //             messagePointerLength
+    //           );
+    //         },
+    //       },
+    //     }
+    //   );
 
-      sockets.setMemory(memoryId, instance.exports.memory);
+    //   sockets.setMemory(memoryId, instance.exports.memory);
 
-      go.run(instance);
-    } else if (testGo) {
+    //   go.run(instance);
+    // else if (testGo) {}
+    if (testGo) {
       const go = new Go();
 
       const instance = await WebAssembly.instantiate(
@@ -347,6 +348,25 @@ if (testAsync) {
       (global as any).berkeleySockets = socketEnvImports;
 
       sockets.setMemory(memoryId, (instance.exports as any).mem);
+
+      go.run(instance);
+
+      (global as any).berkeleySockets = undefined;
+    } else if (testTinyGo) {
+      const go = new TinyGo();
+
+      const instance = await Asyncify.instantiate(
+        await WebAssembly.compile(
+          testBind
+            ? fs.readFileSync("./examples/go/tinygo_async_echo_server.wasm")
+            : fs.readFileSync("./examples/go/tinygo_async_echo_client.wasm")
+        ),
+        go.importObject
+      );
+
+      (global as any).berkeleySockets = socketEnvImports;
+
+      sockets.setMemory(memoryId, (instance.exports as any).memory);
 
       go.run(instance);
 

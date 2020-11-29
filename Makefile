@@ -17,7 +17,9 @@ build: \
     build-tinygo-echo_client-wasm \
 	build-tinygo-echo_server-wasm \
 	build-tinygo-async_echo_server-native \
-	build-tinygo-async_echo_client-native
+	build-tinygo-async_echo_server-wasm \
+	build-tinygo-async_echo_client-native \
+	build-tinygo-async_echo_client-wasm
 
 build-container-wasi-sdk:
 	@docker build -t pojntfx/wasi-sdk examples/c
@@ -56,9 +58,15 @@ build-tinygo-echo_server-wasm: build-container-wasi-sdk
 
 build-tinygo-async_echo_server-native:
 	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && tinygo build -o tinygo_async_echo_server ./cmd/async-echo-server/main.go'
+build-tinygo-async_echo_server-wasm: build-container-wasi-sdk
+	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o tinygo_async_echo_server_original.wasm ./cmd/async-echo-server/main.go'
+	@docker run -v ${PWD}/examples/go:/examples/go:z pojntfx/wasi-sdk sh -c 'cd /examples/go && wasm-opt --asyncify -O tinygo_async_echo_server_original.wasm -o tinygo_async_echo_server.wasm'
 
 build-tinygo-async_echo_client-native:
 	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && tinygo build -o tinygo_async_echo_client ./cmd/async-echo-client/main.go'
+build-tinygo-async_echo_client-wasm: build-container-wasi-sdk
+	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o tinygo_async_echo_client_original.wasm ./cmd/async-echo-client/main.go'
+	@docker run -v ${PWD}/examples/go:/examples/go:z pojntfx/wasi-sdk sh -c 'cd /examples/go && wasm-opt --asyncify -O tinygo_async_echo_client_original.wasm -o tinygo_async_echo_client.wasm'
 
 # Clean
 clean: \
@@ -75,7 +83,9 @@ clean: \
 	clean-tinygo-echo_client-wasm \
 	clean-tinygo-echo_server-wasm \
 	clean-tinygo-async_echo_server-native \
-	clean-tinygo-async_echo_client-native
+	clean-tinygo-async_echo_server-wasm \
+	clean-tinygo-async_echo_client-native \
+	clean-tinygo-async_echo_client-wasm
 
 clean-c-echo_client-wasm:
 	@rm -f examples/c/echo_client*.wasm
@@ -109,9 +119,13 @@ clean-tinygo-echo_server-wasm:
 
 clean-tinygo-async_echo_server-native:
 	@rm -f examples/go/tinygo_async_echo_server
+clean-tinygo-async_echo_server-wasm:
+	@rm -f examples/tinygo/tinygo_async_echo_server*.wasm
 
 clean-tinygo-async_echo_client-native:
 	@rm -f examples/go/tinygo_async_echo_client
+clean-tinygo-async_echo_client-wasm:
+	@rm -f examples/tinygo/tinygo_async_echo_client*.wasm
 
 # Test
 test: \
