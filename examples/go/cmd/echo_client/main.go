@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -36,7 +35,9 @@ func main() {
 	// Create socket
 	serverSocket, err := sockets.Socket(sockets.PF_INET, sockets.SOCK_STREAM, 0)
 	if err != nil {
-		log.Fatalf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, err)
+		fmt.Printf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, err)
+
+		os.Exit(1)
 	}
 
 	// Create reader
@@ -44,27 +45,27 @@ func main() {
 
 	// Connect loop
 	for {
-		log.Println("[INFO] Connecting to server", serverAddressReadable)
+		fmt.Println("[INFO] Connecting to server", serverAddressReadable)
 
 		// Connect
 		if err := sockets.Connect(serverSocket, &serverAddress); err != nil {
-			log.Printf("[ERROR] Could not connect to server %v, retrying in %v: %v\n", serverAddressReadable, RECONNECT_TIMEOUT, err)
+			fmt.Printf("[ERROR] Could not connect to server %v, retrying in %v: %v\n", serverAddressReadable, RECONNECT_TIMEOUT, err)
 
 			time.Sleep(RECONNECT_TIMEOUT)
 
 			continue
 		}
 
-		log.Println("[INFO] Connected to server", serverAddressReadable)
+		fmt.Println("[INFO] Connected to server", serverAddressReadable)
 
 		// Read loop
 		for {
-			log.Println("[DEBUG] Waiting for user input")
+			fmt.Println("[DEBUG] Waiting for user input")
 
 			// Read
 			readMessage, err := reader.ReadString('\n')
 			if err != nil {
-				log.Fatal("[ERROR] Could not read from stdin:", err)
+				fmt.Println("[ERROR] Could not read from stdin:", err)
 			}
 
 			// Send
@@ -72,21 +73,21 @@ func main() {
 
 			sentMessageLength, err := sockets.Send(serverSocket, sentMessage, 0)
 			if err != nil {
-				log.Printf("[ERROR] Could not send to server %v, dropping message: %v\n", serverAddressReadable, err)
+				fmt.Printf("[ERROR] Could not send to server %v, dropping message: %v\n", serverAddressReadable, err)
 
 				break
 			}
 
-			log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, serverAddressReadable)
+			fmt.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, serverAddressReadable)
 
-			log.Printf("[DEBUG] Waiting for server %v to send\n", serverAddressReadable)
+			fmt.Printf("[DEBUG] Waiting for server %v to send\n", serverAddressReadable)
 
 			// Receive
 			receivedMessage := make([]byte, BUFFER_LENGTH)
 
 			receivedMessageLength, err := sockets.Recv(serverSocket, &receivedMessage, BUFFER_LENGTH, 0)
 			if err != nil {
-				log.Printf("[ERROR] Could not receive from server %v, dropping message: %v\n", serverAddressReadable, err)
+				fmt.Printf("[ERROR] Could not receive from server %v, dropping message: %v\n", serverAddressReadable, err)
 
 				continue
 			}
@@ -95,17 +96,17 @@ func main() {
 				break
 			}
 
-			log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, serverAddressReadable)
+			fmt.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, serverAddressReadable)
 
 			// Print
 			fmt.Printf("%v", string(receivedMessage))
 		}
 
-		log.Println("[INFO] Disconnected from server", serverAddressReadable)
+		fmt.Println("[INFO] Disconnected from server", serverAddressReadable)
 
 		// Shutdown
 		if err := sockets.Shutdown(serverSocket, sockets.SHUT_RDWR); err != nil {
-			log.Printf("[ERROR] Could not shutdown server socket %v, continuing: %v\n", serverAddressReadable, err)
+			fmt.Printf("[ERROR] Could not shutdown server socket %v, continuing: %v\n", serverAddressReadable, err)
 		}
 	}
 }
