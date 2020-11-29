@@ -3,13 +3,10 @@
 package sockets
 
 /*
-#cgo CFLAGS: -DBERKELEY_SOCKETS_WITH_INVERSE_ALIAS
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "berkeley_sockets.h"
 */
 import "C"
 import (
@@ -24,7 +21,7 @@ const (
 )
 
 func Socket(socketDomain uint16, socketType int32, socketProtocol int32) (int32, error) {
-	rv := int32(C.socket(C.int(socketDomain), C.int(socketType), C.int(socketProtocol)))
+	rv := int32(socket(C.int(socketDomain), C.int(socketType), C.int(socketProtocol)))
 	if rv == -1 {
 		return rv, fmt.Errorf("could not create socket, error code %v", rv)
 	}
@@ -41,7 +38,7 @@ func Bind(socketFd int32, socketAddr *SockaddrIn) error {
 		},
 	}
 
-	if rv := int32(C.bind(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), C.uint(unsafe.Sizeof(addr)))); rv == -1 {
+	if rv := int32(bind(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), C.uint(unsafe.Sizeof(addr)))); rv == -1 {
 		return fmt.Errorf("could not bind socket, error code %v", rv)
 	}
 
@@ -49,7 +46,7 @@ func Bind(socketFd int32, socketAddr *SockaddrIn) error {
 }
 
 func Listen(socketFd int32, socketBacklog int32) error {
-	if rv := int32(C.listen(C.int(socketFd), C.int(socketBacklog))); rv == -1 {
+	if rv := int32(listen(C.int(socketFd), C.int(socketBacklog))); rv == -1 {
 		return fmt.Errorf("could not listen on socket, error code %v", rv)
 	}
 
@@ -67,7 +64,7 @@ func Accept(socketFd int32, socketAddr *SockaddrIn) (int32, error) {
 
 	addrLen := C.uint(unsafe.Sizeof(socketAddr))
 
-	rv := int32(C.accept(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), &addrLen))
+	rv := int32(accept(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), &addrLen))
 	if rv == -1 {
 		return rv, fmt.Errorf("could not accept on socket, error code %v", rv)
 	}
@@ -83,7 +80,7 @@ func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint
 	receivedMessage := cString(string(make([]byte, socketBufferLength)))
 	defer C.free(unsafe.Pointer(receivedMessage))
 
-	rv := int32(C.recv(C.int(socketFd), unsafe.Pointer(receivedMessage), C.ulong(socketBufferLength), C.int(socketFlags)))
+	rv := int32(recv(C.int(socketFd), unsafe.Pointer(receivedMessage), C.ulong(socketBufferLength), C.int(socketFlags)))
 	if rv == -1 {
 		return rv, fmt.Errorf("could not receive from socket, error code %v", rv)
 	}
@@ -99,7 +96,7 @@ func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32,
 	messageToSend := cString(string(socketMessageToSend))
 	defer C.free(unsafe.Pointer(messageToSend))
 
-	rv := int32(C.send(C.int(socketFd), unsafe.Pointer(messageToSend), C.strlen(messageToSend), C.int(socketFlags)))
+	rv := int32(send(C.int(socketFd), unsafe.Pointer(messageToSend), C.strlen(messageToSend), C.int(socketFlags)))
 	if rv == -1 {
 		return rv, fmt.Errorf("could not send from socket, error code %v", rv)
 	}
@@ -108,7 +105,7 @@ func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32,
 }
 
 func Shutdown(socketFd int32, socketFlags int32) error {
-	if rv := C.shutdown(C.int(socketFd), C.int(socketFlags)); rv == -1 {
+	if rv := shutdown(C.int(socketFd), C.int(socketFlags)); rv == -1 {
 		return fmt.Errorf("could not shut down socket, error code %v", rv)
 	}
 
@@ -124,7 +121,7 @@ func Connect(socketFd int32, socketAddr *SockaddrIn) error {
 		},
 	}
 
-	if rv := C.connect(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), C.uint(unsafe.Sizeof(addr))); rv == -1 {
+	if rv := connect(C.int(socketFd), (*C.sockaddr)(unsafe.Pointer(&addr)), C.uint(unsafe.Sizeof(addr))); rv == -1 {
 		return fmt.Errorf("could not connect to socket, error code %v", rv)
 	}
 
