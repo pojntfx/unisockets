@@ -29,6 +29,7 @@ struct sockaddr_in {
 
 #define PF_INET 2
 #define SOCK_STREAM 1
+#define SHUT_RDWR 2
 
 uint16_t htons(uint16_t v) { return (v >> 8) | (v << 8); }
 #else
