@@ -124,10 +124,27 @@ func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32,
 	return rv, nil
 }
 
-func Shutdown(socketFd int32, socketFlags int32) (int32, error) {
+func Shutdown(socketFd int32, socketFlags int32) error {
 	// Not necessary on WASM
 
-	return 0, nil
+	return nil
+}
+
+func Connect(socketFd int32, socketAddr *SockaddrIn) error {
+	rvChan := make(chan int32)
+
+	go berkeley_sockets.Call("berkeley_sockets_connect", socketFd, unsafe.Pointer(socketAddr), uint32(unsafe.Sizeof(socketAddr))).Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		rvChan <- int32(args[0].Int())
+
+		return nil
+	}))
+
+	rv := <-rvChan
+	if rv == -1 {
+		return fmt.Errorf("could not connect to socket, error code %v", rv)
+	}
+
+	return nil
 }
 
 func Htons(v uint16) uint16 {

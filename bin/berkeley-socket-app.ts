@@ -337,7 +337,9 @@ if (testAsync) {
 
       const instance = await WebAssembly.instantiate(
         await WebAssembly.compile(
-          fs.readFileSync("./examples/go/async_echo_server.wasm")
+          testBind
+            ? fs.readFileSync("./examples/go/async_echo_server.wasm")
+            : fs.readFileSync("./examples/go/async_echo_client.wasm")
         ),
         go.importObject
       );
