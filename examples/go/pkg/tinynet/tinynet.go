@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	"github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/examples/go/pkg/sockets"
 )
@@ -114,7 +115,29 @@ func (l *TCPListener) AcceptTCP() (*TCPConn, error) {
 // }
 
 func DialTCP(network string, laddr, raddr *TCPAddr) (*TCPConn, error) {
-	return &TCPConn{}, nil
+	// Create address
+	serverAddress := sockets.SockaddrIn{
+		SinFamily: sockets.PF_INET,
+		SinPort:   sockets.Htons(uint16(raddr.Port)),
+		SinAddr: struct{ SAddr uint32 }{
+			SAddr: binary.LittleEndian.Uint32(raddr.IP),
+		},
+	}
+
+	// Create socket
+	serverSocket, err := sockets.Socket(sockets.PF_INET, sockets.SOCK_STREAM, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// Connect
+	if err := sockets.Connect(serverSocket, &serverAddress); err != nil {
+		return nil, err
+	}
+
+	return &TCPConn{
+		fd: serverSocket,
+	}, nil
 }
 
 // func (c *Conn) Read(b []byte) (int, error) {
@@ -122,7 +145,9 @@ func DialTCP(network string, laddr, raddr *TCPAddr) (*TCPConn, error) {
 // }
 
 func (c *TCPConn) Read(b []byte) (int, error) {
-	return 0, nil
+	n, err := sockets.Recv(c.fd, &b, uint32(unsafe.Sizeof(b)), 0) // TODO: Get pointer passing to work
+
+	return int(n), err
 }
 
 // func (c *Conn) Write(b []byte) (int, error) {
@@ -130,7 +155,9 @@ func (c *TCPConn) Read(b []byte) (int, error) {
 // }
 
 func (c *TCPConn) Write(b []byte) (int, error) {
-	return 0, nil
+	n, err := sockets.Send(c.fd, b, 0)
+
+	return int(n), err
 }
 
 // func (c *Conn) Close() error {
@@ -138,5 +165,5 @@ func (c *TCPConn) Write(b []byte) (int, error) {
 // }
 
 func (c *TCPConn) Close() error {
-	return nil
+	return sockets.Shutdown(c.fd, sockets.SHUT_RDWR)
 }
