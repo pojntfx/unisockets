@@ -87,14 +87,26 @@ func ListenTCP(network string, laddr *TCPAddr) (*TCPListener, error) {
 
 // type Conn struct{}
 
-type TCPConn struct{}
+type TCPConn struct {
+	fd int32
+}
 
 // func (l *TCPListener) Accept() (Conn, error) {
 // 	return Conn{}, nil
 // }
 
 func (l *TCPListener) AcceptTCP() (*TCPConn, error) {
-	return &TCPConn{}, nil
+	clientAddress := sockets.SockaddrIn{}
+
+	// Accept
+	clientSocket, err := sockets.Accept(l.fd, &clientAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TCPConn{
+		fd: clientSocket,
+	}, nil
 }
 
 // func Dial(network, address string) (Conn, error) {
