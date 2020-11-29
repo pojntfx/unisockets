@@ -1,9 +1,12 @@
 package tinynet
 
 import (
+	"encoding/binary"
 	"errors"
 	"strconv"
 	"strings"
+
+	"github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/examples/go/pkg/sockets"
 )
 
 type IP []byte
@@ -43,14 +46,43 @@ func ResolveTCPAddr(network, address string) (*TCPAddr, error) {
 
 // type Listener interface{}
 
-type TCPListener struct{}
+type TCPListener struct {
+	fd int32
+}
 
 // func Listen(network, address string) (Listener, error) {
 // 	return Listener{}, nil
 // }
 
 func ListenTCP(network string, laddr *TCPAddr) (*TCPListener, error) {
-	return &TCPListener{}, nil
+	// Create address
+	serverAddress := sockets.SockaddrIn{
+		SinFamily: sockets.PF_INET,
+		SinPort:   sockets.Htons(uint16(laddr.Port)),
+		SinAddr: struct{ SAddr uint32 }{
+			SAddr: binary.LittleEndian.Uint32(laddr.IP),
+		},
+	}
+
+	// Create socket
+	serverSocket, err := sockets.Socket(sockets.PF_INET, sockets.SOCK_STREAM, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// Bind
+	if err := sockets.Bind(serverSocket, &serverAddress); err != nil {
+		return nil, err
+	}
+
+	// Listen
+	if err := sockets.Listen(serverSocket, 5); err != nil {
+		return nil, err
+	}
+
+	return &TCPListener{
+		fd: serverSocket,
+	}, nil
 }
 
 // type Conn struct{}
