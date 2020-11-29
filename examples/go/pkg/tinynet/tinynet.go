@@ -145,7 +145,14 @@ func DialTCP(network string, laddr, raddr *TCPAddr) (*TCPConn, error) {
 // }
 
 func (c *TCPConn) Read(b []byte) (int, error) {
-	n, err := sockets.Recv(c.fd, &b, uint32(unsafe.Sizeof(b)), 0) // TODO: Get pointer passing to work
+	readMsg := make([]byte, unsafe.Sizeof(b))
+
+	n, err := sockets.Recv(c.fd, &readMsg, uint32(unsafe.Sizeof(readMsg)), 0)
+	if n == 0 {
+		return int(n), errors.New("client disconnected")
+	}
+
+	copy(b, readMsg)
 
 	return int(n), err
 }
@@ -156,6 +163,9 @@ func (c *TCPConn) Read(b []byte) (int, error) {
 
 func (c *TCPConn) Write(b []byte) (int, error) {
 	n, err := sockets.Send(c.fd, b, 0)
+	if n == 0 {
+		return int(n), errors.New("client disconnected")
+	}
 
 	return int(n), err
 }
