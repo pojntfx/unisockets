@@ -107,6 +107,8 @@ func main() {
 		// Shutdown
 		if err := sockets.Shutdown(serverSocket, sockets.SHUT_RDWR); err != nil {
 			fmt.Printf("[ERROR] Could not shutdown socket %v, stopping: %v\n", serverAddressReadable, err)
+
+			break
 		}
 	}
 }
