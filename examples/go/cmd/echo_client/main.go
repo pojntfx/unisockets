@@ -89,7 +89,7 @@ func main() {
 			if err != nil {
 				fmt.Printf("[ERROR] Could not receive from server %v, dropping message: %v\n", serverAddressReadable, err)
 
-				continue
+				break
 			}
 
 			if receivedMessageLength == 0 {
@@ -106,7 +106,7 @@ func main() {
 
 		// Shutdown
 		if err := sockets.Shutdown(serverSocket, sockets.SHUT_RDWR); err != nil {
-			fmt.Printf("[ERROR] Could not shutdown server socket %v, continuing: %v\n", serverAddressReadable, err)
+			fmt.Printf("[ERROR] Could not shutdown socket %v, stopping: %v\n", serverAddressReadable, err)
 		}
 	}
 }
