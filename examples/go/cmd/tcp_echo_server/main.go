@@ -13,7 +13,14 @@ var (
 )
 
 func main() {
-	lis, err := tinynet.Listen("tcp", LADDR)
+	laddr, err := tinynet.ResolveTCPAddr("tcp", LADDR)
+	if err != nil {
+		fmt.Println("could not resolve TCP address", err)
+
+		os.Exit(1)
+	}
+
+	lis, err := tinynet.ListenTCP("tcp", laddr)
 	if err != nil {
 		fmt.Println("could not listen", err)
 
@@ -23,7 +30,7 @@ func main() {
 	fmt.Println("Listening on", LADDR)
 
 	for {
-		conn, err := lis.Accept()
+		conn, err := lis.AcceptTCP()
 		if err != nil {
 			fmt.Println("could not accept", err)
 
@@ -32,7 +39,7 @@ func main() {
 
 		fmt.Println("Client connected")
 
-		go func(innerConn tinynet.Conn) {
+		go func(innerConn *tinynet.TCPConn) {
 			for {
 				buf := make([]byte, BUFLEN)
 				if n, err := innerConn.Read(buf); err != nil {

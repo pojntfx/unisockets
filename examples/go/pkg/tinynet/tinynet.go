@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/examples/go/pkg/sockets"
@@ -12,12 +13,25 @@ import (
 
 type IP []byte
 
-// type Addr interface{}
+type Addr interface {
+	Network() string
+	String() string
+}
 
 type TCPAddr struct {
+	stringAddr string
+
 	IP   IP
 	Port int
 	Zone string
+}
+
+func (t *TCPAddr) Network() string {
+	return "tcp"
+}
+
+func (t *TCPAddr) String() string {
+	return t.stringAddr
 }
 
 func ResolveTCPAddr(network, address string) (*TCPAddr, error) {
@@ -39,21 +53,30 @@ func ResolveTCPAddr(network, address string) (*TCPAddr, error) {
 	}
 
 	return &TCPAddr{
+		stringAddr: address,
+
 		IP:   ip,
 		Port: port,
 		Zone: "",
 	}, nil
 }
 
-// type Listener interface{}
+type Listener interface {
+	Accept() (Conn, error)
 
-type TCPListener struct {
-	fd int32
+	Close() error
+
+	Addr() Addr
 }
 
-// func Listen(network, address string) (Listener, error) {
-// 	return Listener{}, nil
-// }
+func Listen(network, address string) (Listener, error) {
+	laddr, err := ResolveTCPAddr(network, address)
+	if err != nil {
+		return TCPListener{}, err
+	}
+
+	return ListenTCP(network, laddr)
+}
 
 func ListenTCP(network string, laddr *TCPAddr) (*TCPListener, error) {
 	// Create address
@@ -82,19 +105,29 @@ func ListenTCP(network string, laddr *TCPAddr) (*TCPListener, error) {
 	}
 
 	return &TCPListener{
-		fd: serverSocket,
+		fd:   serverSocket,
+		addr: laddr,
 	}, nil
 }
 
-// type Conn struct{}
-
-type TCPConn struct {
-	fd int32
+type TCPListener struct {
+	fd   int32
+	addr Addr
 }
 
-// func (l *TCPListener) Accept() (Conn, error) {
-// 	return Conn{}, nil
-// }
+func (t TCPListener) Close() error {
+	return sockets.Shutdown(t.fd, sockets.SHUT_RDWR)
+}
+
+func (t TCPListener) Addr() Addr {
+	return t.addr
+}
+
+func (l TCPListener) Accept() (Conn, error) {
+	conn, err := l.AcceptTCP()
+
+	return conn, err
+}
 
 func (l *TCPListener) AcceptTCP() (*TCPConn, error) {
 	clientAddress := sockets.SockaddrIn{}
@@ -110,9 +143,19 @@ func (l *TCPListener) AcceptTCP() (*TCPConn, error) {
 	}, nil
 }
 
-// func Dial(network, address string) (Conn, error) {
-// 	return Conn{}, nil
-// }
+func Dial(network, address string) (Conn, error) {
+	raddr, err := ResolveTCPAddr(network, address)
+	if err != nil {
+		return TCPConn{}, err
+	}
+
+	conn, err := DialTCP(network, nil, raddr) // TODO: Set laddr here
+	if err != nil {
+		return TCPConn{}, err
+	}
+
+	return *conn, err
+}
 
 func DialTCP(network string, laddr, raddr *TCPAddr) (*TCPConn, error) {
 	// Create address
@@ -136,15 +179,38 @@ func DialTCP(network string, laddr, raddr *TCPAddr) (*TCPConn, error) {
 	}
 
 	return &TCPConn{
-		fd: serverSocket,
+		fd:    serverSocket,
+		laddr: laddr,
+		raddr: raddr,
 	}, nil
 }
 
-// func (c *Conn) Read(b []byte) (int, error) {
-// 	return 0, nil
-// }
+type Conn interface {
+	Read(b []byte) (n int, err error)
 
-func (c *TCPConn) Read(b []byte) (int, error) {
+	Write(b []byte) (n int, err error)
+
+	Close() error
+
+	LocalAddr() Addr
+
+	RemoteAddr() Addr
+
+	SetDeadline(t time.Time) error
+
+	SetReadDeadline(t time.Time) error
+
+	SetWriteDeadline(t time.Time) error
+}
+
+type TCPConn struct {
+	fd int32
+
+	laddr Addr
+	raddr Addr
+}
+
+func (c TCPConn) Read(b []byte) (int, error) {
 	readMsg := make([]byte, unsafe.Sizeof(b))
 
 	n, err := sockets.Recv(c.fd, &readMsg, uint32(unsafe.Sizeof(readMsg)), 0)
@@ -157,11 +223,7 @@ func (c *TCPConn) Read(b []byte) (int, error) {
 	return int(n), err
 }
 
-// func (c *Conn) Write(b []byte) (int, error) {
-// 	return 0, nil
-// }
-
-func (c *TCPConn) Write(b []byte) (int, error) {
+func (c TCPConn) Write(b []byte) (int, error) {
 	n, err := sockets.Send(c.fd, b, 0)
 	if n == 0 {
 		return int(n), errors.New("client disconnected")
@@ -170,10 +232,32 @@ func (c *TCPConn) Write(b []byte) (int, error) {
 	return int(n), err
 }
 
-// func (c *Conn) Close() error {
-// 	return nil
-// }
-
-func (c *TCPConn) Close() error {
+func (c TCPConn) Close() error {
 	return sockets.Shutdown(c.fd, sockets.SHUT_RDWR)
+}
+
+func (c TCPConn) LocalAddr() Addr {
+	return c.laddr
+}
+
+func (c TCPConn) RemoteAddr() Addr {
+	return c.laddr
+}
+
+func (c TCPConn) SetDeadline(t time.Time) error {
+	// TODO: Currently there is an infinite deadline
+
+	return nil
+}
+
+func (c TCPConn) SetReadDeadline(t time.Time) error {
+	// TODO: Currently there is an infinite deadline
+
+	return nil
+}
+
+func (c TCPConn) SetWriteDeadline(t time.Time) error {
+	// TODO: Currently there is an infinite deadline
+
+	return nil
 }
