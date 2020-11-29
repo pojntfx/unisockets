@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	LOCAL_HOST = []byte{10, 0, 0, 240}
+	LOCAL_HOST = []byte{127, 0, 0, 1}
 )
 
 const (
