@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/examples/go/pkg/sockets"
 )
@@ -33,31 +33,36 @@ func main() {
 	// Create socket
 	serverSocket, err := sockets.Socket(sockets.PF_INET, sockets.SOCK_STREAM, 0)
 	if err != nil {
-		log.Fatalf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, err)
+		fmt.Printf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, err)
+
+		os.Exit(1)
 	}
 
 	// Bind
 	if err := sockets.Bind(serverSocket, &serverAddress); err != nil {
-		log.Fatalf("[ERROR] Could not bind socket %v: %v\n", serverAddressReadable, err)
+
+		os.Exit(1)
 	}
 
 	// Listen
 	if err := sockets.Listen(serverSocket, BACKLOG); err != nil {
-		log.Fatalf("[ERROR] Could not listen on socket %v: %v\n", serverAddressReadable, err)
+		fmt.Printf("[ERROR] Could not listen on socket %v: %v\n", serverAddressReadable, err)
+
+		os.Exit(1)
 	}
 
-	log.Println("[INFO] Listening on", serverAddressReadable)
+	fmt.Println("[INFO] Listening on", serverAddressReadable)
 
 	// Accept loop
 	for {
-		log.Println("[DEBUG] Accepting on", serverAddressReadable)
+		fmt.Println("[DEBUG] Accepting on", serverAddressReadable)
 
 		clientAddress := sockets.SockaddrIn{}
 
 		// Accept
 		clientSocket, err := sockets.Accept(serverSocket, &clientAddress)
 		if err != nil {
-			log.Println("[ERROR] Could not accept, continuing:", err)
+			fmt.Println("[ERROR] Could not accept, continuing:", err)
 
 			continue
 		}
@@ -68,18 +73,18 @@ func main() {
 
 			clientAddressReadable := fmt.Sprintf("%v:%v", clientHost, innerClientAddress.SinPort)
 
-			log.Println("[INFO] Accepted client", clientAddressReadable)
+			fmt.Println("[INFO] Accepted client", clientAddressReadable)
 
 			// Receive loop
 			for {
-				log.Printf("[DEBUG] Waiting for client %v to send\n", clientAddressReadable)
+				fmt.Printf("[DEBUG] Waiting for client %v to send\n", clientAddressReadable)
 
 				// Receive
 				receivedMessage := make([]byte, BUFFER_LENGTH)
 
 				receivedMessageLength, err := sockets.Recv(innerClientSocket, &receivedMessage, BUFFER_LENGTH, 0)
 				if err != nil {
-					log.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, err)
+					fmt.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, err)
 
 					continue
 				}
@@ -88,26 +93,26 @@ func main() {
 					break
 				}
 
-				log.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
+				fmt.Printf("[DEBUG] Received %v bytes from %v\n", receivedMessageLength, clientAddressReadable)
 
 				// Send
 				sentMessage := []byte(fmt.Sprintf("You've sent: %v", string(receivedMessage)))
 
 				sentMessageLength, err := sockets.Send(innerClientSocket, sentMessage, 0)
 				if err != nil {
-					log.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, err)
+					fmt.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, err)
 
 					break
 				}
 
-				log.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, clientAddressReadable)
+				fmt.Printf("[DEBUG] Sent %v bytes to %v\n", sentMessageLength, clientAddressReadable)
 			}
 
-			log.Println("[INFO] Disconnected from client", clientAddressReadable)
+			fmt.Println("[INFO] Disconnected from client", clientAddressReadable)
 
 			// Shutdown
 			if err := sockets.Shutdown(innerClientSocket, sockets.SHUT_RDWR); err != nil {
-				log.Printf("[ERROR] Could not shutdown client socket %v, continuing: %v\n", clientAddressReadable, err)
+				fmt.Printf("[ERROR] Could not shutdown client socket %v, continuing: %v\n", clientAddressReadable, err)
 			}
 		}(clientSocket, clientAddress)
 	}
