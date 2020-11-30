@@ -349,19 +349,11 @@ const sockets = new Sockets(
               ? fs.readFileSync(
                   "./examples/go/out/tinygo/berkeley_echo_server.wasm"
                 )
-              : useNet
-              ? fs.readFileSync("./examples/go/out/tinygo/net_echo_server.wasm")
-              : useTCP
-              ? fs.readFileSync("./examples/go/out/tinygo/tcp_echo_server.wasm")
               : undefined!
             : useBerkeley
             ? fs.readFileSync(
                 "./examples/go/out/tinygo/berkeley_echo_client.wasm"
               )
-            : useNet
-            ? fs.readFileSync("./examples/go/out/tinygo/net_echo_client.wasm")
-            : useTCP
-            ? fs.readFileSync("./examples/go/out/tinygo/tcp_echo_client.wasm")
             : undefined!
         ),
         go.importObject
