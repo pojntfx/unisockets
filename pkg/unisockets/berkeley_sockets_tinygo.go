@@ -1,6 +1,6 @@
 // +build !js,tinygo
 
-package sockets
+package unisockets
 
 /*
 #include <stdio.h>

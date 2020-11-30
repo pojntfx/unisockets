@@ -4,11 +4,11 @@ import fs from "fs";
 import { WASI } from "wasi";
 import { ExtendedRTCConfiguration } from "wrtc";
 import yargs from "yargs";
-import { AliasDoesNotExistError } from "../lib/signaling/errors/alias-does-not-exist";
-import { SignalingClient } from "../lib/signaling/services/signaling-client";
-import { Sockets } from "../lib/sockets/sockets";
-import { Transporter } from "../lib/transport/transporter";
-import { getLogger } from "../lib/utils/logger";
+import { AliasDoesNotExistError } from "../../pkg/web/signaling/errors/alias-does-not-exist";
+import { SignalingClient } from "../../pkg/web/signaling/services/signaling-client";
+import { Sockets } from "../../pkg/web/sockets/sockets";
+import { Transporter } from "../../pkg/web/transport/transporter";
+import { getLogger } from "../../pkg/web/utils/logger";
 const TinyGo = require("../vendor/tinygo/wasm_exec");
 const Go = require("../vendor/go/wasm_exec");
 

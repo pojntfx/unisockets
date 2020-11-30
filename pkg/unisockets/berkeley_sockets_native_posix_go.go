@@ -1,6 +1,6 @@
 // +build !js,!tinygo
 
-package sockets
+package unisockets
 
 /*
 #cgo CFLAGS: -DBERKELEY_SOCKETS_WITH_INVERSE_ALIAS

@@ -1,6 +1,6 @@
 // +build js,wasm
 
-package sockets
+package unisockets
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package sockets
+package unisockets
 
 type SockaddrIn struct {
 	SinFamily uint16

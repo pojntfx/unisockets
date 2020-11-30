@@ -1,5 +1,5 @@
 import yargs from "yargs";
-import { SignalingServer } from "../lib/signaling/services/signaling-server";
+import { SignalingServer } from "../../pkg/web/signaling/services/signaling-server";
 
 const { listenAddress } = yargs(process.argv.slice(2)).options({
   listenAddress: {
