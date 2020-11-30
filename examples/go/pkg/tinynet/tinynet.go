@@ -213,7 +213,7 @@ type TCPConn struct {
 func (c TCPConn) Read(b []byte) (int, error) {
 	readMsg := make([]byte, unsafe.Sizeof(b))
 
-	n, err := sockets.Recv(c.fd, &readMsg, uint32(unsafe.Sizeof(readMsg)), 0)
+	n, err := sockets.Recv(c.fd, &readMsg, uint32(len(b)), 0)
 	if n == 0 {
 		return int(n), errors.New("client disconnected")
 	}
