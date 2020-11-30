@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/examples/go/pkg/sockets"
+	"github.com/pojntfx/unisockets/pkg/unisockets"
 )
 
 var (
@@ -21,9 +21,9 @@ const (
 
 func main() {
 	// Create address
-	serverAddress := sockets.SockaddrIn{
-		SinFamily: sockets.PF_INET,
-		SinPort:   sockets.Htons(LOCAL_PORT),
+	serverAddress := unisockets.SockaddrIn{
+		SinFamily: unisockets.PF_INET,
+		SinPort:   unisockets.Htons(LOCAL_PORT),
 		SinAddr: struct{ SAddr uint32 }{
 			SAddr: binary.LittleEndian.Uint32(LOCAL_HOST),
 		},
@@ -31,7 +31,7 @@ func main() {
 	serverAddressReadable := fmt.Sprintf("%v:%v", LOCAL_HOST, LOCAL_PORT)
 
 	// Create socket
-	serverSocket, err := sockets.Socket(sockets.PF_INET, sockets.SOCK_STREAM, 0)
+	serverSocket, err := unisockets.Socket(unisockets.PF_INET, unisockets.SOCK_STREAM, 0)
 	if err != nil {
 		fmt.Printf("[ERROR] Could not create socket %v: %v\n", serverAddressReadable, err)
 
@@ -39,14 +39,14 @@ func main() {
 	}
 
 	// Bind
-	if err := sockets.Bind(serverSocket, &serverAddress); err != nil {
+	if err := unisockets.Bind(serverSocket, &serverAddress); err != nil {
 		fmt.Printf("[ERROR] Could not bind to socket %v: %v\n", serverAddressReadable, err)
 
 		os.Exit(1)
 	}
 
 	// Listen
-	if err := sockets.Listen(serverSocket, BACKLOG); err != nil {
+	if err := unisockets.Listen(serverSocket, BACKLOG); err != nil {
 		fmt.Printf("[ERROR] Could not listen on socket %v: %v\n", serverAddressReadable, err)
 
 		os.Exit(1)
@@ -58,17 +58,17 @@ func main() {
 	for {
 		fmt.Println("[DEBUG] Accepting on", serverAddressReadable)
 
-		clientAddress := sockets.SockaddrIn{}
+		clientAddress := unisockets.SockaddrIn{}
 
 		// Accept
-		clientSocket, err := sockets.Accept(serverSocket, &clientAddress)
+		clientSocket, err := unisockets.Accept(serverSocket, &clientAddress)
 		if err != nil {
 			fmt.Println("[ERROR] Could not accept, continuing:", err)
 
 			continue
 		}
 
-		go func(innerClientSocket int32, innerClientAddress sockets.SockaddrIn) {
+		go func(innerClientSocket int32, innerClientAddress unisockets.SockaddrIn) {
 			clientHost := make([]byte, 4) // xxx.xxx.xxx.xxx
 			binary.LittleEndian.PutUint32(clientHost, uint32(innerClientAddress.SinAddr.SAddr))
 
@@ -83,7 +83,7 @@ func main() {
 				// Receive
 				receivedMessage := make([]byte, BUFFER_LENGTH)
 
-				receivedMessageLength, err := sockets.Recv(innerClientSocket, &receivedMessage, BUFFER_LENGTH, 0)
+				receivedMessageLength, err := unisockets.Recv(innerClientSocket, &receivedMessage, BUFFER_LENGTH, 0)
 				if err != nil {
 					fmt.Printf("[ERROR] Could not receive from client %v, dropping message: %v\n", clientAddressReadable, err)
 
@@ -99,7 +99,7 @@ func main() {
 				// Send
 				sentMessage := []byte(fmt.Sprintf("You've sent: %v", string(receivedMessage)))
 
-				sentMessageLength, err := sockets.Send(innerClientSocket, sentMessage, 0)
+				sentMessageLength, err := unisockets.Send(innerClientSocket, sentMessage, 0)
 				if err != nil {
 					fmt.Printf("[ERROR] Could not send to client %v, dropping message: %v\n", clientAddressReadable, err)
 
@@ -112,7 +112,7 @@ func main() {
 			fmt.Println("[INFO] Disconnected from client", clientAddressReadable)
 
 			// Shutdown
-			if err := sockets.Shutdown(innerClientSocket, sockets.SHUT_RDWR); err != nil {
+			if err := unisockets.Shutdown(innerClientSocket, unisockets.SHUT_RDWR); err != nil {
 				fmt.Printf("[ERROR] Could not shutdown client socket %v, stopping: %v\n", clientAddressReadable, err)
 
 				return

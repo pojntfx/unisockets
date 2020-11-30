@@ -1,25 +1,25 @@
 {
-  "name": "@pojntfx/webassembly-berkeley-sockets-via-webrtc",
+  "name": "@pojntfx/unisockets",
   "version": "0.0.1-alpha1",
-  "description": "Berkeley sockets for WebAssembly via WebRTC.",
-  "main": "index.js",
+  "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
+  "main": "index.ts",
   "scripts": {
-    "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files bin/signaling-server.ts",
-    "dev:examples": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files bin/examples.ts",
+    "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/signaling_server/main.ts",
+    "dev:examples": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/examples_runner/main.ts",
     "dev:diagram": "tplant -p tsconfig.json -i './**/*.ts*' --output 'diagram.svg'",
-    "start:signaling-server": "ts-node --files bin/signaling-server.ts",
-    "start:examples": "ts-node --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files bin/examples.ts"
+    "start:signaling-server": "ts-node --files cmd/signaling_server/main.ts",
+    "start:examples": "ts-node --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/examples_runner/main.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc.git"
+    "url": "git+https://github.com/pojntfx/unisockets.git"
   },
   "author": "Felix Pojtinger <felix@pojtinger.com>",
   "license": "AGPL-3.0",
   "bugs": {
-    "url": "https://github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc/issues"
+    "url": "https://github.com/pojntfx/unisockets/issues"
   },
-  "homepage": "https://github.com/pojntfx/webassembly-berkeley-sockets-via-webrtc#readme",
+  "homepage": "https://github.com/pojntfx/unisockets#readme",
   "devDependencies": {
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.4.0",
