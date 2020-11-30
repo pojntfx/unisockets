@@ -14,6 +14,7 @@ build: \
     build-server-net-wasm-jssi-go \
     build-server-berkeley-wasm-wasi-tinygo \
     build-server-berkeley-wasm-jssi-tinygo \
+	build-server-net-wasm-wasi-tinygo \
 	build-client-native-posix-c \
     build-client-berkeley-native-posix-go \
     build-client-net-native-posix-go \
@@ -23,7 +24,8 @@ build: \
     build-client-berkeley-wasm-jssi-go \
     build-client-net-wasm-jssi-go \
     build-client-berkeley-wasm-wasi-tinygo \
-    build-client-berkeley-wasm-jssi-tinygo
+    build-client-berkeley-wasm-jssi-tinygo \
+	build-client-net-wasm-wasi-tinygo
 
 build-wasi-sdk:
 	@docker build -t pojntfx/wasi-sdk examples/c
@@ -59,6 +61,10 @@ build-server-berkeley-wasm-wasi-tinygo: build-wasi-sdk
 build-server-berkeley-wasm-jssi-tinygo:
 	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o out/tinygo/berkeley_echo_server.wasm ./cmd/berkeley_echo_server/main.go'
 
+build-server-net-wasm-wasi-tinygo: build-wasi-sdk
+	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasi -o out/tinygo/net_echo_server_wasi_original.wasm ./cmd/net_echo_server/main.go'
+	@docker run -v ${PWD}/examples/go:/examples/go:z pojntfx/wasi-sdk sh -c 'cd /examples/go && wasm-opt --asyncify -O out/tinygo/net_echo_server_wasi_original.wasm -o out/tinygo/net_echo_server_wasi.wasm'
+
 build-client-native-posix-c:
 	@docker run -v ${PWD}/examples/c:/examples/c:z silkeh/clang sh -c 'cd /examples/c && mkdir -p out && clang echo_client.c -o out/echo_client'
 
@@ -90,6 +96,10 @@ build-client-berkeley-wasm-wasi-tinygo: build-wasi-sdk
 build-client-berkeley-wasm-jssi-tinygo:
 	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o out/tinygo/berkeley_echo_client.wasm ./cmd/berkeley_echo_client/main.go'
 
+build-client-net-wasm-wasi-tinygo: build-wasi-sdk
+	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasi -o out/tinygo/net_echo_client_wasi_original.wasm ./cmd/net_echo_client/main.go'
+	@docker run -v ${PWD}/examples/go:/examples/go:z pojntfx/wasi-sdk sh -c 'cd /examples/go && wasm-opt --asyncify -O out/tinygo/net_echo_client_wasi_original.wasm -o out/tinygo/net_echo_client_wasi.wasm'
+
 # Clean
 clean: \
     clean-server-native-posix-c \
@@ -102,6 +112,7 @@ clean: \
     clean-server-net-wasm-jssi-go \
     clean-server-berkeley-wasm-wasi-tinygo \
     clean-server-berkeley-wasm-jssi-tinygo \
+    clean-server-net-wasm-wasi-tinygo \
 	clean-client-native-posix-c \
     clean-client-berkeley-native-posix-go \
     clean-client-net-native-posix-go \
@@ -111,7 +122,8 @@ clean: \
     clean-client-berkeley-wasm-jssi-go \
     clean-client-net-wasm-jssi-go \
     clean-client-berkeley-wasm-wasi-tinygo \
-    clean-client-berkeley-wasm-jssi-tinygo
+    clean-client-berkeley-wasm-jssi-tinygo \
+    clean-client-net-wasm-wasi-tinygo
 
 clean-server-native-posix-c:
 	@rm -f examples/c/out/echo_server
@@ -145,6 +157,9 @@ clean-server-berkeley-wasm-wasi-tinygo:
 clean-server-berkeley-wasm-jssi-tinygo:
 	@rm -f examples/go/out/tinygo/berkeley_echo_server.wasm
 
+clean-server-net-wasm-wasi-tinygo:
+	@rm -f examples/go/out/tinygo/net_echo_server.wasm
+
 clean-client-native-posix-c:
 	@rm -f examples/c/out/echo_client
 
@@ -176,6 +191,9 @@ clean-client-berkeley-wasm-wasi-tinygo:
 
 clean-client-berkeley-wasm-jssi-tinygo:
 	@rm -f examples/go/out/tinygo/berkeley_echo_client.wasm
+
+clean-client-net-wasm-wasi-tinygo:
+	@rm -f examples/go/out/tinygo/net_echo_client.wasm
 
 # Run
 run: \
