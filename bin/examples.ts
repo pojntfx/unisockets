@@ -289,8 +289,8 @@ const sockets = new Sockets(
       const instance = await WebAssembly.instantiate(
         await WebAssembly.compile(
           runServer
-            ? fs.readFileSync("./examples/go/out/go/echo_server.wasm")
-            : fs.readFileSync("./examples/go/out/go/echo_client.wasm")
+            ? fs.readFileSync("./examples/go/out/go/berkeley_echo_server.wasm")
+            : fs.readFileSync("./examples/go/out/go/berkeley_echo_client.wasm")
         ),
         go.importObject
       );
@@ -314,8 +314,12 @@ const sockets = new Sockets(
       const instance = await WebAssembly.instantiate(
         await WebAssembly.compile(
           runServer
-            ? fs.readFileSync("./examples/go/out/tinygo/echo_server.wasm")
-            : fs.readFileSync("./examples/go/out/tinygo/echo_client.wasm")
+            ? fs.readFileSync(
+                "./examples/go/out/tinygo/berkeley_echo_server.wasm"
+              )
+            : fs.readFileSync(
+                "./examples/go/out/tinygo/berkeley_echo_client.wasm"
+              )
         ),
         go.importObject
       );
@@ -338,8 +342,12 @@ const sockets = new Sockets(
       const instance = await Asyncify.instantiate(
         await WebAssembly.compile(
           runServer
-            ? fs.readFileSync("./examples/go/out/tinygo/echo_server_wasi.wasm")
-            : fs.readFileSync("./examples/go/out/tinygo/echo_client_wasi.wasm")
+            ? fs.readFileSync(
+                "./examples/go/out/tinygo/berkeley_echo_server_wasi.wasm"
+              )
+            : fs.readFileSync(
+                "./examples/go/out/tinygo/berkeley_echo_client_wasi.wasm"
+              )
         ),
         {
           wasi_unstable: wasi.wasiImport,
