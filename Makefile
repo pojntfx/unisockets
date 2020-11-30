@@ -8,6 +8,7 @@ build: \
     build-server-berkeley-native-posix-go \
     build-server-net-native-posix-go \
     build-server-berkeley-native-posix-tinygo \
+    build-server-net-native-posix-tinygo \
     build-server-wasm-wasi-c \
     build-server-berkeley-wasm-jssi-go \
     build-server-net-wasm-jssi-go \
@@ -17,6 +18,7 @@ build: \
     build-client-berkeley-native-posix-go \
     build-client-net-native-posix-go \
     build-client-berkeley-native-posix-tinygo \
+    build-client-net-native-posix-tinygo \
     build-client-wasm-wasi-c \
     build-client-berkeley-wasm-jssi-go \
     build-client-net-wasm-jssi-go \
@@ -37,6 +39,9 @@ build-server-net-native-posix-go:
 
 build-server-berkeley-native-posix-tinygo:
 	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && mkdir -p out/tinygo && tinygo build -o out/tinygo/echo_server ./cmd/berkeley_echo_server/main.go'
+
+build-server-net-native-posix-tinygo:
+	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && mkdir -p out/tinygo && tinygo build -o out/tinygo/net_echo_server ./cmd/net_echo_server/main.go'
 
 build-server-wasm-wasi-c: build-wasi-sdk
 	@docker run -v ${PWD}/examples/c:/examples/c:z pojntfx/wasi-sdk sh -c 'cd /examples/c && mkdir -p out && clang -Wl,--allow-undefined -DIS_WASM -DBERKELEY_SOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot echo_server.c -o out/echo_server_original.wasm && wasm-opt --asyncify -O out/echo_server_original.wasm -o out/echo_server.wasm'
@@ -66,6 +71,9 @@ build-client-net-native-posix-go:
 build-client-berkeley-native-posix-tinygo:
 	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && mkdir -p out/tinygo && tinygo build -o out/tinygo/berkeley_echo_client ./cmd/berkeley_echo_client/main.go'
 
+build-client-net-native-posix-tinygo:
+	@docker run -v ${PWD}/examples/go:/examples/go:z tinygo/tinygo sh -c 'cd /examples/go && mkdir -p out/tinygo && tinygo build -o out/tinygo/net_echo_client ./cmd/net_echo_client/main.go'
+
 build-client-wasm-wasi-c: build-wasi-sdk
 	@docker run -v ${PWD}/examples/c:/examples/c:z pojntfx/wasi-sdk sh -c 'cd /examples/c && mkdir -p out && clang -Wl,--allow-undefined -DIS_WASM -DBERKELEY_SOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot echo_client.c -o out/echo_client_original.wasm && wasm-opt --asyncify -O out/echo_client_original.wasm -o out/echo_client.wasm'
 
@@ -88,6 +96,7 @@ clean: \
     clean-server-berkeley-native-posix-go \
     clean-server-net-native-posix-go \
     clean-server-berkeley-native-posix-tinygo \
+    clean-server-net-native-posix-tinygo \
     clean-server-wasm-wasi-c \
     clean-server-berkeley-wasm-jssi-go \
     clean-server-net-wasm-jssi-go \
@@ -97,6 +106,7 @@ clean: \
     clean-client-berkeley-native-posix-go \
     clean-client-net-native-posix-go \
     clean-client-berkeley-native-posix-tinygo \
+    clean-client-net-native-posix-tinygo \
     clean-client-wasm-wasi-c \
     clean-client-berkeley-wasm-jssi-go \
     clean-client-net-wasm-jssi-go \
@@ -114,6 +124,9 @@ clean-server-net-native-posix-go:
 
 clean-server-berkeley-native-posix-tinygo:
 	@rm -f examples/go/out/tinygo/berkeley_echo_server
+
+clean-server-net-native-posix-tinygo:
+	@rm -f examples/go/out/tinygo/net_echo_server
 
 clean-server-wasm-wasi-c:
 	@rm -f examples/c/out/echo_server_original.wasm
@@ -144,6 +157,9 @@ clean-client-net-native-posix-go:
 clean-client-berkeley-native-posix-tinygo:
 	@rm -f examples/go/out/tinygo/berkeley_echo_client
 
+clean-client-net-native-posix-tinygo:
+	@rm -f examples/go/out/tinygo/net_echo_client
+
 clean-client-wasm-wasi-c:
 	@rm -f examples/c/out/echo_client_original.wasm
 	@rm -f examples/c/out/echo_client.wasm
@@ -167,10 +183,12 @@ run: \
     run-server-berkeley-native-posix-go \
     run-server-net-posix-go \
     run-server-berkeley-native-posix-tinygo \
+    run-server-net-native-posix-tinygo \
 	run-client-native-posix-c \
     run-client-berkeley-native-posix-go \
     run-client-net-native-posix-go \
-    run-client-berkeley-native-posix-tinygo
+    run-client-berkeley-native-posix-tinygo \
+    run-client-net-native-posix-tinygo
 
 run-server-native-posix-c:
 	@./examples/c/out/echo_server
@@ -184,6 +202,9 @@ run-server-net-native-posix-go:
 run-server-berkeley-native-posix-tinygo:
 	@./examples/go/out/tinygo/berkeley_echo_server
 
+run-server-net-native-posix-tinygo:
+	@./examples/go/out/tinygo/net_echo_server
+
 run-client-native-posix-c:
 	@./examples/c/out/echo_client
 
@@ -195,3 +216,6 @@ run-client-net-native-posix-go:
 
 run-client-berkeley-native-posix-tinygo:
 	@./examples/go/out/tinygo/berkeley_echo_client
+
+run-client-net-native-posix-tinygo:
+	@./examples/go/out/tinygo/net_echo_client
