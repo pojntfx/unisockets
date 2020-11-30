@@ -33,6 +33,10 @@ const {
   useJSSI,
   useWASI,
 
+  useBerkeley,
+  useNet,
+  useTCP,
+
   runServer,
 } = yargs(process.argv.slice(2)).options({
   signalingServerAddress: {
@@ -59,6 +63,19 @@ const {
   },
   useTinyGo: {
     description: "Use the TinyGo implementation",
+    default: false,
+  },
+
+  useBerkeley: {
+    description: "Use the Berkeley style sockets implementation",
+    default: false,
+  },
+  useNet: {
+    description: "Use the net style sockets implementation",
+    default: false,
+  },
+  useTCP: {
+    description: "Use the TCP style sockets implementation",
     default: false,
   },
 
@@ -255,7 +272,7 @@ const sockets = new Sockets(
 
 (async () => {
   if (useC) {
-    if (useWASI) {
+    if (useWASI && useBerkeley) {
       const wasi = new WASI();
       const {
         memoryId,
@@ -264,7 +281,7 @@ const sockets = new Sockets(
 
       const instance = await Asyncify.instantiate(
         await WebAssembly.compile(
-          runServer
+          runServer && useBerkeley
             ? fs.readFileSync("./examples/c/out/echo_server.wasm")
             : fs.readFileSync("./examples/c/out/echo_client.wasm")
         ),
@@ -289,8 +306,22 @@ const sockets = new Sockets(
       const instance = await WebAssembly.instantiate(
         await WebAssembly.compile(
           runServer
-            ? fs.readFileSync("./examples/go/out/go/berkeley_echo_server.wasm")
-            : fs.readFileSync("./examples/go/out/go/berkeley_echo_client.wasm")
+            ? useBerkeley
+              ? fs.readFileSync(
+                  "./examples/go/out/go/berkeley_echo_server.wasm"
+                )
+              : useNet
+              ? fs.readFileSync("./examples/go/out/go/net_echo_server.wasm")
+              : useTCP
+              ? fs.readFileSync("./examples/go/out/go/tcp_echo_server.wasm")
+              : undefined!
+            : useBerkeley
+            ? fs.readFileSync("./examples/go/out/go/berkeley_echo_client.wasm")
+            : useNet
+            ? fs.readFileSync("./examples/go/out/go/net_echo_client.wasm")
+            : useTCP
+            ? fs.readFileSync("./examples/go/out/go/tcp_echo_client.wasm")
+            : undefined!
         ),
         go.importObject
       );
@@ -314,12 +345,24 @@ const sockets = new Sockets(
       const instance = await WebAssembly.instantiate(
         await WebAssembly.compile(
           runServer
+            ? useBerkeley
+              ? fs.readFileSync(
+                  "./examples/go/out/tinygo/berkeley_echo_server.wasm"
+                )
+              : useNet
+              ? fs.readFileSync("./examples/go/out/tinygo/net_echo_server.wasm")
+              : useTCP
+              ? fs.readFileSync("./examples/go/out/tinygo/tcp_echo_server.wasm")
+              : undefined!
+            : useBerkeley
             ? fs.readFileSync(
-                "./examples/go/out/tinygo/berkeley_echo_server.wasm"
-              )
-            : fs.readFileSync(
                 "./examples/go/out/tinygo/berkeley_echo_client.wasm"
               )
+            : useNet
+            ? fs.readFileSync("./examples/go/out/tinygo/net_echo_client.wasm")
+            : useTCP
+            ? fs.readFileSync("./examples/go/out/tinygo/tcp_echo_client.wasm")
+            : undefined!
         ),
         go.importObject
       );
@@ -342,12 +385,32 @@ const sockets = new Sockets(
       const instance = await Asyncify.instantiate(
         await WebAssembly.compile(
           runServer
+            ? useBerkeley
+              ? fs.readFileSync(
+                  "./examples/go/out/tinygo/berkeley_echo_server_wasi.wasm"
+                )
+              : useNet
+              ? fs.readFileSync(
+                  "./examples/go/out/tinygo/net_echo_server_wasi.wasm"
+                )
+              : useTCP
+              ? fs.readFileSync(
+                  "./examples/go/out/tinygo/tcp_echo_server_wasi.wasm"
+                )
+              : undefined!
+            : useBerkeley
             ? fs.readFileSync(
-                "./examples/go/out/tinygo/berkeley_echo_server_wasi.wasm"
-              )
-            : fs.readFileSync(
                 "./examples/go/out/tinygo/berkeley_echo_client_wasi.wasm"
               )
+            : useNet
+            ? fs.readFileSync(
+                "./examples/go/out/tinygo/net_echo_client_wasi.wasm"
+              )
+            : useTCP
+            ? fs.readFileSync(
+                "./examples/go/out/tinygo/tcp_echo_client_wasi.wasm"
+              )
+            : undefined!
         ),
         {
           wasi_unstable: wasi.wasiImport,
