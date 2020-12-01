@@ -14,7 +14,7 @@ unisockets implements the [Berkeley sockets API](https://en.wikipedia.org/wiki/B
 
 ### Components
 
-![UML Diagram](https://pojntfx.github.io/unisockets/media/diagram.svg)
+[![UML Diagram](https://pojntfx.github.io/unisockets/media/diagram.svg)](https://pojntfx.github.io/unisockets/media/diagram.svg)
 
 The system is made up of the following components:
 
