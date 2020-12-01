@@ -1,0 +1,25 @@
+name: Yarn CI
+
+on: [push, pull_request]
+
+jobs:
+  yarn:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: "14"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install dependencies with Yarn
+        run: yarn
+      - name: Build with Yarn
+        run: yarn build
+      - name: Publish to npm
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: shawnbot/npm-publish-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
