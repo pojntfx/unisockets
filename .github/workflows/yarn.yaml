@@ -15,13 +15,13 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Install dependencies with Yarn
         run: yarn
-      - name: Build binary with Yarn
+      - name: Build with Yarn
         run: yarn build
-      - name: Build library with Yarn
-        run: yarn build:lib
       - name: Publish to npm
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: primer/publish@3.0.0
+        with:
+          default-branch: "main"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
