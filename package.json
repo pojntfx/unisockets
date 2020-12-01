@@ -17,6 +17,9 @@
   "bin": {
     "unisockets_runner": "out/main.js"
   },
+  "files": [
+    "out/main.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/pojntfx/unisockets.git"
