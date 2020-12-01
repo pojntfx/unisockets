@@ -2,9 +2,10 @@
   "name": "@pojntfx/unisockets",
   "version": "0.0.1-alpha1",
   "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
-  "main": "index.ts",
+  "main": "out/index.js",
   "scripts": {
     "build": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --outfile=out/main.js --platform=node --target=node12 --external:wasi --external:wrtc",
+    "build:lib": "esbuild index.ts --bundle --minify --sourcemap --outfile=out/index.js --platform=node --target=node12 --external:wrtc",
     "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runSignalingServer true",
     "dev:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true cmd/c_echo_server/out/echo_server.wasm",
     "dev:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true cmd/c_echo_client/out/echo_client.wasm",
