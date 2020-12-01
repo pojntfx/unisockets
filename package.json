@@ -4,11 +4,17 @@
   "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
   "main": "index.ts",
   "scripts": {
-    "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/signaling_server/main.ts",
-    "dev:examples": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/examples_runner/main.ts",
+    "build": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --outfile=out/main.js --platform=node --target=node12 --external:wasi --external:wrtc",
+    "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runSignalingServer true",
+    "dev:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useC true --useWASI true cmd/c_echo_server/out/echo_server.wasm",
+    "dev:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useC true --useWASI true cmd/c_echo_client/out/echo_client.wasm",
     "dev:diagram": "tplant -p tsconfig.json -i './**/*.ts*' --output 'diagram.svg'",
-    "start:signaling-server": "ts-node --files cmd/signaling_server/main.ts",
-    "start:examples": "ts-node --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/examples_runner/main.ts"
+    "start:signaling-server": "./out/main.js --runSignalingServer true",
+    "start:example-server": "./out/main.js --runBinary true --useC true --useC true --useWASI true --binaryPath cmd/c_echo_server/out/echo_server.wasm",
+    "start:example-client": "./out/main.js --runBinary true --useC true --useC true --useWASI true --binaryPath cmd/c_echo_client/out/echo_client.wasm"
+  },
+  "bin": {
+    "unisockets_runner": "out/main.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +30,7 @@
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.4.0",
     "@types/yargs": "^15.0.9",
+    "esbuild": "^0.8.17",
     "tplant": "^2.3.6",
     "ts-node": "^9.0.0",
     "ts-node-dev": "^1.0.0",
