@@ -6,12 +6,12 @@
   "scripts": {
     "build": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --outfile=out/main.js --platform=node --target=node12 --external:wasi --external:wrtc",
     "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runSignalingServer true",
-    "dev:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useC true --useWASI true cmd/c_echo_server/out/echo_server.wasm",
-    "dev:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useC true --useWASI true cmd/c_echo_client/out/echo_client.wasm",
+    "dev:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true cmd/c_echo_server/out/echo_server.wasm",
+    "dev:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true cmd/c_echo_client/out/echo_client.wasm",
     "dev:diagram": "tplant -p tsconfig.json -i './**/*.ts*' --output 'diagram.svg'",
     "start:signaling-server": "./out/main.js --runSignalingServer true",
-    "start:example-server": "./out/main.js --runBinary true --useC true --useC true --useWASI true --binaryPath cmd/c_echo_server/out/echo_server.wasm",
-    "start:example-client": "./out/main.js --runBinary true --useC true --useC true --useWASI true --binaryPath cmd/c_echo_client/out/echo_client.wasm"
+    "start:example-server": "./out/main.js --runBinary true --useC true --useWASI true --binaryPath cmd/c_echo_server/out/echo_server.wasm",
+    "start:example-client": "./out/main.js --runBinary true --useC true --useWASI true --binaryPath cmd/c_echo_client/out/echo_client.wasm"
   },
   "bin": {
     "unisockets_runner": "out/main.js"
