@@ -20,11 +20,11 @@ The system is made up of the following components:
 
 - **Signaling**: A WebRTC signaling server, client and protocol has been implemented to allow for nodes to discover each other and exchange candidates, but is not involved in any actual connections. When compiling natively, it is not required.
 - **Transport**: A minimal wrapper around the WebRTC API. When compiling to WASM, this component manages all actual data transfers and handles incoming/outgoing peer to peer connections. When compiling natively, it is not required.
-- **Sockets**: A set of WebAssembly imports that satisfy the basic API of the Berkeley sockets, such as `socket`, `bind`, `listen, `accept`, `connect`, `send`, `recv` etc. When compiling natively, it falls back to the native implementation.
+- **Sockets**: A set of WebAssembly imports that satisfy the basic API of the Berkeley sockets, such as `socket`, `bind`, `listen`, `accept`, `connect`, `send`, `recv` etc. When compiling natively, it falls back to the native implementation.
 
 These components have no hard dependencies on one another, and can be used independenly.
 
-Additionally, a [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/berkeley_sockets.h) for easy usage and Go/TinyGo bindings (See [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets/pkg/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets/pkg/unisockets)) have been created.
+Additionally, a [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/berkeley_sockets.h) for easy usage and Go/TinyGo bindings (see [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets/pkg/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets/pkg/unisockets)) have been created.
 
 ### Further Resources
 
@@ -32,7 +32,7 @@ Interested in an implementation of the [Go `net` package](https://golang.org/pkg
 
 ## Usage
 
-Check out [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets) for API documentation. Many examples on how to use it (C, TinyGo & Go clients & servers plus an example WebAssembly runner) can also be found in [the `cmd` folder](https://github.com/pojntfx/unisockets/blob/main/cmd). Looking for advice on how to build and run natively and using WASM? Check out the [`Makefile`](https://github.com/pojntfx/unisockets/blob/main/Makefile)!
+Check out the [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/berkeley_sockets.h) for the C API docs or [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets) for the Go/TinyGo API. Many examples on how to use it (C, TinyGo & Go clients & servers plus an example WebAssembly runner) can also be found in [the `cmd` folder](https://github.com/pojntfx/unisockets/blob/main/cmd). Looking for advice on how to build and run natively or using WASM? Check out the [`Makefile`](https://github.com/pojntfx/unisockets/blob/main/Makefile)!
 
 ## License
 
