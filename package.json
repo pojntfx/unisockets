@@ -2,25 +2,25 @@
   "name": "@pojntfx/unisockets",
   "version": "0.0.1",
   "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
-  "main": "out/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "npm run build:bin && npm run build:lib && npm run build:docs && npm run build:diagram",
-    "build:bin": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --outfile=out/main.js --platform=node --target=node12 --external:wasi --external:wrtc",
-    "build:lib": "esbuild index.ts --bundle --minify --sourcemap --outfile=out/index.js --platform=node --target=node12 --external:wrtc",
-    "build:docs": "mkdir -p docs && typedoc --tsconfig -p tsconfig.json --mode file --out docs --media docs/media .",
-    "build:diagram": "mkdir -p docs/media && tplant -p tsconfig.json -i './**/*.ts*' --output 'docs/media/diagram.svg'",
+    "build:bin": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --distfile=dist/main.js --platform=node --target=node12 --external:wasi --external:wrtc",
+    "build:lib": "esbuild index.ts --bundle --minify --sourcemap --distfile=dist/index.js --platform=node --target=node12 --external:wrtc",
+    "build:docs": "mkdir -p docs && typedoc --tsconfig -p tsconfig.json --mode file --dist docs --media docs/media .",
+    "build:diagram": "mkdir -p docs/media && tplant -p tsconfig.json -i './**/*.ts*' --distput 'docs/media/diagram.svg'",
     "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runSignalingServer true",
-    "dev:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true cmd/c_echo_server/out/echo_server.wasm",
-    "dev:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true cmd/c_echo_client/out/echo_client.wasm",
-    "start:signaling-server": "./out/main.js --runSignalingServer true",
-    "start:example-server": "./out/main.js --runBinary true --useC true --useWASI true --binaryPath cmd/c_echo_server/out/echo_server.wasm",
-    "start:example-client": "./out/main.js --runBinary true --useC true --useWASI true --binaryPath cmd/c_echo_client/out/echo_client.wasm"
+    "dev:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true out/c/echo_server.wasm",
+    "dev:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --experimental-wasi-unstable-preview1 --experimental-wasm-bigint --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true out/c/echo_client.wasm",
+    "start:signaling-server": "./dist/main.js --runSignalingServer true",
+    "start:example-server": "./dist/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
+    "start:example-client": "./dist/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm"
   },
   "bin": {
-    "unisockets_runner": "out/main.js"
+    "unisockets_runner": "dist/main.js"
   },
   "files": [
-    "out/main.js"
+    "dist/main.js"
   ],
   "repository": {
     "type": "git",
