@@ -4,6 +4,7 @@ all: build
 # Build
 build: \
     build-wasi-sdk \
+    build-unisockets-runner \
     build-server-native-posix-c \
     build-server-native-posix-go \
     build-server-native-posix-tinygo \
@@ -20,51 +21,41 @@ build: \
     build-client-wasm-jssi-tinygo
 
 build-wasi-sdk:
-	@docker build -t pojntfx/wasi-sdk cmd/c_echo_client
+	@docker build -t pojntfx/wasi-sdk -f Dockerfile.wasi-sdk .
+build-unisockets-runner:
+	@docker build -t pojntfx/unisockets-runner -f Dockerfile.unisockets-runner .
 
 build-server-native-posix-c:
-	@docker run -v ${PWD}/cmd:/cmd:z silkeh/clang sh -c 'cd /cmd/c_echo_server && mkdir -p out && clang main.c -o out/echo_server'
-
+	@docker run -v ${PWD}:/src:z silkeh/clang sh -c 'cd /src && mkdir -p out/c && clang ./cmd/c_echo_server/main.c -o out/c/echo_server'
 build-server-native-posix-go:
-	@docker run -v ${PWD}/cmd:/cmd:z golang sh -c 'cd /cmd/go_echo_server && go build -o out/go/echo_server main.go'
-
+	@docker run -v ${PWD}:/src:z golang sh -c 'cd /src && go build -o out/go/echo_server ./cmd/go_echo_server/main.go'
 build-server-native-posix-tinygo:
-	@docker run -v ${PWD}/cmd:/cmd:z tinygo/tinygo sh -c 'cd /cmd/go_echo_server && mkdir -p out/tinygo && tinygo build -o out/tinygo/echo_server main.go'
-
+	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -o out/tinygo/echo_server ./cmd/go_echo_server/main.go'
 build-server-wasm-wasi-c: build-wasi-sdk
-	@docker run -v ${PWD}/cmd:/cmd:z pojntfx/wasi-sdk sh -c 'cd /cmd/c_echo_server && mkdir -p out && clang -Wl,--allow-undefined -DIS_WASM -DBERKELEY_SOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot main.c -o out/echo_server_original.wasm && wasm-opt --asyncify -O out/echo_server_original.wasm -o out/echo_server.wasm'
-
+	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && mkdir -p out/c && clang -Wl,--allow-undefined -DIS_WASM -DBERKELEY_SOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot cmd/c_echo_server/main.c -o out/c/echo_server_original.wasm && wasm-opt --asyncify -O out/c/echo_server_original.wasm -o out/c/echo_server.wasm'
 build-server-wasm-jssi-go:
-	@docker run -v ${PWD}/cmd:/cmd:z -e GOOS=js -e GOARCH=wasm golang sh -c 'cd /cmd/go_echo_server && go build -o out/go/echo_server.wasm main.go'
-
+	@docker run -v ${PWD}:/src:z -e GOOS=js -e GOARCH=wasm golang sh -c 'cd /src && go build -o out/go/echo_server.wasm ./cmd/go_echo_server/main.go'
 build-server-wasm-wasi-tinygo: build-wasi-sdk
-	@docker run -v ${PWD}/cmd:/cmd:z tinygo/tinygo sh -c 'cd /cmd/go_echo_server && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasi -o out/tinygo/echo_server_wasi_original.wasm main.go'
-	@docker run -v ${PWD}/cmd:/cmd:z pojntfx/wasi-sdk sh -c 'cd /cmd/go_echo_server && wasm-opt --asyncify -O out/tinygo/echo_server_wasi_original.wasm -o out/tinygo/echo_server_wasi.wasm'
-
+	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasi -o out/tinygo/echo_server_wasi_original.wasm ./cmd/go_echo_server/main.go'
+	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && wasm-opt --asyncify -O out/tinygo/echo_server_wasi_original.wasm -o out/tinygo/echo_server_wasi.wasm'
 build-server-wasm-jssi-tinygo:
-	@docker run -v ${PWD}/cmd:/cmd:z tinygo/tinygo sh -c 'cd /cmd/go_echo_server && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o out/tinygo/echo_server.wasm main.go'
+	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o out/tinygo/echo_server_jssi.wasm ./cmd/go_echo_server/main.go'
 
 build-client-native-posix-c:
-	@docker run -v ${PWD}/cmd:/cmd:z silkeh/clang sh -c 'cd /cmd/c_echo_client && mkdir -p out && clang main.c -o out/echo_client'
-
+	@docker run -v ${PWD}:/src:z silkeh/clang sh -c 'cd /src && mkdir -p out/c && clang ./cmd/c_echo_client/main.c -o out/c/echo_client'
 build-client-native-posix-go:
-	@docker run -v ${PWD}/cmd:/cmd:z golang sh -c 'cd /cmd/go_echo_client && go build -o out/go/echo_client main.go'
-
+	@docker run -v ${PWD}:/src:z golang sh -c 'cd /src && go build -o out/go/echo_client ./cmd/go_echo_client/main.go'
 build-client-native-posix-tinygo:
-	@docker run -v ${PWD}/cmd:/cmd:z tinygo/tinygo sh -c 'cd /cmd/go_echo_client && mkdir -p out/tinygo && tinygo build -o out/tinygo/echo_client main.go'
-
+	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -o out/tinygo/echo_client ./cmd/go_echo_client/main.go'
 build-client-wasm-wasi-c: build-wasi-sdk
-	@docker run -v ${PWD}/cmd:/cmd:z pojntfx/wasi-sdk sh -c 'cd /cmd/c_echo_client && mkdir -p out && clang -Wl,--allow-undefined -DIS_WASM -DBERKELEY_SOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot main.c -o out/echo_client_original.wasm && wasm-opt --asyncify -O out/echo_client_original.wasm -o out/echo_client.wasm'
-
+	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && mkdir -p out/c && clang -Wl,--allow-undefined -DIS_WASM -DBERKELEY_SOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot cmd/c_echo_client/main.c -o out/c/echo_client_original.wasm && wasm-opt --asyncify -O out/c/echo_client_original.wasm -o out/c/echo_client.wasm'
 build-client-wasm-jssi-go:
-	@docker run -v ${PWD}/cmd:/cmd:z -e GOOS=js -e GOARCH=wasm golang sh -c 'cd /cmd/go_echo_client && go build -o out/go/echo_client.wasm main.go'
-
+	@docker run -v ${PWD}:/src:z -e GOOS=js -e GOARCH=wasm golang sh -c 'cd /src && go build -o out/go/echo_client.wasm ./cmd/go_echo_client/main.go'
 build-client-wasm-wasi-tinygo: build-wasi-sdk
-	@docker run -v ${PWD}/cmd:/cmd:z tinygo/tinygo sh -c 'cd /cmd/go_echo_client && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasi -o out/tinygo/echo_client_wasi_original.wasm main.go'
-	@docker run -v ${PWD}/cmd:/cmd:z pojntfx/wasi-sdk sh -c 'cd /cmd/go_echo_client && wasm-opt --asyncify -O out/tinygo/echo_client_wasi_original.wasm -o out/tinygo/echo_client_wasi.wasm'
-
+	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasi -o out/tinygo/echo_client_wasi_original.wasm ./cmd/go_echo_client/main.go'
+	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && wasm-opt --asyncify -O out/tinygo/echo_client_wasi_original.wasm -o out/tinygo/echo_client_wasi.wasm'
 build-client-wasm-jssi-tinygo:
-	@docker run -v ${PWD}/cmd:/cmd:z tinygo/tinygo sh -c 'cd /cmd/go_echo_client && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o out/tinygo/echo_client.wasm main.go'
+	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DBERKELEY_SOCKETS_WITH_CUSTOM_ARPA_INET" -target wasm -o out/tinygo/echo_client_jssi.wasm ./cmd/go_echo_client/main.go'
 
 # Clean
 clean: \
@@ -84,74 +75,81 @@ clean: \
     clean-client-wasm-jssi-tinygo
 
 clean-server-native-posix-c:
-	@rm -f cmd/c_echo_server/out/echo_server
-
+	@rm -f out/c/echo_server
 clean-server-native-posix-go:
-	@rm -f cmd/go_echo_server/out/go/echo_server
-
+	@rm -f out/go/echo_server
 clean-server-native-posix-tinygo:
-	@rm -f cmd/go_echo_server/out/tinygo/echo_server
-
+	@rm -f out/tinygo/echo_server
 clean-server-wasm-wasi-c:
-	@rm -f cmd/c_echo_server/out/echo_server_original.wasm
-	@rm -f cmd/c_echo_server/out/echo_server.wasm
-
+	@rm -f out/c/echo_server_original.wasm
+	@rm -f out/c/echo_server.wasm
 clean-server-wasm-jssi-go:
-	@rm -f cmd/go_echo_server/out/go/echo_server.wasm
-
+	@rm -f out/go/echo_server.wasm
 clean-server-wasm-wasi-tinygo:
-	@rm -f cmd/go_echo_server/out/tinygo/echo_server_wasi_original.wasm
-	@rm -f cmd/go_echo_server/out/tinygo/echo_server_wasi.wasm
-
+	@rm -f out/tinygo/echo_server_wasi_original.wasm
+	@rm -f out/tinygo/echo_server_wasi.wasm
 clean-server-wasm-jssi-tinygo:
-	@rm -f cmd/go_echo_server/out/tinygo/echo_server.wasm
+	@rm -f out/tinygo/echo_server_jssi.wasm
 
 clean-client-native-posix-c:
-	@rm -f cmd/c_echo_client/out/echo_client
-
+	@rm -f out/c/echo_client
 clean-client-native-posix-go:
-	@rm -f cmd/go_echo_client/out/go/echo_client
-
+	@rm -f out/go/echo_client
 clean-client-native-posix-tinygo:
-	@rm -f cmd/go_echo_client/out/tinygo/echo_client
-
+	@rm -f out/tinygo/echo_client
 clean-client-wasm-wasi-c:
-	@rm -f cmd/c_echo_client/out/echo_client_original.wasm
-	@rm -f cmd/c_echo_client/out/echo_client.wasm
-
+	@rm -f out/c/echo_client_original.wasm
+	@rm -f out/c/echo_client.wasm
 clean-client-wasm-jssi-go:
-	@rm -f cmd/go_echo_client/out/go/echo_client.wasm
-
+	@rm -f out/go/echo_client.wasm
 clean-client-wasm-wasi-tinygo:
-	@rm -f cmd/go_echo_client/out/tinygo/echo_client_wasi_original.wasm
-	@rm -f cmd/go_echo_client/out/tinygo/echo_client_wasi.wasm
-
+	@rm -f out/tinygo/echo_client_wasi_original.wasm
+	@rm -f out/tinygo/echo_client_wasi.wasm
 clean-client-wasm-jssi-tinygo:
-	@rm -f cmd/go_echo_client/out/tinygo/echo_client.wasm
+	@rm -f out/tinygo/echo_client_jssi.wasm
 
 # Run
 run: \
+	run-signaling-server \
     run-server-native-posix-c \
     run-server-native-posix-go \
     run-server-native-posix-tinygo \
+	run-server-wasm-jssi-go \
+	run-server-wasm-wasi-tinygo \
+	run-server-wasm-jssi-tinygo \
 	run-client-native-posix-c \
     run-client-native-posix-go \
-    run-client-native-posix-tinygo
+    run-client-native-posix-tinygo \
+	run-client-wasm-jssi-go \
+	run-client-wasm-wasi-tinygo \
+	run-client-wasm-jssi-tinygo
+
+run-signaling-server: build-unisockets-runner
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runSignalingServer true'
 
 run-server-native-posix-c:
-	@./cmd/c_echo_server/out/echo_server
-
+	@./out/c/echo_server
 run-server-native-posix-go:
-	@./cmd/go_echo_server/out/go/echo_server
-
+	@./out/go/echo_server
 run-server-native-posix-tinygo:
-	@./cmd/go_echo_server/out/tinygo/echo_server
+	@./out/tinygo/echo_server
+run-server-wasm-jssi-go:
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useGo true --useJSSI true --binaryPath ./out/go/echo_server.wasm'
+run-server-wasm-wasi-tiny:
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useTinyGo true --useWASI true --binaryPath ./out/tinygo/echo_server_wasi.wasm'
+run-server-wasm-jssi-tinygo:
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useTinyGo true --useJSSI true --binaryPath ./out/tinygo/echo_server_wasi.wasm'
 
 run-client-native-posix-c:
-	@./cmd/c_echo_client/out/echo_client
-
+	@./out/c/echo_client
 run-client-native-posix-go:
-	@./cmd/go_echo_client/out/go/echo_client
-
+	@./out/go/echo_client
 run-client-native-posix-tinygo:
-	@./cmd/go_echo_client/out/tinygo/echo_client
+	@./out/tinygo/echo_client
+run-client-wasm-jssi-go:
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useGo true --useJSSI true --binaryPath ./out/go/echo_client.wasm'
+run-client-wasm-wasi-tiny:
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useTinyGo true --useWASI true --binaryPath ./out/tinygo/echo_client_wasi.wasm'
+run-client-wasm-jssi-tinygo:
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useTinyGo true --useJSSI true --binaryPath ./out/tinygo/echo_client_wasi.wasm'
+
