@@ -1,4 +1,4 @@
-import WebSocket, { Data } from "ws";
+import WebSocket, { Data } from "isomorphic-ws";
 import { getLogger } from "../../utils/logger";
 import { ClientClosedError } from "../errors/client-closed";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
@@ -41,9 +41,9 @@ export class Service {
   protected async receive(
     rawOperation: Data
   ): Promise<ISignalingOperation<TSignalingData>> {
-    const operation = JSON.parse(rawOperation as string) as ISignalingOperation<
-      TSignalingData
-    >;
+    const operation = JSON.parse(
+      rawOperation as string
+    ) as ISignalingOperation<TSignalingData>;
 
     this.logger.debug("Received operation", operation);
 

@@ -1,4 +1,4 @@
-import WebSocket, { Server } from "ws";
+import WebSocket, { Server } from "isomorphic-ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { PortAlreadyAllocatedError } from "../errors/port-already-allocated-error";
 import { SubnetDoesNotExistError } from "../errors/subnet-does-not-exist";
