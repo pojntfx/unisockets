@@ -1,4 +1,4 @@
-import WebSocket from "ws";
+import WebSocket from "isomorphic-ws";
 import { UnimplementedOperationError } from "../errors/unimplemented-operation";
 import { IAcknowledgementData } from "../operations/acknowledgement";
 import { IAliasData } from "../operations/alias";
