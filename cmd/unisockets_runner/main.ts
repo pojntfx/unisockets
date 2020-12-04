@@ -13,8 +13,8 @@ import { SignalingServer } from "../../pkg/web/signaling/services/signaling-serv
 import { Sockets } from "../../pkg/web/sockets/sockets";
 import { Transporter } from "../../pkg/web/transport/transporter";
 import { getLogger } from "../../pkg/web/utils/logger";
-const TinyGo = require("../../vendor/tinygo/wasm_exec");
-const Go = require("../../vendor/go/wasm_exec");
+import Go from "../../vendor/go/wasm_exec.js";
+import TinyGo from "../../vendor/tinygo/wasm_exec.js";
 
 const transporterConfig: ExtendedRTCConfiguration = {
   iceServers: [
@@ -67,7 +67,7 @@ const {
   },
   subnetPrefix: {
     description: "Subnet prefix to advertise",
-    default: "10.0.0",
+    default: "127.0.0",
   },
 
   binaryPath: {

@@ -114,12 +114,14 @@ run: \
     run-server-native-posix-c \
     run-server-native-posix-go \
     run-server-native-posix-tinygo \
+	run-server-wasm-wasi-c \
 	run-server-wasm-jssi-go \
 	run-server-wasm-wasi-tinygo \
 	run-server-wasm-jssi-tinygo \
 	run-client-native-posix-c \
     run-client-native-posix-go \
     run-client-native-posix-tinygo \
+	run-client-wasm-wasi-c \
 	run-client-wasm-jssi-go \
 	run-client-wasm-wasi-tinygo \
 	run-client-wasm-jssi-tinygo
@@ -133,6 +135,8 @@ run-server-native-posix-go:
 	@./out/go/echo_server
 run-server-native-posix-tinygo:
 	@./out/tinygo/echo_server
+run-server-wasm-wasi-c:
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useC true --useWASI true --binaryPath ./out/c/echo_server.wasm'
 run-server-wasm-jssi-go:
 	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useGo true --useJSSI true --binaryPath ./out/go/echo_server.wasm'
 run-server-wasm-wasi-tiny:
@@ -146,6 +150,8 @@ run-client-native-posix-go:
 	@./out/go/echo_client
 run-client-native-posix-tinygo:
 	@./out/tinygo/echo_client
+run-client-wasm-wasi-c:
+	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useC true --useWASI true --binaryPath ./out/c/echo_client.wasm'
 run-client-wasm-jssi-go:
 	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useGo true --useJSSI true --binaryPath ./out/go/echo_client.wasm'
 run-client-wasm-wasi-tiny:
