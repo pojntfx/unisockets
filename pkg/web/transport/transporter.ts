@@ -8,7 +8,7 @@ import { ChannelDoesNotExistError } from "../signaling/errors/channel-does-not-e
 import { ConnectionDoesNotExistError } from "../signaling/errors/connection-does-not-exist";
 import { SDPInvalidError } from "../signaling/errors/sdp-invalid";
 import { getLogger } from "../utils/logger";
-import { EventEmitter, once } from "events";
+import Emittery from "emittery";
 
 export class Transporter {
   private logger = getLogger();
@@ -16,7 +16,7 @@ export class Transporter {
   private channels = new Map<string, RTCDataChannel>();
   private queuedMessages = new Map<string, Uint8Array[]>();
   private queuedCandidates = new Map<string, string[]>();
-  private asyncResolver = new EventEmitter();
+  private asyncResolver = new Emittery();
 
   constructor(
     private config: ExtendedRTCConfiguration,
@@ -256,7 +256,7 @@ export class Transporter {
       !channel ||
       channel!.readyState !== "open" // Checked by !channel
     ) {
-      await once(this.asyncResolver, this.getChannelKey(id));
+      await this.asyncResolver.once(this.getChannelKey(id));
 
       channel = this.channels.get(id);
     }
@@ -273,7 +273,7 @@ export class Transporter {
     ) {
       return this.queuedMessages.get(id)?.shift()!; // size !== 0 and undefined is ever pushed
     } else {
-      const [msg] = await once(this.asyncResolver, this.getMessageKey(id));
+      const msg = await this.asyncResolver.once(this.getMessageKey(id));
 
       this.queuedMessages.get(id)?.shift();
 

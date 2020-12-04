@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node --experimental-wasi-unstable-preview1 --experimental-wasm-bigint
 
 import * as Asyncify from "asyncify-wasm";
-import { EventEmitter } from "events";
+import Emittery from "emittery";
 import fs from "fs";
 import { WASI } from "wasi";
 import { ExtendedRTCConfiguration } from "wrtc";
@@ -114,7 +114,7 @@ if (runBinary) {
     logger.info("Handling transporter connection close", { id });
   };
 
-  const ready = new EventEmitter();
+  const ready = new Emittery();
 
   const aliases = new Map<string, string>();
   const transporter = new Transporter(
@@ -279,6 +279,8 @@ if (runBinary) {
 
   // WASM runner
   (async () => {
+    await ready.once("ready");
+
     if (useC) {
       if (useWASI) {
         const wasi = new WASI();
