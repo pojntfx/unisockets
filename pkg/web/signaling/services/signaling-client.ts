@@ -12,7 +12,7 @@ import {
   TSignalingData,
 } from "../operations/operation";
 import { Service } from "./service";
-import { EventEmitter } from "events";
+import Emittery from "emittery";
 import { Bind } from "../operations/bind";
 import { BindRejectedError } from "../errors/bind-rejected";
 import { ShutdownRejectedError } from "../errors/shutdown-rejected";
@@ -28,7 +28,7 @@ import { Knock } from "../operations/knock";
 export class SignalingClient extends Service {
   private id = "";
   private client?: WebSocket;
-  private asyncResolver = new EventEmitter();
+  private asyncResolver = new Emittery();
 
   constructor(
     private address: string,
@@ -83,15 +83,17 @@ export class SignalingClient extends Service {
     this.logger.info("Binding", { id: this.id, alias });
 
     return new Promise<void>(async (res, rej) => {
-      this.asyncResolver.once(
-        this.getAliasKey(this.id, alias),
-        (set: boolean) =>
-          set
-            ? res()
-            : rej(
-                new BindRejectedError(this.getAliasKey(this.id, alias)).message
-              )
-      );
+      (async () => {
+        const set = await this.asyncResolver.once(
+          this.getAliasKey(this.id, alias)
+        );
+
+        set
+          ? res()
+          : rej(
+              new BindRejectedError(this.getAliasKey(this.id, alias)).message
+            );
+      })();
 
       await this.send(this.client, new Bind({ id: this.id, alias }));
     });
@@ -101,9 +103,13 @@ export class SignalingClient extends Service {
     this.logger.info("Accepting", { id: this.id, alias });
 
     return new Promise(async (res) => {
-      this.asyncResolver.once(this.getAcceptKey(alias), (clientAlias: string) =>
-        res(clientAlias)
-      );
+      (async () => {
+        const clientAlias = await this.asyncResolver.once(
+          this.getAcceptKey(alias)
+        );
+
+        res(clientAlias as string);
+      })();
 
       await this.send(this.client, new Accepting({ id: this.id, alias }));
     });
@@ -113,16 +119,18 @@ export class SignalingClient extends Service {
     this.logger.info("Shutting down", { id: this.id, alias });
 
     return new Promise<void>(async (res, rej) => {
-      this.asyncResolver.once(
-        this.getAliasKey(this.id, alias),
-        (set: boolean) =>
-          set
-            ? rej(
-                new ShutdownRejectedError(this.getAliasKey(this.id, alias))
-                  .message
-              )
-            : res()
-      );
+      (async () => {
+        const set = await this.asyncResolver.once(
+          this.getAliasKey(this.id, alias)
+        );
+
+        set
+          ? rej(
+              new ShutdownRejectedError(this.getAliasKey(this.id, alias))
+                .message
+            )
+          : res();
+      })();
 
       await this.send(this.client, new Shutdown({ id: this.id, alias }));
     });
@@ -139,9 +147,9 @@ export class SignalingClient extends Service {
 
       this.asyncResolver.on(
         this.getConnectionKey(clientConnectionId),
-        (payload: string) => {
+        (payload) => {
           const { set, alias: newAlias, isConnectionAlias } = JSON.parse(
-            payload
+            payload as string
           );
 
           if (set) {
