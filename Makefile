@@ -152,4 +152,3 @@ run-client-wasm-wasi-tiny:
 	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useTinyGo true --useWASI true --binaryPath ./out/tinygo/echo_client_wasi.wasm'
 run-client-wasm-jssi-tinygo:
 	@docker run --net host -v ${PWD}:/src:z pojntfx/unisockets-runner sh -c 'cd /src && unisockets_runner --runBinary true --useTinyGo true --useJSSI true --binaryPath ./out/tinygo/echo_client_wasi.wasm'
-
