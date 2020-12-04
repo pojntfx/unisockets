@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --experimental-wasi-unstable-preview1 --experimental-wasm-bigint
+#!/usr/bin/env node
 
 import { WASI } from "@wasmer/wasi";
 import { lowerI64Imports } from "@wasmer/wasm-transformer";
