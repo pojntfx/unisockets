@@ -3,4 +3,5 @@ docs
 out
 dist
 yarn-error.log
-browser
+.cache
+static
