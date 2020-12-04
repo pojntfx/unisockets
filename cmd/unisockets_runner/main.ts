@@ -19,7 +19,7 @@ const Go = require("../../vendor/go/wasm_exec");
 const transporterConfig: ExtendedRTCConfiguration = {
   iceServers: [
     {
-      urls: "stun:global.stun.twilio.com:3478?transport=udp",
+      urls: "stun:stun.l.google.com:19302",
     },
   ],
 };

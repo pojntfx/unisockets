@@ -285,12 +285,12 @@ export class Transporter {
     connectionState: string,
     id: string
   ) {
-    if (["new", "connected", undefined].includes(connectionState)) {
-      connectionState === "connected" && (await this.onConnectionConnect(id));
-    } else {
+    if (connectionState === "closed") {
       await this.onConnectionDisconnect(id);
 
       await this.shutdown(id);
+    } else {
+      connectionState === "connected" && (await this.onConnectionConnect(id));
     }
   }
 
