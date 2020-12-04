@@ -4,9 +4,10 @@
   "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npm run build:bin && npm run build:lib && npm run build:docs && npm run build:diagram",
-    "build:bin": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --outfile=dist/main.js --platform=node --target=node12 --external:wasi --external:wrtc",
+    "build": "yarn build:lib && yarn build:bin && yarn build:web && yarn build:docs && yarn build:diagram",
     "build:lib": "esbuild index.ts --bundle --minify --sourcemap --outfile=dist/index.js --platform=node --target=node12 --external:wrtc",
+    "build:bin": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --outfile=dist/main.js --platform=node --target=node12 --external:wasi --external:wrtc",
+    "build:web": "esbuild cmd/unisockets_runner_web/main.ts --bundle --minify --sourcemap --target=chrome58,firefox57,safari11,edge16 '--define:process.env.NODE_ENV=\"production\"' --outfile=browser/main.js --external:fs --external:crypto --external:util --external:os --external:path --external:zlib --external:http --external:https --external:events",
     "build:docs": "mkdir -p docs && typedoc --tsconfig -p tsconfig.json --mode file --out docs --media docs/media --exclude node_modules .",
     "build:diagram": "mkdir -p docs/media && tplant -p tsconfig.json -i './**/*.ts*' --output 'docs/media/diagram.svg'",
     "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runSignalingServer true",
