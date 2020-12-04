@@ -4,5 +4,4 @@ out
 dist
 yarn-error.log
 .cache
-static
 browser
