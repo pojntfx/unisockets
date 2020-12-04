@@ -45,6 +45,9 @@
     "typescript": "^4.0.5"
   },
   "dependencies": {
+    "@wasmer/wasi": "^0.12.0",
+    "@wasmer/wasm-transformer": "^0.12.0",
+    "@wasmer/wasmfs": "^0.12.0",
     "asyncify-wasm": "^1.1.1",
     "emittery": "^0.7.2",
     "isomorphic-ws": "^4.0.1",

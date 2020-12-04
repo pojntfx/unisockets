@@ -1,9 +1,10 @@
 #!/usr/bin/env -S node --experimental-wasi-unstable-preview1 --experimental-wasm-bigint
 
+import { WASI } from "@wasmer/wasi";
+import { lowerI64Imports } from "@wasmer/wasm-transformer";
 import * as Asyncify from "asyncify-wasm";
 import Emittery from "emittery";
 import fs from "fs";
-import { WASI } from "wasi";
 import { ExtendedRTCConfiguration } from "wrtc";
 import yargs from "yargs";
 import { AliasDoesNotExistError } from "../../pkg/web/signaling/errors/alias-does-not-exist";
@@ -283,19 +284,22 @@ if (runBinary) {
 
     if (useC) {
       if (useWASI) {
-        const wasi = new WASI();
+        const wasi = new WASI({
+          args: [],
+          env: {},
+        });
         const {
           memoryId,
           imports: socketEnvImports,
         } = await sockets.getImports();
 
-        const instance = await Asyncify.instantiate(
-          await WebAssembly.compile(fs.readFileSync(binaryPath)),
-          {
-            wasi_snapshot_preview1: wasi.wasiImport,
-            env: socketEnvImports,
-          }
+        const module = await WebAssembly.compile(
+          await lowerI64Imports(new Uint8Array(fs.readFileSync(binaryPath)))
         );
+        const instance = await Asyncify.instantiate(module, {
+          ...wasi.getImports(module),
+          env: socketEnvImports,
+        });
 
         sockets.setMemory(memoryId, instance.exports.memory);
 
@@ -343,25 +347,28 @@ if (runBinary) {
 
         (global as any).berkeleySockets = undefined;
       } else if (useWASI) {
-        const wasi = new WASI();
-        const go = new TinyGo();
+        const wasi = new WASI({
+          args: [],
+          env: {},
+        });
         const {
           memoryId,
           imports: socketEnvImports,
         } = await sockets.getImports();
+        const go = new TinyGo();
 
-        const instance = await Asyncify.instantiate(
-          await WebAssembly.compile(fs.readFileSync(binaryPath)),
-          {
-            wasi_unstable: wasi.wasiImport,
-            env: {
-              ...go.importObject.env,
-              ...socketEnvImports,
-            },
-          }
+        const module = await WebAssembly.compile(
+          await lowerI64Imports(new Uint8Array(fs.readFileSync(binaryPath)))
         );
+        const instance = await Asyncify.instantiate(module, {
+          ...wasi.getImports(module),
+          env: {
+            ...go.importObject.env,
+            ...socketEnvImports,
+          },
+        });
 
-        sockets.setMemory(memoryId, (instance.exports as any).memory);
+        sockets.setMemory(memoryId, instance.exports.memory);
 
         wasi.start(instance);
       }
