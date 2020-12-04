@@ -15,11 +15,6 @@
 #define RECEIVED_MESSAGE_BUFFER_LENGTH                                         \
   SENT_MESSAGE_BUFFER_LENGTH + sizeof(RECEIVED_MESSAGE_PREFIX)
 
-#ifdef IS_WASM
-#undef SERVER_HOST
-#define SERVER_HOST "10.0.0.240"
-#endif
-
 int main() {
   // Variables
   int server_sock;

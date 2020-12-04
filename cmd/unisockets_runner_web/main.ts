@@ -12,10 +12,8 @@ import { SignalingClient } from "../../pkg/web/signaling/services/signaling-clie
 import { Sockets } from "../../pkg/web/sockets/sockets";
 import { Transporter } from "../../pkg/web/transport/transporter";
 import { getLogger } from "../../pkg/web/utils/logger";
-(window as any).fs = new WasmFs().fs;
-
-const TinyGo = require("../../vendor/tinygo/wasm_exec");
-const Go = require("../../vendor/go/wasm_exec");
+import Go from "../../vendor/go/wasm_exec.js";
+import TinyGo from "../../vendor/tinygo/wasm_exec.js";
 
 const transporterConfig: ExtendedRTCConfiguration = {
   iceServers: [
@@ -27,21 +25,21 @@ const transporterConfig: ExtendedRTCConfiguration = {
 
 const signalingServerConnectAddress = "ws://localhost:6999";
 const reconnectTimeout = 1000;
-const subnetPrefix = "10.0.0";
+const subnetPrefix = "127.0.0";
 
 const urlParams = new URLSearchParams(window.location.search);
 const useServerBinary = urlParams.get("server");
 
 const binaryPath = useServerBinary
-  ? "c/echo_server.wasm"
-  : "c/echo_client.wasm";
+  ? "go/echo_server.wasm"
+  : "go/echo_client.wasm";
 
-const useC = true;
-const useGo = false;
+const useC = false;
+const useGo = true;
 const useTinyGo = false;
 
-const useJSSI = false;
-const useWASI = true;
+const useJSSI = true;
+const useWASI = false;
 
 const logger = getLogger();
 

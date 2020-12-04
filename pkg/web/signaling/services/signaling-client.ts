@@ -71,7 +71,7 @@ export class SignalingClient extends Service {
     this.client.onerror = async (e) => {
       this.logger.error("WebSocket error", e);
 
-      this.client?.terminate();
+      this.client?.terminate && this.client?.terminate(); // `terminate` does not seem to be defined in some browsers
     };
     this.client.onopen = async () => await this.handleConnect();
     this.client.onclose = async () => await this.handleDisconnect();
