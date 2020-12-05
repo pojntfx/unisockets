@@ -374,18 +374,18 @@ export class SignalingClient extends Service {
     alias: string,
     isConnectionAlias: boolean
   ) {
-    this.asyncResolver.emit(
+    await this.asyncResolver.emit(
       this.getConnectionKey(clientConnectionId),
       JSON.stringify({ set, alias, isConnectionAlias })
     );
   }
 
   private async notifyBindAndShutdown(id: string, alias: string, set: boolean) {
-    this.asyncResolver.emit(this.getAliasKey(id, alias), set);
+    await this.asyncResolver.emit(this.getAliasKey(id, alias), set);
   }
 
   private async notifyAccept(boundAlias: string, clientAlias: string) {
-    this.asyncResolver.emit(this.getAcceptKey(boundAlias), clientAlias);
+    await this.asyncResolver.emit(this.getAcceptKey(boundAlias), clientAlias);
   }
 
   private getAliasKey(id: string, alias: string) {

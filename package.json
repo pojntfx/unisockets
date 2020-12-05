@@ -13,7 +13,7 @@
     "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runSignalingServer true",
     "dev:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
     "dev:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm",
-    "dev:web": "parcel --out-dir browser ./cmd/unisockets_runner_web/index.html",
+    "dev:web": "parcel --hmr-port 1235 --out-dir browser ./cmd/unisockets_runner_web/index.html",
     "start:signaling-server": "./dist/main.js --runSignalingServer true",
     "start:example-server": "./dist/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
     "start:example-client": "./dist/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm",

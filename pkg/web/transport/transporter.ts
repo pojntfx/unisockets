@@ -49,7 +49,7 @@ export class Transporter {
     channel.onopen = async () => {
       this.logger.debug("Channel opened", { id: answererId });
 
-      this.asyncResolver.emit(this.getChannelKey(answererId), true);
+      await this.asyncResolver.emit(this.getChannelKey(answererId), true);
 
       await this.onChannelOpen(answererId);
     };
@@ -124,7 +124,7 @@ export class Transporter {
       channel.onopen = async () => {
         this.logger.debug("Channel opened", { id });
 
-        this.asyncResolver.emit(this.getChannelKey(id), true);
+        await this.asyncResolver.emit(this.getChannelKey(id), true);
 
         await this.onChannelOpen(id);
       };
@@ -304,7 +304,7 @@ export class Transporter {
 
       messages?.push(msg);
 
-      this.asyncResolver.emit(this.getMessageKey(id), msg);
+      await this.asyncResolver.emit(this.getMessageKey(id), msg);
     } else {
       throw new ChannelDoesNotExistError();
     }
