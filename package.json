@@ -1,6 +1,6 @@
 {
   "name": "@pojntfx/unisockets",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
   "main": "dist/index.js",
   "scripts": {
