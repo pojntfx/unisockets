@@ -269,13 +269,28 @@ const sockets = new Sockets(
         go.importObject
       );
 
+      (global as any).fs.read = (
+        _: number,
+        buffer: Uint8Array,
+        ___: number,
+        ____: number,
+        _____: number,
+        callback: Function
+      ) => {
+        new Promise<Uint8Array>((res) => {
+          const rawInput = prompt("value for stdin:");
+          const input = new TextEncoder().encode(rawInput + "\n");
+
+          buffer.set(input);
+
+          res(input);
+        }).then((input) => callback(null, input.length));
+      };
       (global as any).berkeleySockets = socketEnvImports;
 
       sockets.setMemory(memoryId, (instance.exports as any).mem);
 
       go.run(instance);
-
-      (global as any).berkeleySockets = undefined;
     }
   } else if (useTinyGo) {
     if (useJSSI) {
@@ -292,13 +307,28 @@ const sockets = new Sockets(
         go.importObject
       );
 
+      (global as any).fs.read = (
+        _: number,
+        buffer: Uint8Array,
+        ___: number,
+        ____: number,
+        _____: number,
+        callback: Function
+      ) => {
+        new Promise<Uint8Array>((res) => {
+          const rawInput = prompt("value for stdin:");
+          const input = new TextEncoder().encode(rawInput + "\n");
+
+          buffer.set(input);
+
+          res(input);
+        }).then((input) => callback(null, input.length));
+      };
       (global as any).berkeleySockets = socketEnvImports;
 
       sockets.setMemory(memoryId, (instance.exports as any).memory);
 
       go.run(instance);
-
-      (global as any).berkeleySockets = undefined;
     } else if (useWASI) {
       const wasmFs = new WasmFs();
       const wasi = new WASI({
