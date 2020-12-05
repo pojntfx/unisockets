@@ -84,7 +84,7 @@ const handleAcknowledgement = async (id: string, rejected: boolean) => {
     });
   }
 
-  ready.emit("ready", true);
+  await ready.emit("ready", true);
 };
 const getOffer = async (
   answererId: string,
