@@ -127,20 +127,3 @@ func Connect(socketFd int32, socketAddr *SockaddrIn) error {
 func Htons(v uint16) uint16 {
 	return uint16(C.htons(v))
 }
-
-// See https://github.com/bgould/go-littlefs/blob/master/go_lfs.go#L415-L430 for the implementations below
-
-func cString(s string) *C.char {
-	ptr := C.malloc(C.size_t(len(s) + 1))
-	buf := (*[1 << 28]byte)(ptr)[: len(s)+1 : len(s)+1]
-	copy(buf, s)
-	buf[len(s)] = 0
-	return (*C.char)(ptr)
-}
-
-func goString(s *C.char) string {
-	slen := int(C.strlen(s))
-	sbuf := make([]byte, slen)
-	copy(sbuf, (*[1 << 28]byte)(unsafe.Pointer(s))[:slen:slen])
-	return string(sbuf)
-}
