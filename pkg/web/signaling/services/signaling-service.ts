@@ -24,7 +24,7 @@ import {
 } from "../operations/operation";
 import { IShutdownData, Shutdown } from "../operations/shutdown";
 
-export class Service {
+export class SignalingService {
   protected logger = getLogger();
 
   protected async send(

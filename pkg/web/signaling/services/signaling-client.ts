@@ -11,7 +11,7 @@ import {
   ISignalingOperation,
   TSignalingData,
 } from "../operations/operation";
-import { Service } from "./service";
+import { SignalingService } from "./signaling-service";
 import Emittery from "emittery";
 import { Bind } from "../operations/bind";
 import { BindRejectedError } from "../errors/bind-rejected";
@@ -25,7 +25,7 @@ import { IAcceptData } from "../operations/accept";
 import { IGreetingData } from "../operations/greeting";
 import { Knock } from "../operations/knock";
 
-export class SignalingClient extends Service {
+export class SignalingClient extends SignalingService {
   private id = "";
   private client?: WebSocket;
   private asyncResolver = new Emittery();
