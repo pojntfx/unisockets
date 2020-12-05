@@ -24,9 +24,9 @@ import {
   TSignalingData,
 } from "../operations/operation";
 import { IShutdownData } from "../operations/shutdown";
-import { Service } from "./service";
+import { SignalingService } from "./signaling-service";
 
-export class SignalingServer extends Service {
+export class SignalingServer extends SignalingService {
   private clients = new Map<string, WebSocket>();
   private aliases = new Map<string, MAlias>();
 
