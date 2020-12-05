@@ -77,15 +77,14 @@ func Accept(socketFd int32, socketAddr *SockaddrIn) (int32, error) {
 }
 
 func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint32, socketFlags int32) (int32, error) {
-	receivedMessage := cString(string(make([]byte, socketBufferLength)))
-	defer C.free(unsafe.Pointer(receivedMessage))
+	receivedMessage := make([]byte, socketBufferLength)
 
-	rv := int32(recv(C.int(socketFd), unsafe.Pointer(receivedMessage), C.ulong(socketBufferLength), C.int(socketFlags)))
+	rv := int32(recv(C.int(socketFd), unsafe.Pointer(&receivedMessage[0]), C.ulong(socketBufferLength), C.int(socketFlags)))
 	if rv == -1 {
 		return rv, fmt.Errorf("could not receive from socket, error code %v", rv)
 	}
 
-	outReceivedMessage := []byte(goString(receivedMessage))
+	outReceivedMessage := []byte(receivedMessage)
 
 	*socketReceivedMessage = outReceivedMessage
 
@@ -93,10 +92,7 @@ func Recv(socketFd int32, socketReceivedMessage *[]byte, socketBufferLength uint
 }
 
 func Send(socketFd int32, socketMessageToSend []byte, socketFlags int32) (int32, error) {
-	messageToSend := cString(string(socketMessageToSend))
-	defer C.free(unsafe.Pointer(messageToSend))
-
-	rv := int32(send(C.int(socketFd), unsafe.Pointer(messageToSend), C.strlen(messageToSend), C.int(socketFlags)))
+	rv := int32(send(C.int(socketFd), unsafe.Pointer(&socketMessageToSend[0]), C.ulong(len(socketMessageToSend)), C.int(socketFlags)))
 	if rv == -1 {
 		return rv, fmt.Errorf("could not send from socket, error code %v", rv)
 	}
