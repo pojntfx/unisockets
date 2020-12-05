@@ -6,7 +6,7 @@
   "scripts": {
     "build": "yarn build:lib && yarn build:declarations && yarn build:bin && yarn build:web && yarn build:docs && yarn build:diagram",
     "build:lib": "esbuild index.ts --bundle --minify --sourcemap --outfile=dist/index.js --platform=node --target=node12 --external:wrtc",
-    "build:declarations": "tsc --project tsconfig.json --declaration --emitDeclarationOnly --outFile dist/index.d.ts",
+    "build:declarations": "tsc --project tsconfig.json --declaration --emitDeclarationOnly --outDir dist",
     "build:bin": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --outfile=dist/main.js --platform=node --target=node12 --external:wasi --external:wrtc --external:@wasmer/wasm-transformer",
     "build:web": "parcel build --out-dir browser ./cmd/unisockets_runner_web/index.html",
     "build:docs": "mkdir -p docs && typedoc --tsconfig tsconfig.json --mode file --outDir docs --media docs/media --exclude '+(node_modules|docs|out|dist|browser|vendor)' .",
@@ -24,10 +24,7 @@
     "unisockets_runner": "dist/main.js"
   },
   "files": [
-    "dist/index.d.ts",
-    "dist/index.js",
-    "dist/index.js.map",
-    "dist/main.js"
+    "dist"
   ],
   "repository": {
     "type": "git",
