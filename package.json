@@ -23,7 +23,8 @@
     "unisockets_runner": "dist/main.js"
   },
   "files": [
-    "dist/main.js"
+    "dist/main.js",
+    "dist/index.js"
   ],
   "repository": {
     "type": "git",
