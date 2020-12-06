@@ -7,6 +7,37 @@ import { getLogger } from "../utils/logger";
 
 const AF_INET = 2;
 
+// Matches pkg/unisockets/berkeley_sockets.h
+interface ISocketImports {
+  berkeley_sockets_socket: () => Promise<number>;
+  berkeley_sockets_bind: (
+    fd: number,
+    addressPointer: number,
+    addressLength: number
+  ) => Promise<number>;
+  berkeley_sockets_listen: () => Promise<number>;
+  berkeley_sockets_accept: (
+    fd: number,
+    addressPointer: number,
+    addressLengthPointer: number
+  ) => Promise<number>;
+  berkeley_sockets_connect: (
+    fd: number,
+    addressPointer: number,
+    addressLength: number
+  ) => Promise<number>;
+  berkeley_sockets_send: (
+    fd: number,
+    messagePointer: number,
+    messagePointerLength: number
+  ) => Promise<number>;
+  berkeley_sockets_recv: (
+    fd: number,
+    messagePointer: number,
+    messagePointerLength: number
+  ) => Promise<number>;
+}
+
 export class Sockets {
   private logger = getLogger();
   private binds = new Map<number, string>();
@@ -20,7 +51,7 @@ export class Sockets {
     private externalRecv: (alias: string) => Promise<Uint8Array>
   ) {}
 
-  async getImports() {
+  async getImports(): Promise<{ memoryId: string; imports: ISocketImports }> {
     const memoryId = v4();
 
     return {
