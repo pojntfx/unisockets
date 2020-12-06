@@ -71,7 +71,7 @@ export class Transporter {
     const offer = await connection.createOffer();
     await connection.setLocalDescription(offer);
 
-    this.logger.info("Created offer", { offer: offer.sdp });
+    this.logger.verbose("Created offer", { offer: offer.sdp });
 
     if (offer.sdp === undefined) {
       connection.close();
@@ -91,7 +91,7 @@ export class Transporter {
     offer: string,
     handleCandidate: (candidate: string) => Promise<void>
   ) {
-    this.logger.info("Handling offer", { id, offer });
+    this.logger.verbose("Handling offer", { id, offer });
 
     const connection = new RTCPeerConnection(this.config);
     this.connections.set(id, connection);
@@ -112,7 +112,7 @@ export class Transporter {
 
     const answer = await connection.createAnswer();
 
-    this.logger.info("Created answer", { offer: offer, answer: answer.sdp });
+    this.logger.verbose("Created answer", { offer: offer, answer: answer.sdp });
 
     await connection.setLocalDescription(answer);
 
@@ -156,7 +156,7 @@ export class Transporter {
   }
 
   async handleAnswer(id: string, answer: string) {
-    this.logger.info("Handling answer", { id, answer });
+    this.logger.verbose("Handling answer", { id, answer });
 
     if (this.connections.has(id)) {
       const connection = this.connections.get(id);
@@ -187,9 +187,9 @@ export class Transporter {
         new RTCIceCandidate(JSON.parse(candidate))
       );
 
-      this.logger.info("Added candidate", { id, candidate });
+      this.logger.verbose("Added candidate", { id, candidate });
     } else {
-      this.logger.info("Queueing candidate", { id, candidate });
+      this.logger.verbose("Queueing candidate", { id, candidate });
 
       if (!this.queuedCandidates.has(id)) this.queuedCandidates.set(id, []);
 
@@ -199,7 +199,7 @@ export class Transporter {
 
   async shutdown(id: string) {
     if (this.connections.has(id)) {
-      this.logger.info("Shutting down connection", { id });
+      this.logger.verbose("Shutting down connection", { id });
 
       this.connections.get(id)?.close();
 
@@ -211,7 +211,7 @@ export class Transporter {
     }
 
     if (this.channels.has(id)) {
-      this.logger.info("Shutting down channel", { id });
+      this.logger.verbose("Shutting down channel", { id });
 
       this.channels.get(id)?.close();
 
@@ -223,7 +223,7 @@ export class Transporter {
     }
 
     if (this.queuedCandidates.has(id)) {
-      this.logger.info("Removing queued candidates", { id });
+      this.logger.verbose("Removing queued candidates", { id });
 
       this.queuedCandidates.delete(id);
 
@@ -235,7 +235,7 @@ export class Transporter {
     }
 
     if (this.queuedMessages.has(id)) {
-      this.logger.info("Removing queued messages", { id });
+      this.logger.verbose("Removing queued messages", { id });
 
       this.queuedMessages.delete(id);
 

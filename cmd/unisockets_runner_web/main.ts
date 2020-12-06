@@ -45,16 +45,16 @@ const logger = getLogger();
 
 // Transporter handlers
 const handleTransporterConnectionConnect = async (id: string) => {
-  logger.info("Handling transporter connection connect", { id });
+  logger.verbose("Handling transporter connection connect", { id });
 };
 const handleTransporterConnectionDisconnect = async (id: string) => {
-  logger.info("Handling transporter connection disconnect", { id });
+  logger.verbose("Handling transporter connection disconnect", { id });
 };
 const handleTransporterChannelOpen = async (id: string) => {
-  logger.info("Handling transporter connection open", { id });
+  logger.verbose("Handling transporter connection open", { id });
 };
 const handleTransporterChannelClose = async (id: string) => {
-  logger.info("Handling transporter connection close", { id });
+  logger.verbose("Handling transporter connection close", { id });
 };
 
 const ready = new Emittery();
@@ -70,10 +70,10 @@ const transporter = new Transporter(
 
 // Signaling client handlers
 const handleConnect = async () => {
-  logger.info("Handling connect");
+  logger.verbose("Handling connect");
 };
 const handleDisconnect = async () => {
-  logger.info("Handling disconnect");
+  logger.verbose("Handling disconnect");
 };
 const handleAcknowledgement = async (id: string, rejected: boolean) => {
   logger.debug("Handling acknowledgement", { id, rejected });
@@ -92,7 +92,7 @@ const getOffer = async (
 ) => {
   const offer = await transporter.getOffer(answererId, handleCandidate);
 
-  logger.info("Created offer", { answererId, offer });
+  logger.verbose("Created offer", { answererId, offer });
 
   return offer;
 };
@@ -107,7 +107,7 @@ const handleOffer = async (
     handleCandidate
   );
 
-  logger.info("Created answer for offer", { offererId, offer, answer });
+  logger.verbose("Created answer for offer", { offererId, offer, answer });
 
   return answer;
 };
@@ -116,7 +116,7 @@ const handleAnswer = async (
   answererId: string,
   answer: string
 ) => {
-  logger.info("Handling answer", { offererId, answererId, answer });
+  logger.verbose("Handling answer", { offererId, answererId, answer });
 
   await transporter.handleAnswer(answererId, answer);
 };
@@ -125,12 +125,12 @@ const handleCandidate = async (
   answererId: string,
   candidate: string
 ) => {
-  logger.info("Handling candidate", { offererId, answererId, candidate });
+  logger.verbose("Handling candidate", { offererId, answererId, candidate });
 
   await transporter.handleCandidate(offererId, candidate);
 };
 const handleGoodbye = async (id: string) => {
-  logger.info("Handling goodbye", { id });
+  logger.verbose("Handling goodbye", { id });
 
   await transporter.shutdown(id);
 };
@@ -138,7 +138,7 @@ const handleAlias = async (id: string, alias: string, set: boolean) => {
   logger.debug("Handling alias", { id });
 
   if (set) {
-    logger.info("Setting alias", { id, alias });
+    logger.verbose("Setting alias", { id, alias });
 
     aliases.set(alias, id);
 
@@ -146,7 +146,7 @@ const handleAlias = async (id: string, alias: string, set: boolean) => {
       aliases: JSON.stringify(Array.from(aliases)),
     });
   } else {
-    logger.info("Removing alias", { id, alias });
+    logger.verbose("Removing alias", { id, alias });
 
     aliases.delete(alias);
 
@@ -173,25 +173,25 @@ const signalingClient = new SignalingClient(
 
 // Socket handlers
 const handleExternalBind = async (alias: string) => {
-  logger.info("Handling external bind", { alias });
+  logger.verbose("Handling external bind", { alias });
 
   await signalingClient.bind(alias);
 };
 
 const handleExternalAccept = async (alias: string) => {
-  logger.info("Handling external accept", { alias });
+  logger.verbose("Handling external accept", { alias });
 
   return await signalingClient.accept(alias);
 };
 
 const handleExternalConnect = async (alias: string) => {
-  logger.info("Handling external connect", { alias });
+  logger.verbose("Handling external connect", { alias });
 
   await signalingClient.connect(alias);
 };
 
 const handleExternalSend = async (alias: string, msg: Uint8Array) => {
-  logger.info("Handling external send", { alias, msg });
+  logger.verbose("Handling external send", { alias, msg });
 
   if (aliases.has(alias)) {
     return await transporter.send(aliases.get(alias)!, msg); // .has
@@ -204,7 +204,7 @@ const handleExternalRecv = async (alias: string) => {
   if (aliases.has(alias)) {
     const msg = await transporter.recv(aliases.get(alias)!); // .has
 
-    logger.info("Handling external recv", { alias, msg });
+    logger.verbose("Handling external recv", { alias, msg });
 
     return msg;
   } else {

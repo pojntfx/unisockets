@@ -56,7 +56,7 @@ export class SignalingServer extends SignalingService {
       );
     });
 
-    this.logger.info("Listening", {
+    this.logger.verbose("Listening", {
       host: this.host,
       port: this.port,
     });
@@ -65,7 +65,7 @@ export class SignalingServer extends SignalingService {
   }
 
   async close() {
-    this.logger.info("Shutting down signaling server");
+    this.logger.verbose("Shutting down signaling server");
 
     await new Promise<void>((res, rej) =>
       this.server ? this.server.close((e) => (e ? rej(e) : res())) : res()
@@ -90,7 +90,7 @@ export class SignalingServer extends SignalingService {
             this.clients.forEach(async (client) => {
               await this.send(client, new Alias({ id, alias, set: false }));
 
-              this.logger.info("Sent alias", { id, alias });
+              this.logger.verbose("Sent alias", { id, alias });
             });
           }
         });
@@ -99,7 +99,7 @@ export class SignalingServer extends SignalingService {
           async (client) => await this.send(client, new Goodbye({ id }))
         );
 
-        this.logger.info("Client disconnected", { id });
+        this.logger.verbose("Client disconnected", { id });
       });
     } else {
       throw new ClientDoesNotExistError();
@@ -116,7 +116,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.KNOCK: {
         const data = operation.data as IKnockData;
 
-        this.logger.info("Received knock", data);
+        this.logger.verbose("Received knock", data);
 
         await this.handleKnock(data, client);
 
@@ -126,7 +126,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.OFFER: {
         const data = operation.data as IOfferData;
 
-        this.logger.info("Received offer", data);
+        this.logger.verbose("Received offer", data);
 
         await this.handleOffer(data);
 
@@ -136,7 +136,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.ANSWER: {
         const data = operation.data as IAnswerData;
 
-        this.logger.info("Received answer", data);
+        this.logger.verbose("Received answer", data);
 
         await this.handleAnswer(data);
 
@@ -146,7 +146,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.CANDIDATE: {
         const data = operation.data as ICandidateData;
 
-        this.logger.info("Received candidate", data);
+        this.logger.verbose("Received candidate", data);
 
         await this.handleCandidate(data);
 
@@ -156,7 +156,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.BIND: {
         const data = operation.data as IBindData;
 
-        this.logger.info("Received bind", data);
+        this.logger.verbose("Received bind", data);
 
         await this.handleBind(data);
 
@@ -166,7 +166,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.ACCEPTING: {
         const data = operation.data as IAcceptingData;
 
-        this.logger.info("Received accepting", data);
+        this.logger.verbose("Received accepting", data);
 
         await this.handleAccepting(data);
 
@@ -176,7 +176,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.SHUTDOWN: {
         const data = operation.data as IShutdownData;
 
-        this.logger.info("Received shutdown", data);
+        this.logger.verbose("Received shutdown", data);
 
         await this.handleShutdown(data);
 
@@ -186,7 +186,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.CONNECT: {
         const data = operation.data as IConnectData;
 
-        this.logger.info("Received connect", data);
+        this.logger.verbose("Received connect", data);
 
         await this.handleConnect(data);
 
@@ -225,7 +225,7 @@ export class SignalingServer extends SignalingService {
           })
         );
 
-        this.logger.info("Sent greeting", {
+        this.logger.verbose("Sent greeting", {
           offererId: existingId,
           answererId: id,
         });
@@ -235,7 +235,7 @@ export class SignalingServer extends SignalingService {
     this.clients.set(id, client);
     await this.registerGoodbye(id);
 
-    this.logger.info("Client connected", { id });
+    this.logger.verbose("Client connected", { id });
   }
 
   private async handleOffer(data: IOfferData) {
@@ -250,7 +250,7 @@ export class SignalingServer extends SignalingService {
       })
     );
 
-    this.logger.info("Sent offer", {
+    this.logger.verbose("Sent offer", {
       offererId: data.offererId,
       answererId: data.answererId,
       offer: data.offer,
@@ -262,7 +262,7 @@ export class SignalingServer extends SignalingService {
 
     await this.send(client, new Answer(data));
 
-    this.logger.info("Sent answer", data);
+    this.logger.verbose("Sent answer", data);
   }
 
   private async handleCandidate(data: ICandidateData) {
@@ -270,12 +270,12 @@ export class SignalingServer extends SignalingService {
 
     await this.send(client, new Candidate(data));
 
-    this.logger.info("Sent candidate", data);
+    this.logger.verbose("Sent candidate", data);
   }
 
   private async handleBind(data: IBindData) {
     if (this.aliases.has(data.alias)) {
-      this.logger.info("Rejecting bind, alias already taken", data);
+      this.logger.verbose("Rejecting bind, alias already taken", data);
 
       const client = this.clients.get(data.id);
 
@@ -284,7 +284,7 @@ export class SignalingServer extends SignalingService {
         new Alias({ id: data.id, alias: data.alias, set: false })
       );
     } else {
-      this.logger.info("Accepting bind", data);
+      this.logger.verbose("Accepting bind", data);
 
       await this.claimTCPAddress(data.alias);
 
@@ -296,7 +296,7 @@ export class SignalingServer extends SignalingService {
           new Alias({ id: data.id, alias: data.alias, set: true })
         );
 
-        this.logger.info("Sent alias", { id, data });
+        this.logger.verbose("Sent alias", { id, data });
       });
     }
   }
@@ -306,9 +306,9 @@ export class SignalingServer extends SignalingService {
       !this.aliases.has(data.alias) ||
       this.aliases.get(data.alias)!.id !== data.id // `.has` checks this
     ) {
-      this.logger.info("Rejecting accepting, alias does not exist", data);
+      this.logger.verbose("Rejecting accepting, alias does not exist", data);
     } else {
-      this.logger.info("Accepting accepting", data);
+      this.logger.verbose("Accepting accepting", data);
 
       this.aliases.set(data.alias, new MAlias(data.id, true));
     }
@@ -323,7 +323,7 @@ export class SignalingServer extends SignalingService {
       await this.removeTCPAddress(data.alias);
       await this.removeIPAddress(data.alias);
 
-      this.logger.info("Accepting shutdown", data);
+      this.logger.verbose("Accepting shutdown", data);
 
       this.clients.forEach(async (client, id) => {
         await this.send(
@@ -331,10 +331,10 @@ export class SignalingServer extends SignalingService {
           new Alias({ id: data.id, alias: data.alias, set: false })
         );
 
-        this.logger.info("Sent alias", { id, data });
+        this.logger.verbose("Sent alias", { id, data });
       });
     } else {
-      this.logger.info(
+      this.logger.verbose(
         "Rejecting shutdown, alias not taken or incorrect client ID",
         data
       );
@@ -356,7 +356,7 @@ export class SignalingServer extends SignalingService {
       !this.aliases.has(data.remoteAlias) ||
       !this.aliases.get(data.remoteAlias)!.accepting // `.has` checks this
     ) {
-      this.logger.info("Rejecting connect, remote alias does not exist", {
+      this.logger.verbose("Rejecting connect, remote alias does not exist", {
         data,
       });
 
@@ -372,7 +372,7 @@ export class SignalingServer extends SignalingService {
         })
       );
     } else {
-      this.logger.info("Accepting connect", {
+      this.logger.verbose("Accepting connect", {
         data,
       });
 
@@ -388,7 +388,7 @@ export class SignalingServer extends SignalingService {
 
       await this.send(client, clientAliasMessage);
 
-      this.logger.info("Sent alias for connection to client", {
+      this.logger.verbose("Sent alias for connection to client", {
         data,
         alias: clientAliasMessage,
       });
@@ -404,7 +404,7 @@ export class SignalingServer extends SignalingService {
 
       await this.send(server, serverAliasMessage);
 
-      this.logger.info("Sent alias for connection to server", {
+      this.logger.verbose("Sent alias for connection to server", {
         data,
         alias: serverAliasMessage,
       });
@@ -416,7 +416,7 @@ export class SignalingServer extends SignalingService {
 
       await this.send(server, serverAcceptMessage);
 
-      this.logger.info("Sent accept to server", {
+      this.logger.verbose("Sent accept to server", {
         data,
         accept: serverAcceptMessage,
       });
@@ -430,7 +430,7 @@ export class SignalingServer extends SignalingService {
 
       await this.send(client, serverAliasForClientsMessage);
 
-      this.logger.info("Sent alias for server to client", {
+      this.logger.verbose("Sent alias for server to client", {
         data,
         alias: serverAliasForClientsMessage,
       });
