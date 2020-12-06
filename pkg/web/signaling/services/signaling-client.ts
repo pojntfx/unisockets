@@ -76,11 +76,11 @@ export class SignalingClient extends SignalingService {
     this.client.onopen = async () => await this.handleConnect();
     this.client.onclose = async () => await this.handleDisconnect();
 
-    this.logger.info("Server connected", { address: this.address });
+    this.logger.verbose("Server connected", { address: this.address });
   }
 
   async bind(alias: string) {
-    this.logger.info("Binding", { id: this.id, alias });
+    this.logger.verbose("Binding", { id: this.id, alias });
 
     return new Promise<void>(async (res, rej) => {
       (async () => {
@@ -100,7 +100,7 @@ export class SignalingClient extends SignalingService {
   }
 
   async accept(alias: string): Promise<string> {
-    this.logger.info("Accepting", { id: this.id, alias });
+    this.logger.verbose("Accepting", { id: this.id, alias });
 
     return new Promise(async (res) => {
       (async () => {
@@ -116,7 +116,7 @@ export class SignalingClient extends SignalingService {
   }
 
   async shutdown(alias: string) {
-    this.logger.info("Shutting down", { id: this.id, alias });
+    this.logger.verbose("Shutting down", { id: this.id, alias });
 
     return new Promise<void>(async (res, rej) => {
       (async () => {
@@ -137,7 +137,7 @@ export class SignalingClient extends SignalingService {
   }
 
   async connect(remoteAlias: string): Promise<string> {
-    this.logger.info("Connecting", { id: this.id, remoteAlias });
+    this.logger.verbose("Connecting", { id: this.id, remoteAlias });
 
     const clientConnectionId = v4();
 
@@ -182,7 +182,7 @@ export class SignalingClient extends SignalingService {
   }
 
   private async handleConnect() {
-    this.logger.info("Server connected", { address: this.address });
+    this.logger.verbose("Server connected", { address: this.address });
 
     await this.send(this.client, new Knock({ subnet: this.subnet }));
 
@@ -190,7 +190,7 @@ export class SignalingClient extends SignalingService {
   }
 
   private async handleDisconnect() {
-    this.logger.info("Server disconnected", {
+    this.logger.verbose("Server disconnected", {
       address: this.address,
       reconnectingIn: this.reconnectDuration,
     });
@@ -205,7 +205,7 @@ export class SignalingClient extends SignalingService {
   private async sendCandidate(candidate: Candidate) {
     await this.send(this.client, candidate);
 
-    this.logger.info("Sent candidate", candidate);
+    this.logger.verbose("Sent candidate", candidate);
   }
 
   private async handleOperation(
@@ -217,7 +217,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.GOODBYE: {
         const data = operation.data as IGoodbyeData;
 
-        this.logger.info("Received goodbye", data);
+        this.logger.verbose("Received goodbye", data);
 
         await this.onGoodbye(data.id);
 
@@ -229,7 +229,7 @@ export class SignalingClient extends SignalingService {
 
         this.id = data.id;
 
-        this.logger.info("Received acknowledgement", { id: this.id });
+        this.logger.verbose("Received acknowledgement", { id: this.id });
 
         await this.onAcknowledgement(this.id, data.rejected);
 
@@ -250,7 +250,7 @@ export class SignalingClient extends SignalingService {
               })
             );
 
-            this.logger.info("Sent candidate", data);
+            this.logger.verbose("Sent candidate", data);
           }
         );
 
@@ -263,7 +263,7 @@ export class SignalingClient extends SignalingService {
           })
         );
 
-        this.logger.info("Sent offer", {
+        this.logger.verbose("Sent offer", {
           offererId: this.id,
           answererId: data.answererId,
           offer,
@@ -275,7 +275,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.OFFER: {
         const data = operation.data as IOfferData;
 
-        this.logger.info("Received offer", data);
+        this.logger.verbose("Received offer", data);
 
         const answer = await this.getAnswer(
           data.offererId,
@@ -289,7 +289,7 @@ export class SignalingClient extends SignalingService {
               })
             );
 
-            this.logger.info("Sent candidate", data);
+            this.logger.verbose("Sent candidate", data);
           }
         );
 
@@ -302,7 +302,7 @@ export class SignalingClient extends SignalingService {
           })
         );
 
-        this.logger.info("Sent answer", {
+        this.logger.verbose("Sent answer", {
           offererId: data.offererId,
           answererId: this.id,
           answer,
@@ -314,7 +314,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.ANSWER: {
         const data = operation.data as IAnswerData;
 
-        this.logger.info("Received answer", data);
+        this.logger.verbose("Received answer", data);
 
         await this.onAnswer(data.offererId, data.answererId, data.answer);
 
@@ -324,7 +324,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.CANDIDATE: {
         const data = operation.data as ICandidateData;
 
-        this.logger.info("Received candidate", data);
+        this.logger.verbose("Received candidate", data);
 
         await this.onCandidate(data.offererId, data.answererId, data.candidate);
 
@@ -334,7 +334,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.ALIAS: {
         const data = operation.data as IAliasData;
 
-        this.logger.info("Received alias", data);
+        this.logger.verbose("Received alias", data);
 
         if (data.clientConnectionId) {
           await this.notifyConnect(
@@ -355,7 +355,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.ACCEPT: {
         const data = operation.data as IAcceptData;
 
-        this.logger.info("Received accept", data);
+        this.logger.verbose("Received accept", data);
 
         await this.notifyAccept(data.boundAlias, data.clientAlias);
 
