@@ -19,6 +19,8 @@ jobs:
         run: make -j$(nproc)
       - name: Build with Yarn
         run: yarn build
+      - name: Test with Yarn
+        run: yarn test
       - name: Publish to npm
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: pascalgn/npm-publish-action@1.3.5

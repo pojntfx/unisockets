@@ -29,6 +29,7 @@ import { SignalingService } from "./signaling-service";
 export class SignalingServer extends SignalingService {
   private clients = new Map<string, WebSocket>();
   private aliases = new Map<string, MAlias>();
+  protected server?: Server;
 
   constructor(private host: string, private port: number) {
     super();
@@ -42,6 +43,10 @@ export class SignalingServer extends SignalingService {
       port: this.port,
     });
 
+    await new Promise<void>(
+      (res) => server.once("listening", () => res()) // We create it above, so this can't be undefined
+    );
+
     server.on("connection", async (client) => {
       client.on(
         "message",
@@ -54,6 +59,18 @@ export class SignalingServer extends SignalingService {
       host: this.host,
       port: this.port,
     });
+
+    this.server = server;
+  }
+
+  async close() {
+    this.logger.info("Shutting down signaling server");
+
+    await new Promise<void>((res, rej) =>
+      this.server ? this.server.close((e) => (e ? rej(e) : res())) : res()
+    );
+
+    this.logger.debug("Closed signaling server");
   }
 
   private async registerGoodbye(id: string) {
