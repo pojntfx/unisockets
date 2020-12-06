@@ -1,3 +1,4 @@
+import { Mutex } from "async-mutex";
 import WebSocket, { Server } from "isomorphic-ws";
 import { ClientDoesNotExistError } from "../errors/client-does-not-exist";
 import { PortAlreadyAllocatedError } from "../errors/port-already-allocated-error";
@@ -437,111 +438,142 @@ export class SignalingServer extends SignalingService {
   }
 
   private subnets = new Map<string, Map<number, MMember>>();
+  private subnetsMutex = new Mutex();
 
   private async createIPAddress(subnet: string) {
-    if (!this.subnets.has(subnet)) {
-      this.subnets.set(subnet, new Map());
-    }
+    const release = await this.subnetsMutex.acquire();
 
-    const existingMembers = Array.from(this.subnets.get(subnet)!.keys()).sort(
-      (a, b) => a - b
-    ); // We ensure above
+    try {
+      if (!this.subnets.has(subnet)) {
+        this.subnets.set(subnet, new Map());
+      }
 
-    // Find the next free suffix
-    const newSuffix: number = await new Promise((res) => {
-      existingMembers.forEach((suffix, index) => {
-        suffix !== index && res(index);
+      const existingMembers = Array.from(this.subnets.get(subnet)!.keys()).sort(
+        (a, b) => a - b
+      ); // We ensure above
+
+      // Find the next free suffix
+      const newSuffix: number = await new Promise((res) => {
+        existingMembers.forEach((suffix, index) => {
+          suffix !== index && res(index);
+        });
+
+        res(existingMembers.length);
       });
 
-      res(existingMembers.length);
-    });
+      if (newSuffix > 255) {
+        return "-1";
+      }
 
-    if (newSuffix > 255) {
-      return "-1";
+      const newMember = new MMember([]);
+
+      this.subnets.get(subnet)!.set(newSuffix, newMember); // We ensure above
+
+      return this.toIPAddress(subnet, newSuffix);
+    } finally {
+      release();
     }
-
-    const newMember = new MMember([]);
-
-    this.subnets.get(subnet)!.set(newSuffix, newMember); // We ensure above
-
-    return this.toIPAddress(subnet, newSuffix);
   }
 
   private async createTCPAddress(ipAddress: string) {
-    const { subnet, suffix } = this.parseIPAddress(ipAddress);
+    const release = await this.subnetsMutex.acquire();
 
-    if (this.subnets.has(subnet)) {
-      if (this.subnets.get(subnet)!.has(suffix)) {
-        const existingPorts = this.subnets
-          .get(subnet)!
-          .get(suffix)!
-          .ports.sort((a, b) => a - b); // We ensure above
+    try {
+      const { subnet, suffix } = this.parseIPAddress(ipAddress);
 
-        // Find next free port
-        const newPort: number = await new Promise((res) => {
-          existingPorts.forEach((port, index) => {
-            port !== index && res(index);
+      if (this.subnets.has(subnet)) {
+        if (this.subnets.get(subnet)!.has(suffix)) {
+          const existingPorts = this.subnets
+            .get(subnet)!
+            .get(suffix)!
+            .ports.sort((a, b) => a - b); // We ensure above
+
+          // Find next free port
+          const newPort: number = await new Promise((res) => {
+            existingPorts.forEach((port, index) => {
+              port !== index && res(index);
+            });
+
+            res(existingPorts.length);
           });
 
-          res(existingPorts.length);
-        });
+          this.subnets.get(subnet)!.get(suffix)!.ports.push(newPort); // We ensure above
 
-        this.subnets.get(subnet)!.get(suffix)!.ports.push(newPort); // We ensure above
-
-        return this.toTCPAddress(this.toIPAddress(subnet, suffix), newPort);
+          return this.toTCPAddress(this.toIPAddress(subnet, suffix), newPort);
+        } else {
+          throw new SuffixDoesNotExistError();
+        }
       } else {
-        throw new SuffixDoesNotExistError();
+        throw new SubnetDoesNotExistError();
       }
-    } else {
-      throw new SubnetDoesNotExistError();
+    } finally {
+      release();
     }
   }
 
   private async claimTCPAddress(tcpAddress: string) {
-    const { ipAddress, port } = this.parseTCPAddress(tcpAddress);
-    const { subnet, suffix } = this.parseIPAddress(ipAddress);
+    const release = await this.subnetsMutex.acquire();
 
-    if (this.subnets.has(subnet)) {
-      if (!this.subnets.get(subnet)!.has(suffix)) {
-        this.subnets.get(subnet)!.set(suffix, new MMember([])); // We ensure above
-      }
+    try {
+      const { ipAddress, port } = this.parseTCPAddress(tcpAddress);
+      const { subnet, suffix } = this.parseIPAddress(ipAddress);
 
-      if (
-        this.subnets
-          .get(subnet)!
-          .get(suffix)!
-          .ports.find((p) => p === port) === undefined
-      ) {
-        this.subnets.get(subnet)!.get(suffix)!.ports.push(port); // We ensure above
+      if (this.subnets.has(subnet)) {
+        if (!this.subnets.get(subnet)!.has(suffix)) {
+          this.subnets.get(subnet)!.set(suffix, new MMember([])); // We ensure above
+        }
+
+        if (
+          this.subnets
+            .get(subnet)!
+            .get(suffix)!
+            .ports.find((p) => p === port) === undefined
+        ) {
+          this.subnets.get(subnet)!.get(suffix)!.ports.push(port); // We ensure above
+        } else {
+          throw new PortAlreadyAllocatedError();
+        }
       } else {
-        throw new PortAlreadyAllocatedError();
+        throw new SubnetDoesNotExistError();
       }
-    } else {
-      throw new SubnetDoesNotExistError();
+    } finally {
+      release();
     }
   }
 
   private async removeIPAddress(ipAddress: string) {
-    const { subnet, suffix } = this.parseIPAddress(ipAddress);
+    const release = await this.subnetsMutex.acquire();
 
-    if (this.subnets.has(subnet)) {
-      if (this.subnets.get(subnet)!.has(suffix)) {
-        this.subnets.get(subnet)!.delete(suffix); // We ensure above
+    try {
+      const { subnet, suffix } = this.parseIPAddress(ipAddress);
+
+      if (this.subnets.has(subnet)) {
+        if (this.subnets.get(subnet)!.has(suffix)) {
+          this.subnets.get(subnet)!.delete(suffix); // We ensure above
+        }
       }
+    } finally {
+      release();
     }
   }
 
   private async removeTCPAddress(tcpAddress: string) {
-    const { ipAddress, port } = this.parseTCPAddress(tcpAddress);
-    const { subnet, suffix } = this.parseIPAddress(ipAddress);
+    const release = await this.subnetsMutex.acquire();
 
-    if (this.subnets.has(subnet)) {
-      if (this.subnets.get(subnet)!.has(suffix)) {
-        this.subnets.get(subnet)!.get(suffix)!.ports = this.subnets
-          .get(subnet)!
-          .get(suffix)!
-          .ports.filter((p) => p !== port); // We ensure above
+    try {
+      const { ipAddress, port } = this.parseTCPAddress(tcpAddress);
+      const { subnet, suffix } = this.parseIPAddress(ipAddress);
+
+      if (this.subnets.has(subnet)) {
+        if (this.subnets.get(subnet)!.has(suffix)) {
+          this.subnets.get(subnet)!.get(suffix)!.ports = this.subnets
+            .get(subnet)!
+            .get(suffix)!
+            .ports.filter((p) => p !== port); // We ensure above
+        }
       }
+    } finally {
+      release();
     }
   }
 
