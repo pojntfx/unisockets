@@ -100,42 +100,7 @@ export class SignalingServer extends SignalingService {
 
         this.logger.info("Received knock", data);
 
-        const id = await this.createIPAddress(data.subnet);
-
-        if (id !== "-1") {
-          await this.send(client, new Acknowledgement({ id, rejected: false }));
-        } else {
-          await this.send(client, new Acknowledgement({ id, rejected: true }));
-
-          this.logger.error("Knock rejected", {
-            id,
-            reason: "subnet overflow",
-          });
-
-          break;
-        }
-
-        this.clients.forEach(async (existingClient, existingId) => {
-          if (existingId !== id) {
-            await this.send(
-              existingClient,
-              new Greeting({
-                offererId: existingId,
-                answererId: id,
-              })
-            );
-
-            this.logger.info("Sent greeting", {
-              offererId: existingId,
-              answererId: id,
-            });
-          }
-        });
-
-        this.clients.set(id, client);
-        await this.registerGoodbye(id);
-
-        this.logger.info("Client connected", { id });
+        await this.handleKnock(data, client);
 
         break;
       }
@@ -145,22 +110,7 @@ export class SignalingServer extends SignalingService {
 
         this.logger.info("Received offer", data);
 
-        const client = this.clients.get(data.answererId);
-
-        await this.send(
-          client,
-          new Offer({
-            offererId: data.offererId,
-            answererId: data.answererId,
-            offer: data.offer,
-          })
-        );
-
-        this.logger.info("Sent offer", {
-          offererId: data.offererId,
-          answererId: data.answererId,
-          offer: data.offer,
-        });
+        await this.handleOffer(data);
 
         break;
       }
@@ -168,13 +118,9 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.ANSWER: {
         const data = operation.data as IAnswerData;
 
-        const client = this.clients.get(data.offererId);
-
         this.logger.info("Received answer", data);
 
-        await this.send(client, new Answer(data));
-
-        this.logger.info("Sent answer", data);
+        await this.handleAnswer(data);
 
         break;
       }
@@ -182,13 +128,9 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.CANDIDATE: {
         const data = operation.data as ICandidateData;
 
-        const client = this.clients.get(data.answererId);
-
         this.logger.info("Received candidate", data);
 
-        await this.send(client, new Candidate(data));
-
-        this.logger.info("Sent candidate", data);
+        await this.handleCandidate(data);
 
         break;
       }
@@ -198,31 +140,7 @@ export class SignalingServer extends SignalingService {
 
         this.logger.info("Received bind", data);
 
-        if (this.aliases.has(data.alias)) {
-          this.logger.info("Rejecting bind, alias already taken", data);
-
-          const client = this.clients.get(data.id);
-
-          await this.send(
-            client,
-            new Alias({ id: data.id, alias: data.alias, set: false })
-          );
-        } else {
-          this.logger.info("Accepting bind", data);
-
-          await this.claimTCPAddress(data.alias);
-
-          this.aliases.set(data.alias, new MAlias(data.id, false));
-
-          this.clients.forEach(async (client, id) => {
-            await this.send(
-              client,
-              new Alias({ id: data.id, alias: data.alias, set: true })
-            );
-
-            this.logger.info("Sent alias", { id, data });
-          });
-        }
+        await this.handleBind(data);
 
         break;
       }
@@ -232,16 +150,7 @@ export class SignalingServer extends SignalingService {
 
         this.logger.info("Received accepting", data);
 
-        if (
-          !this.aliases.has(data.alias) ||
-          this.aliases.get(data.alias)!.id !== data.id // `.has` checks this
-        ) {
-          this.logger.info("Rejecting accepting, alias does not exist", data);
-        } else {
-          this.logger.info("Accepting accepting", data);
-
-          this.aliases.set(data.alias, new MAlias(data.id, true));
-        }
+        await this.handleAccepting(data);
 
         break;
       }
@@ -251,37 +160,7 @@ export class SignalingServer extends SignalingService {
 
         this.logger.info("Received shutdown", data);
 
-        if (
-          this.aliases.has(data.alias) &&
-          this.aliases.get(data.alias)!.id === data.id // `.has` checks this
-        ) {
-          this.aliases.delete(data.alias);
-          await this.removeTCPAddress(data.alias);
-          await this.removeIPAddress(data.alias);
-
-          this.logger.info("Accepting shutdown", data);
-
-          this.clients.forEach(async (client, id) => {
-            await this.send(
-              client,
-              new Alias({ id: data.id, alias: data.alias, set: false })
-            );
-
-            this.logger.info("Sent alias", { id, data });
-          });
-        } else {
-          this.logger.info(
-            "Rejecting shutdown, alias not taken or incorrect client ID",
-            data
-          );
-
-          const client = this.clients.get(data.id);
-
-          await this.send(
-            client,
-            new Alias({ id: data.id, alias: data.alias, set: true })
-          );
-        }
+        await this.handleShutdown(data);
 
         break;
       }
@@ -289,92 +168,9 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.CONNECT: {
         const data = operation.data as IConnectData;
 
-        const clientAlias = await this.createTCPAddress(data.id);
-        const client = this.clients.get(data.id);
+        this.logger.info("Received connect", data);
 
-        if (
-          !this.aliases.has(data.remoteAlias) ||
-          !this.aliases.get(data.remoteAlias)!.accepting // `.has` checks this
-        ) {
-          this.logger.info("Rejecting connect, remote alias does not exist", {
-            data,
-          });
-
-          await this.removeTCPAddress(clientAlias);
-
-          await this.send(
-            client,
-            new Alias({
-              id: data.id,
-              alias: clientAlias,
-              set: false,
-              clientConnectionId: data.clientConnectionId,
-            })
-          );
-        } else {
-          this.logger.info("Accepting connect", {
-            data,
-          });
-
-          this.aliases.set(clientAlias, new MAlias(data.id, false));
-
-          const clientAliasMessage = new Alias({
-            id: data.id,
-            alias: clientAlias,
-            set: true,
-            clientConnectionId: data.clientConnectionId,
-            isConnectionAlias: true,
-          });
-
-          await this.send(client, clientAliasMessage);
-
-          this.logger.info("Sent alias for connection to client", {
-            data,
-            alias: clientAliasMessage,
-          });
-
-          const serverId = this.aliases.get(data.remoteAlias)!; // `.has` checks this
-          const server = this.clients.get(serverId.id);
-
-          const serverAliasMessage = new Alias({
-            id: data.id,
-            alias: clientAlias,
-            set: true,
-          });
-
-          await this.send(server, serverAliasMessage);
-
-          this.logger.info("Sent alias for connection to server", {
-            data,
-            alias: serverAliasMessage,
-          });
-
-          const serverAcceptMessage = new Accept({
-            boundAlias: data.remoteAlias,
-            clientAlias: clientAlias,
-          });
-
-          await this.send(server, serverAcceptMessage);
-
-          this.logger.info("Sent accept to server", {
-            data,
-            accept: serverAcceptMessage,
-          });
-
-          const serverAliasForClientsMessage = new Alias({
-            id: serverId.id,
-            alias: data.remoteAlias,
-            set: true,
-            clientConnectionId: data.clientConnectionId,
-          });
-
-          await this.send(client, serverAliasForClientsMessage);
-
-          this.logger.info("Sent alias for server to client", {
-            data,
-            alias: serverAliasForClientsMessage,
-          });
-        }
+        await this.handleConnect(data);
 
         break;
       }
@@ -382,6 +178,244 @@ export class SignalingServer extends SignalingService {
       default: {
         throw new UnimplementedOperationError(operation.opcode);
       }
+    }
+  }
+
+  private async handleKnock(data: IKnockData, client: WebSocket) {
+    const id = await this.createIPAddress(data.subnet);
+
+    if (id !== "-1") {
+      await this.send(client, new Acknowledgement({ id, rejected: false }));
+    } else {
+      await this.send(client, new Acknowledgement({ id, rejected: true }));
+
+      this.logger.error("Knock rejected", {
+        id,
+        reason: "subnet overflow",
+      });
+
+      return;
+    }
+
+    this.clients.forEach(async (existingClient, existingId) => {
+      if (existingId !== id) {
+        await this.send(
+          existingClient,
+          new Greeting({
+            offererId: existingId,
+            answererId: id,
+          })
+        );
+
+        this.logger.info("Sent greeting", {
+          offererId: existingId,
+          answererId: id,
+        });
+      }
+    });
+
+    this.clients.set(id, client);
+    await this.registerGoodbye(id);
+
+    this.logger.info("Client connected", { id });
+  }
+
+  private async handleOffer(data: IOfferData) {
+    const client = this.clients.get(data.answererId);
+
+    await this.send(
+      client,
+      new Offer({
+        offererId: data.offererId,
+        answererId: data.answererId,
+        offer: data.offer,
+      })
+    );
+
+    this.logger.info("Sent offer", {
+      offererId: data.offererId,
+      answererId: data.answererId,
+      offer: data.offer,
+    });
+  }
+
+  private async handleAnswer(data: IAnswerData) {
+    const client = this.clients.get(data.offererId);
+
+    await this.send(client, new Answer(data));
+
+    this.logger.info("Sent answer", data);
+  }
+
+  private async handleCandidate(data: ICandidateData) {
+    const client = this.clients.get(data.answererId);
+
+    await this.send(client, new Candidate(data));
+
+    this.logger.info("Sent candidate", data);
+  }
+
+  private async handleBind(data: IBindData) {
+    if (this.aliases.has(data.alias)) {
+      this.logger.info("Rejecting bind, alias already taken", data);
+
+      const client = this.clients.get(data.id);
+
+      await this.send(
+        client,
+        new Alias({ id: data.id, alias: data.alias, set: false })
+      );
+    } else {
+      this.logger.info("Accepting bind", data);
+
+      await this.claimTCPAddress(data.alias);
+
+      this.aliases.set(data.alias, new MAlias(data.id, false));
+
+      this.clients.forEach(async (client, id) => {
+        await this.send(
+          client,
+          new Alias({ id: data.id, alias: data.alias, set: true })
+        );
+
+        this.logger.info("Sent alias", { id, data });
+      });
+    }
+  }
+
+  private async handleAccepting(data: IAcceptingData) {
+    if (
+      !this.aliases.has(data.alias) ||
+      this.aliases.get(data.alias)!.id !== data.id // `.has` checks this
+    ) {
+      this.logger.info("Rejecting accepting, alias does not exist", data);
+    } else {
+      this.logger.info("Accepting accepting", data);
+
+      this.aliases.set(data.alias, new MAlias(data.id, true));
+    }
+  }
+
+  private async handleShutdown(data: IShutdownData) {
+    if (
+      this.aliases.has(data.alias) &&
+      this.aliases.get(data.alias)!.id === data.id // `.has` checks this
+    ) {
+      this.aliases.delete(data.alias);
+      await this.removeTCPAddress(data.alias);
+      await this.removeIPAddress(data.alias);
+
+      this.logger.info("Accepting shutdown", data);
+
+      this.clients.forEach(async (client, id) => {
+        await this.send(
+          client,
+          new Alias({ id: data.id, alias: data.alias, set: false })
+        );
+
+        this.logger.info("Sent alias", { id, data });
+      });
+    } else {
+      this.logger.info(
+        "Rejecting shutdown, alias not taken or incorrect client ID",
+        data
+      );
+
+      const client = this.clients.get(data.id);
+
+      await this.send(
+        client,
+        new Alias({ id: data.id, alias: data.alias, set: true })
+      );
+    }
+  }
+
+  private async handleConnect(data: IConnectData) {
+    const clientAlias = await this.createTCPAddress(data.id);
+    const client = this.clients.get(data.id);
+
+    if (
+      !this.aliases.has(data.remoteAlias) ||
+      !this.aliases.get(data.remoteAlias)!.accepting // `.has` checks this
+    ) {
+      this.logger.info("Rejecting connect, remote alias does not exist", {
+        data,
+      });
+
+      await this.removeTCPAddress(clientAlias);
+
+      await this.send(
+        client,
+        new Alias({
+          id: data.id,
+          alias: clientAlias,
+          set: false,
+          clientConnectionId: data.clientConnectionId,
+        })
+      );
+    } else {
+      this.logger.info("Accepting connect", {
+        data,
+      });
+
+      this.aliases.set(clientAlias, new MAlias(data.id, false));
+
+      const clientAliasMessage = new Alias({
+        id: data.id,
+        alias: clientAlias,
+        set: true,
+        clientConnectionId: data.clientConnectionId,
+        isConnectionAlias: true,
+      });
+
+      await this.send(client, clientAliasMessage);
+
+      this.logger.info("Sent alias for connection to client", {
+        data,
+        alias: clientAliasMessage,
+      });
+
+      const serverId = this.aliases.get(data.remoteAlias)!; // `.has` checks this
+      const server = this.clients.get(serverId.id);
+
+      const serverAliasMessage = new Alias({
+        id: data.id,
+        alias: clientAlias,
+        set: true,
+      });
+
+      await this.send(server, serverAliasMessage);
+
+      this.logger.info("Sent alias for connection to server", {
+        data,
+        alias: serverAliasMessage,
+      });
+
+      const serverAcceptMessage = new Accept({
+        boundAlias: data.remoteAlias,
+        clientAlias: clientAlias,
+      });
+
+      await this.send(server, serverAcceptMessage);
+
+      this.logger.info("Sent accept to server", {
+        data,
+        accept: serverAcceptMessage,
+      });
+
+      const serverAliasForClientsMessage = new Alias({
+        id: serverId.id,
+        alias: data.remoteAlias,
+        set: true,
+        clientConnectionId: data.clientConnectionId,
+      });
+
+      await this.send(client, serverAliasForClientsMessage);
+
+      this.logger.info("Sent alias for server to client", {
+        data,
+        alias: serverAliasForClientsMessage,
+      });
     }
   }
 
