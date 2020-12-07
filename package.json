@@ -1,9 +1,9 @@
 {
   "name": "@pojntfx/unisockets",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
   "main": "dist/nodeLib/index.js",
-  "module": "dist/webLib/index.mjs",
+  "module": "dist/webLib/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "rm -rf dist && yarn build:types && yarn build:lib:node && yarn build:lib:web && yarn build:app:node && yarn build:app:web && yarn build:diagram && yarn build:docs",
