@@ -5,6 +5,7 @@ const bundle = (format) => ({
   input: source,
   output: {
     file: format == "cjs" ? main : module,
+    format: format == "cjs" ? "cjs" : "es",
   },
   plugins: [esbuild()],
   external: (id) => !/^[./]/.test(id),
