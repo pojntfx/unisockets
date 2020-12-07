@@ -31,8 +31,8 @@ const urlParams = new URLSearchParams(window.location.search);
 const useServerBinary = urlParams.get("server");
 
 const binaryPath = useServerBinary
-  ? "go/echo_server.wasm"
-  : "go/echo_client.wasm";
+  ? "out/go/echo_server.wasm"
+  : "out/go/echo_client.wasm";
 
 const useC = false;
 const useGo = true;
