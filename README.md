@@ -8,6 +8,7 @@ A universal Berkeley sockets implementation for both WebAssembly (based on WebRT
 [![TypeDoc](https://img.shields.io/badge/TypeScript-Documentation-informational)](https://pojntfx.github.io/unisockets/)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets)
 [![npm](https://img.shields.io/npm/v/@pojntfx/unisockets)](https://www.npmjs.com/package/@pojntfx/unisockets)
+[![Demo](https://img.shields.io/badge/Demo-unisockets.netlify.app-blueviolet)](https://unisockets.netlify.app/)
 
 ## Overview
 
