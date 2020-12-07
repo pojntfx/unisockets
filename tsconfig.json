@@ -1,13 +1,11 @@
 {
   "compilerOptions": {
-    "target": "es2019",
-    "module": "commonjs",
+    "target": "ES2019",
+    "module": "CommonJS",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "experimentalDecorators": true
-  },
-  "exclude": ["browser", "dist", ".cache", "docs"]
+    "allowJs": true
+  }
 }

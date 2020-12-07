@@ -1,7 +1,6 @@
 node_modules
-docs
-out
-dist
 yarn-error.log
-.cache
-browser
+dist
+.parcel-cache
+cmd
+out

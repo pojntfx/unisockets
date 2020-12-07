@@ -2,28 +2,31 @@
   "name": "@pojntfx/unisockets",
   "version": "0.0.12",
   "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "dist/nodeLib/index.js",
+  "module": "dist/webLib/index.mjs",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "yarn build:lib && yarn build:bin && yarn build:web && yarn build:docs && yarn build:diagram",
-    "build:lib": "rollup -c",
-    "build:bin": "esbuild cmd/unisockets_runner/main.ts --bundle --minify --outfile=dist/main.js --platform=node --target=node12 --external:wasi --external:wrtc --external:@wasmer/wasm-transformer",
-    "build:web": "parcel build --out-dir browser ./cmd/unisockets_runner_web/index.html",
-    "build:docs": "mkdir -p docs && typedoc --tsconfig tsconfig.json --mode file --outDir docs --media docs/media --exclude '+(node_modules|docs|out|dist|browser|vendor)' .",
-    "build:diagram": "mkdir -p docs/media && tplant -p tsconfig.json -i './**/*.ts*' --output 'docs/media/diagram.svg'",
+    "build": "rm -rf dist && yarn build:types && yarn build:lib:node && yarn build:lib:web && yarn build:app:node && yarn build:app:web && yarn build:diagram && yarn build:docs",
+    "build:types": "parcel build --target types index.ts",
+    "build:lib:node": "parcel build --target nodeLib index.ts",
+    "build:lib:web": "parcel build --target webLib index.ts",
+    "build:app:node": "parcel build --target nodeApp cmd/unisockets_runner/main.ts && chmod +x dist/nodeApp/main.js",
+    "build:app:web": "mkdir -p dist/webApp && cp -r out dist/webApp && parcel build --target webApp cmd/unisockets_runner_web/index.html",
+    "build:diagram": "mkdir -p dist/media && tplant -p tsconfig.json -i 'pkg/**/*.ts*' --output 'dist/media/diagram.svg'",
+    "build:docs": "mkdir -p dist/docs && typedoc --tsconfig tsconfig.json --mode file --outDir dist/docs --out dist/docs --media dist/media --exclude '+(node_modules|dist)' .",
     "test": "jest",
-    "dev:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runSignalingServer true",
-    "dev:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
-    "dev:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm",
-    "dev:web": "parcel --hmr-port 1235 --out-dir browser ./cmd/unisockets_runner_web/index.html",
-    "start:signaling-server": "./dist/main.js --runSignalingServer true",
-    "start:example-server": "./dist/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
-    "start:example-client": "./dist/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm",
-    "start:web": "serve browser"
+    "dev:app:node:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runSignalingServer true",
+    "dev:app:node:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
+    "dev:app:node:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm",
+    "dev:app:web": "mkdir -p dist/webApp && cp -r out dist/webApp && parcel --hmr-port 1235 --target webApp cmd/unisockets_runner_web/index.html",
+    "start:app:node:signaling-server": "./dist/nodeApp/main.js --runSignalingServer true",
+    "start:app:node:example-server": "./dist/nodeApp/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
+    "start:app:node:example-client": "./dist/nodeApp/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm",
+    "start:app:web": "serve dist/webApp",
+    "start:docs": "serve dist/docs"
   },
   "bin": {
-    "unisockets_runner": "dist/main.js"
+    "unisockets_runner": "dist/nodeApp/main.js"
   },
   "files": [
     "dist"
@@ -43,19 +46,11 @@
     "@types/uuid": "^8.3.0",
     "@types/ws": "^7.4.0",
     "@types/yargs": "^15.0.9",
-    "esbuild": "^0.8.20",
     "get-port": "^5.1.1",
     "jest": "^26.6.3",
-    "parcel-bundler": "^1.12.4",
-    "parcel-plugin-static-files-copy": "^2.5.0",
-    "rollup": "^2.34.2",
-    "rollup-plugin-dts": "^2.0.0",
-    "rollup-plugin-esbuild": "^2.6.0",
     "tplant": "^2.3.6",
     "ts-jest": "^26.4.4",
-    "ts-node": "^9.0.0",
     "ts-node-dev": "^1.0.0",
-    "tslib": "^2.0.3",
     "typedoc": "^0.19.2",
     "typescript": "^4.0.5"
   },
@@ -74,11 +69,48 @@
     "ws": "^7.4.0",
     "yargs": "^16.1.0"
   },
-  "browserslist": [
-    "last 1 Chrome version"
-  ],
-  "staticFiles": {
-    "staticPath": "out",
-    "watcherGlob": "**"
+  "targets": {
+    "nodeLib": {
+      "isLibrary": true,
+      "context": "node",
+      "includeNodeModules": {
+        "wrtc": false
+      },
+      "engines": {
+        "node": ">=12.x"
+      }
+    },
+    "webLib": {
+      "isLibrary": true,
+      "context": "browser",
+      "engines": {
+        "browsers": ">=5%"
+      }
+    },
+    "nodeApp": {
+      "engines": {
+        "node": ">=12.x"
+      }
+    },
+    "webApp": {
+      "engines": {
+        "browsers": ">=5%"
+      }
+    }
+  },
+  "jest": {
+    "rootDir": "pkg",
+    "preset": "ts-jest",
+    "testMatch": [
+      "<rootDir>/**/*.test.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 0,
+        "functions": 0,
+        "lines": 0,
+        "statements": 0
+      }
+    }
   }
 }
