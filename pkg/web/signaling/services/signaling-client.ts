@@ -82,7 +82,7 @@ export class SignalingClient extends SignalingService {
   async close() {
     this.logger.debug("Closing signaling client");
 
-    this.client?.terminate();
+    this.client?.terminate && this.client?.terminate(); // `terminate` does not seem to be defined in some browsers
   }
 
   async bind(alias: string) {
