@@ -79,6 +79,12 @@ export class SignalingClient extends SignalingService {
     this.logger.verbose("Server connected", { address: this.address });
   }
 
+  async close() {
+    this.logger.debug("Closing signaling client");
+
+    this.client?.terminate();
+  }
+
   async bind(alias: string) {
     this.logger.verbose("Binding", { id: this.id, alias });
 
