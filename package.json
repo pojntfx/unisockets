@@ -14,6 +14,7 @@
     "build:diagram": "mkdir -p dist/media && tplant -p tsconfig.json -i 'pkg/**/*.ts*' --output 'dist/media/diagram.svg'",
     "build:docs": "mkdir -p dist/docs && typedoc --tsconfig tsconfig.json --mode file --outDir dist/docs --out dist/docs --media dist/media --exclude '+(node_modules|dist)' .",
     "test": "jest",
+    "test:update": "jest --updateSnapshot",
     "dev:tests": "jest ---watchAll",
     "dev:lib": "rollup -c -w",
     "dev:app:node:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runSignalingServer true",
