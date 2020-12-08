@@ -1,14 +1,16 @@
+import dts from "rollup-plugin-dts";
 import esbuild from "rollup-plugin-esbuild";
-import { main, module, source } from "./package.json";
+import { main, module, source, types } from "./package.json";
 
 const bundle = (format) => ({
   input: source,
   output: {
-    file: format == "cjs" ? main : module,
+    file: format == "cjs" ? main : format == "dts" ? types : module,
     format: format == "cjs" ? "cjs" : "es",
+    sourcemap: format != "dts",
   },
-  plugins: [esbuild()],
+  plugins: format == "dts" ? [dts()] : [esbuild()],
   external: (id) => !/^[./]/.test(id),
 });
 
-export default [bundle("js"), bundle("cjs")];
+export default [bundle("es"), bundle("cjs"), bundle("dts")];
