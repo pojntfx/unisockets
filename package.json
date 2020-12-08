@@ -7,14 +7,15 @@
   "module": "dist/webLib/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "rm -rf dist && yarn build:types && yarn build:lib && yarn build:app:node && yarn build:app:web && yarn build:diagram && yarn build:docs",
-    "build:types": "parcel build --target types index.ts",
+    "build": "rm -rf dist && yarn build:lib && yarn build:app:node && yarn build:app:web && yarn build:diagram && yarn build:docs",
     "build:lib": "rollup -c",
     "build:app:node": "parcel build --target nodeApp cmd/unisockets_runner/main.ts && chmod +x dist/nodeApp/main.js",
     "build:app:web": "mkdir -p dist/webApp && cp -r out dist/webApp && parcel build --target webApp cmd/unisockets_runner_web/index.html",
     "build:diagram": "mkdir -p dist/media && tplant -p tsconfig.json -i 'pkg/**/*.ts*' --output 'dist/media/diagram.svg'",
     "build:docs": "mkdir -p dist/docs && typedoc --tsconfig tsconfig.json --mode file --outDir dist/docs --out dist/docs --media dist/media --exclude '+(node_modules|dist)' .",
     "test": "jest",
+    "dev:tests": "jest ---watchAll",
+    "dev:lib": "rollup -c -w",
     "dev:app:node:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runSignalingServer true",
     "dev:app:node:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
     "dev:app:node:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm",
@@ -31,8 +32,7 @@
   "files": [
     "dist/nodeLib",
     "dist/webLib",
-    "dist/index.d.ts",
-    "dist/index.d.ts.map"
+    "dist/index.d.ts"
   ],
   "repository": {
     "type": "git",
@@ -54,6 +54,7 @@
     "jest": "^26.6.3",
     "parcel": "^2.0.0-nightly.469",
     "rollup": "^2.34.2",
+    "rollup-plugin-dts": "^2.0.0",
     "rollup-plugin-esbuild": "^2.6.0",
     "tplant": "^2.3.6",
     "ts-jest": "^26.4.4",
