@@ -93,6 +93,7 @@
   "jest": {
     "rootDir": "pkg",
     "preset": "ts-jest",
+    "testEnvironment": "node",
     "testMatch": [
       "<rootDir>/**/*.test.ts"
     ],
