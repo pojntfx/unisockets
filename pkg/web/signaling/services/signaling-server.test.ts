@@ -11,52 +11,48 @@ import { SignalingServer } from "./signaling-server";
 describe("SignalingServer", () => {
   const host = "localhost";
   let port: number;
-  let instance: SignalingServer;
+  let signalingServer: SignalingServer;
 
   beforeEach(async () => {
     port = await getPort();
-    instance = new SignalingServer(host, port);
+    signalingServer = new SignalingServer(host, port);
   });
 
-  describe("open lifecycle", () => {
-    it("should open", async () => {
-      await instance.open();
+  describe("lifecycle", () => {
+    describe("open", () => {
+      it("should open", async () => {
+        await signalingServer.open();
+      });
+
+      afterEach(async () => {
+        await signalingServer.close();
+      });
     });
 
-    afterEach(async () => {
-      await instance.close();
-    });
-  });
+    describe("close", () => {
+      beforeEach(async () => {
+        await signalingServer.open();
+      });
 
-  describe("positive close lifecycle", () => {
-    it("should close if opened", async () => {
-      await instance.close();
-    });
-
-    beforeEach(async () => {
-      await instance.open();
-    });
-  });
-
-  describe("negative close lifecycle", () => {
-    it("should close if not opened", async () => {
-      await instance.close();
+      it("should close", async () => {
+        await signalingServer.close();
+      });
     });
   });
 
   describe("operations", () => {
     let client: WebSocket;
 
-    afterEach(async () => {
-      await instance.close();
-    });
-
     beforeEach(async (done) => {
-      await instance.open();
+      await signalingServer.open();
 
       client = new WebSocket(`ws://${host}:${port}`);
 
       client.once("open", done);
+    });
+
+    afterEach(async () => {
+      await signalingServer.close();
     });
 
     describe("KNOCK", () => {

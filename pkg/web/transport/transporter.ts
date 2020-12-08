@@ -26,6 +26,12 @@ export class Transporter {
     private onChannelClose: (id: string) => Promise<void>
   ) {}
 
+  async close() {
+    for (let connection of this.connections) {
+      await this.shutdown(connection[0]);
+    }
+  }
+
   async getOffer(
     answererId: string,
     handleCandidate: (candidate: string) => Promise<void>
