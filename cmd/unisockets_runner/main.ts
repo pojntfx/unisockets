@@ -53,8 +53,9 @@ const {
   },
 
   signalingServerListenAddress: {
-    description: "Signaling server listen address",
-    default: "0.0.0.0:6999",
+    description:
+      "Signaling server listen address. You may also set the PORT env variable to change the port.",
+    default: `0.0.0.0:${process.env.PORT || 6999}`,
   },
 
   signalingServerConnectAddress: {
