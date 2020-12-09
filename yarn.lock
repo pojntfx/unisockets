@@ -3182,7 +3182,7 @@ command-exists@^1.2.6:
   resolved "https://registry.yarnpkg.com/command-exists/-/command-exists-1.2.9.tgz#c50725af3808c8ab0260fd60b01fbfa25b954f69"
   integrity sha512-LTQ/SGc+s0Xc0Fu5WaKnR0YiygZkm9eKFvyS+fRsU7/ZWFF8ykFM6Pc9aCVf1+xasOOZpO3BAVgVrKvsqKHV7w==
 
-commander@^2.19.0, commander@^2.20.0, commander@^2.8.1:
+commander@^2.19.0, commander@^2.20.0:
   version "2.20.3"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
   integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==
@@ -6343,20 +6343,6 @@ node-modules-regexp@^1.0.0:
   resolved "https://registry.yarnpkg.com/node-modules-regexp/-/node-modules-regexp-1.0.0.tgz#8d9dbe28964a4ac5712e9131642107c71e90ec40"
   integrity sha1-jZ2+KJZKSsVxLpExZCEHxx6Q7EA=
 
-node-nailgun-client@^0.1.0:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/node-nailgun-client/-/node-nailgun-client-0.1.2.tgz#c8ee2f8226664020192e4936cacaadf9aa13ae29"
-  integrity sha512-OC611lR0fsDUSptwnhBf8d3sj4DZ5fiRKfS2QaGPe0kR3Dt9YoZr1MY7utK0scFPTbXuQdSBBbeoKYVbME1q5g==
-  dependencies:
-    commander "^2.8.1"
-
-node-nailgun-server@^0.1.4:
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/node-nailgun-server/-/node-nailgun-server-0.1.4.tgz#80cbf1af37611030c60aa88be72d657994df50d4"
-  integrity sha512-e0Hbh6XPb/7GqATJ45BePaUEO5AwR7InRW/pGeMKHH1cqPMBFCeqdBNfvi+bkVLnsbYOOQE+pAek9nmNoD8sYw==
-  dependencies:
-    commander "^2.8.1"
-
 node-notifier@^8.0.0:
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/node-notifier/-/node-notifier-8.0.0.tgz#a7eee2d51da6d0f7ff5094bc7108c911240c1620"
@@ -6368,16 +6354,6 @@ node-notifier@^8.0.0:
     shellwords "^0.1.1"
     uuid "^8.3.0"
     which "^2.0.2"
-
-node-plantuml@^0.9.0:
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/node-plantuml/-/node-plantuml-0.9.0.tgz#7a6cd34c7c26fbdd3124b1f792974ed6446addcb"
-  integrity sha512-bUnntTGjbpYu1pvXZI/GS6ctcXf3AOMqJxBMO8vFzTT5RwH8Cj/J5Ca6Dy+PEfMiMDdSBCFKSGnvYyBvYnucXg==
-  dependencies:
-    commander "^2.8.1"
-    node-nailgun-client "^0.1.0"
-    node-nailgun-server "^0.1.4"
-    plantuml-encoder "^1.2.5"
 
 node-pre-gyp@^0.13.0:
   version "0.13.0"
@@ -6907,7 +6883,7 @@ pkg-dir@^4.2.0:
   dependencies:
     find-up "^4.0.0"
 
-plantuml-encoder@^1.2.5, plantuml-encoder@^1.4.0:
+plantuml-encoder@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/plantuml-encoder/-/plantuml-encoder-1.4.0.tgz#7899302cf785de956bf1a167e15420feee5975f7"
   integrity sha512-sxMwpDw/ySY1WB2CE3+IdMuEcWibJ72DDOsXLkSmEaSzwEUaYBT6DWgOfBiHGCux4q433X6+OEFWjlVqp7gL6g==
