@@ -21,7 +21,7 @@
     "dev:app:node:signaling-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runSignalingServer true",
     "dev:app:node:example-server": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
     "dev:app:node:example-client": "LOG_LEVEL=debug DEBUG='' ts-node-dev --files cmd/unisockets_runner/main.ts --runBinary true --useC true --useWASI true --binaryPath out/c/echo_client.wasm",
-    "dev:app:web": "mkdir -p dist/webApp && cp -r out dist/webApp && parcel --hmr-port 1235 --target webApp cmd/unisockets_runner_web/index.html",
+    "dev:app:web": "mkdir -p dist/webApp out && cp -r out dist/webApp && parcel --hmr-port 1235 --target webApp cmd/unisockets_runner_web/index.html",
     "start": "yarn start:app:node:signaling-server",
     "start:app:node:signaling-server": "./dist/nodeApp/main.js --runSignalingServer true",
     "start:app:node:example-server": "./dist/nodeApp/main.js --runBinary true --useC true --useWASI true --binaryPath out/c/echo_server.wasm",
