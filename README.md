@@ -28,6 +28,12 @@ These components have no hard dependencies on one another, and can be used indep
 
 Additionally, a [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/berkeley_sockets.h) for easy usage and Go/TinyGo bindings (see [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets/pkg/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets/pkg/unisockets)) have been created.
 
+### Signaling Protocol
+
+The signaling components use the following protocol:
+
+[![Sequence Diagram](https://pojntfx.github.io/unisockets/media/sequence.svg)](https://pojntfx.github.io/unisockets/media/sequence.svg)
+
 ### Further Resources
 
 Interested in an implementation of the [Go `net` package](https://golang.org/pkg/net/) based on this package, with TinyGo and WASM support? You might be interested in [tinynet](https://github.com/pojntfx/tinynet)!

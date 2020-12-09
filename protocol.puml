@@ -1,0 +1,59 @@
+@startuml
+title unisockets Signaling Protocol
+
+actor "External System 1" as e1
+participant "Binding Client" as bc
+participant "Signaling Server" as ss
+participant "Connecting Client" as cc
+actor "External System 2" as e2
+
+e1 ->> bc: Opens client
+
+bc ->> ss: Knock(subnet: 127.0.0)
+ss -->> bc: Acknowledgement(id: 127.0.0.1, rejected: false)
+
+bc ->> ss: Bind(id: 127.0.0.1, alias: 127.0.0.1:1234)
+ss -->> bc: Alias(id: 127.0.0.1, alias: 127.0.0.1:1234, set: true)
+
+bc ->> ss: Accepting(id: 127.0.0.1, alias: 127.0.0.1:1234)
+
+e2 ->> cc: Opens client
+
+cc ->> ss: Knock(subnet: 127.0.0)
+cc -->> ss: Acknowledgement(id: 127.0.0.2, rejected: false)
+
+ss ->> bc: Greeting(offererId: 127.0.0.1, answererId: 127.0.0.2)
+bc -->> ss: Offer(offererId: 127.0.0.1, answererId: 127.0.0.2, offer: o1)
+bc ->> ss: Candidate(offererId: 127.0.0.2, answererId: 127.0.0.1, candidate: c1)
+bc ->> ss: Candidate(offererId: 127.0.0.2, answererId: 127.0.0.1, candidate: c2)
+ss -->> bc: Candidate(offererId: 127.0.0.2, answererId: 127.0.0.1, candidate: c1)
+ss -->> bc: Candidate(offererId: 127.0.0.2, answererId: 127.0.0.1, candidate: c2)
+
+cc -->> ss: Answer(offererId: 127.0.0.1, answererId: 127.0.0.2, answer: a1)
+cc ->> ss: Candidate(offererId: 127.0.0.2, answererId: 127.0.0.1, candidate: c3)
+cc ->> ss: Candidate(offererId: 127.0.0.2, answererId: 127.0.0.1, candidate: c4)
+
+ss -->> bc: Answer(offererId: 127.0.0.1, answererId: 127.0.0.2, answer: a1)
+
+ss ->> bc: Candidate(offererId: 127.0.0.2, answererId: 127.0.0.1, candidate: c3)
+ss ->> bc: Candidate(offererId: 127.0.0.2, answererId: 127.0.0.1, candidate: c4)
+
+cc ->> ss: Connect(id: 127.0.0.2, clientConnectionId: co1, remoteAlias: 127.0.0.1:1234)
+
+ss -->> cc: Alias(id: 127.0.0.2, alias: 127.0.0.2:0, set: true, clientConnectionId: co1, isConnectionAlias: true)
+ss ->> bc: Alias(id: 127.0.0.2, alias: 127.0.0.2:0, set: true)
+
+ss ->> bc: Accept(boundAlias: 127.0.0.1:1234, clientAlias: 127.0.0.2:0)
+bc -->> ss: Accepting(id: 127.0.0.1, alias: 127.0.0.1:1234)
+
+ss -->> cc: Alias(id: 127.0.0.1, alias: 127.0.0.1:1234, set: true, clientConnectionId: co1)
+
+note over bc,cc:Handshake complete
+
+e2 ->> cc: Closes client
+
+ss ->> bc: Goodbye(id: 127.0.0.2)
+ss ->> bc: Alias(id: 127.0.0.2, alias: 127.0.0.2:0, set:false)
+
+note over bc,cc:Removal complete
+@enduml
