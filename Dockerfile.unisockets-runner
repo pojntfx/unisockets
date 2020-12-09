@@ -2,6 +2,9 @@ FROM node:14
 
 WORKDIR /opt
 
+RUN apt update
+RUN apt install -y openjdk-8-jre
+
 COPY package.json package.json
 COPY yarn.lock yarn.lock
 
