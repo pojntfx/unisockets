@@ -10,7 +10,7 @@
     "build": "rm -rf dist && yarn build:lib && yarn build:app:node && yarn build:app:web",
     "build:lib": "rollup -c",
     "build:app:node": "parcel build --target nodeApp cmd/unisockets_runner/main.ts && chmod +x dist/nodeApp/main.js",
-    "build:app:web": "mkdir -p dist/webApp && cp -r out dist/webApp && parcel build --target webApp cmd/unisockets_runner_web/index.html",
+    "build:app:web": "mkdir -p dist/webApp out && cp -r out dist/webApp && parcel build --target webApp cmd/unisockets_runner_web/index.html",
     "build:diagram": "mkdir -p dist/media && tplant -p tsconfig.json -i 'pkg/**/*.ts*' --output 'dist/media/diagram.svg'",
     "build:protocol": "mkdir -p dist/media && puml generate --svg protocol.puml -o dist/media/sequence.svg",
     "build:docs": "mkdir -p dist/docs && typedoc --tsconfig tsconfig.json --mode file --outDir dist/docs --out dist/docs --media dist/media --exclude '+(node_modules|dist)' .",
