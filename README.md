@@ -24,7 +24,7 @@ The system is made up of the following components:
 - **Transport**: A minimal wrapper around the WebRTC API. When compiling to WASM, this component manages all actual data transfers and handles incoming/outgoing peer to peer connections. When compiling natively, it is not required.
 - **Sockets**: A set of WebAssembly imports that satisfy the basic API of the Berkeley sockets, such as `socket`, `bind`, `listen`, `accept`, `connect`, `send`, `recv` etc. When compiling natively, it falls back to the native implementation.
 
-These components have no hard dependencies on one another, and can be used independenly.
+These components have no hard dependencies on one another, and can be used independendly.
 
 Additionally, a [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/berkeley_sockets.h) for easy usage and Go/TinyGo bindings (see [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets/pkg/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets/pkg/unisockets)) have been created.
 
@@ -33,6 +33,8 @@ Additionally, a [universal C/C++ header](https://github.com/pojntfx/unisockets/b
 The signaling components use the following protocol:
 
 [![Sequence Diagram](https://pojntfx.github.io/unisockets/media/sequence.svg)](https://pojntfx.github.io/unisockets/media/sequence.svg)
+
+A public signaling server instance is running on `wss://unisockets.herokuapp.com` and used in the demo.
 
 ### Further Resources
 

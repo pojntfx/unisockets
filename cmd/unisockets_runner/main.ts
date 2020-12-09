@@ -60,7 +60,7 @@ const {
 
   signalingServerConnectAddress: {
     description: "Signaling server connect address",
-    default: "ws://localhost:6999",
+    default: "wss://unisockets.herokuapp.com",
   },
   reconnectTimeout: {
     description: "Reconnect timeout in milliseconds",

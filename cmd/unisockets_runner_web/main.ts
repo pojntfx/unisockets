@@ -23,7 +23,7 @@ const transporterConfig: ExtendedRTCConfiguration = {
   ],
 };
 
-const signalingServerConnectAddress = "ws://localhost:6999";
+const signalingServerConnectAddress = "wss://unisockets.herokuapp.com";
 const reconnectTimeout = 1000;
 const subnetPrefix = "127.0.0";
 
