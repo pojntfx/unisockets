@@ -43,6 +43,9 @@ jobs:
           BRANCH: gh-pages
           FOLDER: dist/docs
           CLEAN: true
+          GIT_CONFIG_NAME: bot
+          GIT_CONFIG_EMAIL: bot@example.com
+          SINGLE_COMMIT: true
       - uses: jsmrcaga/action-netlify-deploy@master
         if: ${{ github.ref == 'refs/heads/main' }}
         with:
