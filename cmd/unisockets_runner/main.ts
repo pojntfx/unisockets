@@ -319,13 +319,12 @@ if (runBinary) {
           go.importObject
         );
 
-        (global as any).berkeleySockets = socketEnvImports;
+        (global as any).jssiImports = {};
+        (global as any).jssiImports.berkeleySockets = socketEnvImports;
 
         sockets.setMemory(memoryId, (instance.exports as any).mem);
 
         go.run(instance);
-
-        (global as any).berkeleySockets = undefined;
       }
     } else if (useTinyGo) {
       if (useJSSI) {
@@ -340,13 +339,12 @@ if (runBinary) {
           go.importObject
         );
 
-        (global as any).berkeleySockets = socketEnvImports;
+        (global as any).jssiImports = {};
+        (global as any).jssiImports.berkeleySockets = socketEnvImports;
 
         sockets.setMemory(memoryId, (instance.exports as any).memory);
 
         go.run(instance);
-
-        (global as any).berkeleySockets = undefined;
       } else if (useWASI) {
         const wasi = new WASI({
           args: [],

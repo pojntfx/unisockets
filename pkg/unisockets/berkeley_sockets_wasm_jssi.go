@@ -11,7 +11,7 @@ import (
 // TODO: Get this to work with TinyGo WASM/JS
 
 var (
-	berkeley_sockets = js.Global().Get("berkeleySockets")
+	berkeley_sockets = js.Global().Get("jssiImports").Get("berkeleySockets")
 )
 
 const (
