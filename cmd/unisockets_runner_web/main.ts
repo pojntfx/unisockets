@@ -304,8 +304,7 @@ const sockets = new Sockets(
           res(input);
         }).then((input) => callback(null, input.length));
       };
-      (global as any).jssiImports = {};
-      (global as any).jssiImports.berkeleySockets = socketEnvImports;
+      (global as any).jssiImports = socketEnvImports;
 
       sockets.setMemory(memoryId, (instance.exports as any).mem);
 
@@ -343,8 +342,7 @@ const sockets = new Sockets(
           res(input);
         }).then((input) => callback(null, input.length));
       };
-      (global as any).jssiImports = {};
-      (global as any).jssiImports.berkeleySockets = socketEnvImports;
+      (global as any).jssiImports = socketEnvImports;
 
       sockets.setMemory(memoryId, (instance.exports as any).memory);
 
