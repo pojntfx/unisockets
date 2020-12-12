@@ -2,7 +2,7 @@
 
 import { WASI } from "@wasmer/wasi";
 import wasiBindings from "@wasmer/wasi/lib/bindings/browser";
-import { lowerI64Imports } from "@wasmer/wasm-transformer/lib/optimized/wasm-transformer.esm";
+import { lowerI64Imports } from "@wasmer/wasm-transformer/lib/unoptimized/wasm-transformer.esm.js";
 import { WasmFs } from "@wasmer/wasmfs";
 import * as Asyncify from "asyncify-wasm";
 import Emittery from "emittery";
