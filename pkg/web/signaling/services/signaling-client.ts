@@ -86,7 +86,7 @@ export class SignalingClient extends SignalingService {
   }
 
   async bind(alias: string) {
-    this.logger.verbose("Binding", { id: this.id, alias });
+    this.logger.debug("Binding", { id: this.id, alias });
 
     return new Promise<void>(async (res, rej) => {
       (async () => {
@@ -106,7 +106,7 @@ export class SignalingClient extends SignalingService {
   }
 
   async accept(alias: string): Promise<string> {
-    this.logger.verbose("Accepting", { id: this.id, alias });
+    this.logger.debug("Accepting", { id: this.id, alias });
 
     return new Promise(async (res) => {
       (async () => {
@@ -122,7 +122,7 @@ export class SignalingClient extends SignalingService {
   }
 
   async shutdown(alias: string) {
-    this.logger.verbose("Shutting down", { id: this.id, alias });
+    this.logger.debug("Shutting down", { id: this.id, alias });
 
     return new Promise<void>(async (res, rej) => {
       (async () => {
@@ -143,7 +143,7 @@ export class SignalingClient extends SignalingService {
   }
 
   async connect(remoteAlias: string): Promise<string> {
-    this.logger.verbose("Connecting", { id: this.id, remoteAlias });
+    this.logger.debug("Connecting", { id: this.id, remoteAlias });
 
     const clientConnectionId = v4();
 
@@ -188,7 +188,7 @@ export class SignalingClient extends SignalingService {
   }
 
   private async handleConnect() {
-    this.logger.verbose("Server connected", { address: this.address });
+    this.logger.silly("Server connected", { address: this.address });
 
     await this.send(this.client, new Knock({ subnet: this.subnet }));
 
@@ -209,21 +209,21 @@ export class SignalingClient extends SignalingService {
   }
 
   private async sendCandidate(candidate: Candidate) {
-    await this.send(this.client, candidate);
+    this.logger.silly("Sent candidate", candidate);
 
-    this.logger.verbose("Sent candidate", candidate);
+    await this.send(this.client, candidate);
   }
 
   private async handleOperation(
     operation: ISignalingOperation<TSignalingData>
   ) {
-    this.logger.debug("Handling operation", operation);
+    this.logger.silly("Handling operation", operation);
 
     switch (operation.opcode) {
       case ESIGNALING_OPCODES.GOODBYE: {
         const data = operation.data as IGoodbyeData;
 
-        this.logger.verbose("Received goodbye", data);
+        this.logger.debug("Received goodbye", data);
 
         await this.onGoodbye(data.id);
 
@@ -235,7 +235,7 @@ export class SignalingClient extends SignalingService {
 
         this.id = data.id;
 
-        this.logger.verbose("Received acknowledgement", { id: this.id });
+        this.logger.debug("Received acknowledgement", { id: this.id });
 
         await this.onAcknowledgement(this.id, data.rejected);
 
@@ -256,7 +256,7 @@ export class SignalingClient extends SignalingService {
               })
             );
 
-            this.logger.verbose("Sent candidate", data);
+            this.logger.debug("Sent candidate", data);
           }
         );
 
@@ -269,7 +269,7 @@ export class SignalingClient extends SignalingService {
           })
         );
 
-        this.logger.verbose("Sent offer", {
+        this.logger.debug("Sent offer", {
           offererId: this.id,
           answererId: data.answererId,
           offer,
@@ -281,7 +281,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.OFFER: {
         const data = operation.data as IOfferData;
 
-        this.logger.verbose("Received offer", data);
+        this.logger.debug("Received offer", data);
 
         const answer = await this.getAnswer(
           data.offererId,
@@ -295,7 +295,7 @@ export class SignalingClient extends SignalingService {
               })
             );
 
-            this.logger.verbose("Sent candidate", data);
+            this.logger.debug("Sent candidate", data);
           }
         );
 
@@ -308,7 +308,7 @@ export class SignalingClient extends SignalingService {
           })
         );
 
-        this.logger.verbose("Sent answer", {
+        this.logger.debug("Sent answer", {
           offererId: data.offererId,
           answererId: this.id,
           answer,
@@ -320,7 +320,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.ANSWER: {
         const data = operation.data as IAnswerData;
 
-        this.logger.verbose("Received answer", data);
+        this.logger.debug("Received answer", data);
 
         await this.onAnswer(data.offererId, data.answererId, data.answer);
 
@@ -330,7 +330,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.CANDIDATE: {
         const data = operation.data as ICandidateData;
 
-        this.logger.verbose("Received candidate", data);
+        this.logger.debug("Received candidate", data);
 
         await this.onCandidate(data.offererId, data.answererId, data.candidate);
 
@@ -340,7 +340,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.ALIAS: {
         const data = operation.data as IAliasData;
 
-        this.logger.verbose("Received alias", data);
+        this.logger.debug("Received alias", data);
 
         if (data.clientConnectionId) {
           await this.notifyConnect(
@@ -361,7 +361,7 @@ export class SignalingClient extends SignalingService {
       case ESIGNALING_OPCODES.ACCEPT: {
         const data = operation.data as IAcceptData;
 
-        this.logger.verbose("Received accept", data);
+        this.logger.debug("Received accept", data);
 
         await this.notifyAccept(data.boundAlias, data.clientAlias);
 
@@ -380,6 +380,13 @@ export class SignalingClient extends SignalingService {
     alias: string,
     isConnectionAlias: boolean
   ) {
+    this.logger.silly("Notifying of connect", {
+      clientConnectionId,
+      set,
+      alias,
+      isConnectionAlias,
+    });
+
     await this.asyncResolver.emit(
       this.getConnectionKey(clientConnectionId),
       JSON.stringify({ set, alias, isConnectionAlias })
@@ -387,22 +394,46 @@ export class SignalingClient extends SignalingService {
   }
 
   private async notifyBindAndShutdown(id: string, alias: string, set: boolean) {
+    this.logger.silly("Notifying bind and shutdown", {
+      id,
+      alias,
+      set,
+    });
+
     await this.asyncResolver.emit(this.getAliasKey(id, alias), set);
   }
 
   private async notifyAccept(boundAlias: string, clientAlias: string) {
+    this.logger.silly("Notifying accept", {
+      boundAlias,
+      clientAlias,
+    });
+
     await this.asyncResolver.emit(this.getAcceptKey(boundAlias), clientAlias);
   }
 
   private getAliasKey(id: string, alias: string) {
+    this.logger.silly("Getting alias key", {
+      id,
+      alias,
+    });
+
     return `alias id=${id} alias=${alias}`;
   }
 
   private getConnectionKey(clientConnectionId: string) {
+    this.logger.silly("Getting connection key", {
+      clientConnectionId,
+    });
+
     return `connection id=${clientConnectionId}`;
   }
 
   private getAcceptKey(boundAlias: string) {
+    this.logger.silly("Getting accept key", {
+      boundAlias,
+    });
+
     return `accept alias=${boundAlias}`;
   }
 }
