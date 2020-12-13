@@ -65,7 +65,7 @@ export class SignalingServer extends SignalingService {
   }
 
   async close() {
-    this.logger.verbose("Shutting down signaling server");
+    this.logger.debug("Shutting down signaling server");
 
     await new Promise<void>((res, rej) =>
       this.server ? this.server.close((e) => (e ? rej(e) : res())) : res()
@@ -75,6 +75,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private async registerGoodbye(id: string) {
+    this.logger.silly("Registering goodbye", { id });
+
     if (this.clients.has(id)) {
       const client = this.clients.get(id)!; // `.has` checks this
 
@@ -90,7 +92,7 @@ export class SignalingServer extends SignalingService {
             this.clients.forEach(async (client) => {
               await this.send(client, new Alias({ id, alias, set: false }));
 
-              this.logger.verbose("Sent alias", { id, alias });
+              this.logger.debug("Sent alias", { id, alias });
             });
           }
         });
@@ -110,13 +112,13 @@ export class SignalingServer extends SignalingService {
     operation: ISignalingOperation<TSignalingData>,
     client: WebSocket
   ) {
-    this.logger.debug("Handling operation", operation);
+    this.logger.silly("Handling operation", { operation, client });
 
     switch (operation.opcode) {
       case ESIGNALING_OPCODES.KNOCK: {
         const data = operation.data as IKnockData;
 
-        this.logger.verbose("Received knock", data);
+        this.logger.debug("Received knock", data);
 
         await this.handleKnock(data, client);
 
@@ -126,7 +128,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.OFFER: {
         const data = operation.data as IOfferData;
 
-        this.logger.verbose("Received offer", data);
+        this.logger.debug("Received offer", data);
 
         await this.handleOffer(data);
 
@@ -136,7 +138,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.ANSWER: {
         const data = operation.data as IAnswerData;
 
-        this.logger.verbose("Received answer", data);
+        this.logger.debug("Received answer", data);
 
         await this.handleAnswer(data);
 
@@ -146,7 +148,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.CANDIDATE: {
         const data = operation.data as ICandidateData;
 
-        this.logger.verbose("Received candidate", data);
+        this.logger.debug("Received candidate", data);
 
         await this.handleCandidate(data);
 
@@ -156,7 +158,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.BIND: {
         const data = operation.data as IBindData;
 
-        this.logger.verbose("Received bind", data);
+        this.logger.debug("Received bind", data);
 
         await this.handleBind(data);
 
@@ -166,7 +168,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.ACCEPTING: {
         const data = operation.data as IAcceptingData;
 
-        this.logger.verbose("Received accepting", data);
+        this.logger.debug("Received accepting", data);
 
         await this.handleAccepting(data);
 
@@ -176,7 +178,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.SHUTDOWN: {
         const data = operation.data as IShutdownData;
 
-        this.logger.verbose("Received shutdown", data);
+        this.logger.debug("Received shutdown", data);
 
         await this.handleShutdown(data);
 
@@ -186,7 +188,7 @@ export class SignalingServer extends SignalingService {
       case ESIGNALING_OPCODES.CONNECT: {
         const data = operation.data as IConnectData;
 
-        this.logger.verbose("Received connect", data);
+        this.logger.debug("Received connect", data);
 
         await this.handleConnect(data);
 
@@ -200,6 +202,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private async handleKnock(data: IKnockData, client: WebSocket) {
+    this.logger.silly("Handling knock", { data, client });
+
     const id = await this.createIPAddress(data.subnet);
 
     if (id !== "-1") {
@@ -207,7 +211,7 @@ export class SignalingServer extends SignalingService {
     } else {
       await this.send(client, new Acknowledgement({ id, rejected: true }));
 
-      this.logger.error("Knock rejected", {
+      this.logger.debug("Knock rejected", {
         id,
         reason: "subnet overflow",
       });
@@ -225,7 +229,7 @@ export class SignalingServer extends SignalingService {
           })
         );
 
-        this.logger.verbose("Sent greeting", {
+        this.logger.debug("Sent greeting", {
           offererId: existingId,
           answererId: id,
         });
@@ -239,6 +243,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private async handleOffer(data: IOfferData) {
+    this.logger.silly("Handling offer", { data });
+
     const client = this.clients.get(data.answererId);
 
     await this.send(
@@ -250,7 +256,7 @@ export class SignalingServer extends SignalingService {
       })
     );
 
-    this.logger.verbose("Sent offer", {
+    this.logger.debug("Sent offer", {
       offererId: data.offererId,
       answererId: data.answererId,
       offer: data.offer,
@@ -258,24 +264,30 @@ export class SignalingServer extends SignalingService {
   }
 
   private async handleAnswer(data: IAnswerData) {
+    this.logger.silly("Handling answer", { data });
+
     const client = this.clients.get(data.offererId);
 
     await this.send(client, new Answer(data));
 
-    this.logger.verbose("Sent answer", data);
+    this.logger.debug("Sent answer", data);
   }
 
   private async handleCandidate(data: ICandidateData) {
+    this.logger.silly("Handling candidate", { data });
+
     const client = this.clients.get(data.answererId);
 
     await this.send(client, new Candidate(data));
 
-    this.logger.verbose("Sent candidate", data);
+    this.logger.debug("Sent candidate", data);
   }
 
   private async handleBind(data: IBindData) {
+    this.logger.silly("Handling bind", { data });
+
     if (this.aliases.has(data.alias)) {
-      this.logger.verbose("Rejecting bind, alias already taken", data);
+      this.logger.debug("Rejecting bind, alias already taken", data);
 
       const client = this.clients.get(data.id);
 
@@ -284,7 +296,7 @@ export class SignalingServer extends SignalingService {
         new Alias({ id: data.id, alias: data.alias, set: false })
       );
     } else {
-      this.logger.verbose("Accepting bind", data);
+      this.logger.debug("Accepting bind", data);
 
       await this.claimTCPAddress(data.alias);
 
@@ -296,25 +308,29 @@ export class SignalingServer extends SignalingService {
           new Alias({ id: data.id, alias: data.alias, set: true })
         );
 
-        this.logger.verbose("Sent alias", { id, data });
+        this.logger.debug("Sent alias", { id, data });
       });
     }
   }
 
   private async handleAccepting(data: IAcceptingData) {
+    this.logger.silly("Handling accepting", { data });
+
     if (
       !this.aliases.has(data.alias) ||
       this.aliases.get(data.alias)!.id !== data.id // `.has` checks this
     ) {
-      this.logger.verbose("Rejecting accepting, alias does not exist", data);
+      this.logger.debug("Rejecting accepting, alias does not exist", data);
     } else {
-      this.logger.verbose("Accepting accepting", data);
+      this.logger.debug("Accepting accepting", data);
 
       this.aliases.set(data.alias, new MAlias(data.id, true));
     }
   }
 
   private async handleShutdown(data: IShutdownData) {
+    this.logger.silly("Handling shutdown", { data });
+
     if (
       this.aliases.has(data.alias) &&
       this.aliases.get(data.alias)!.id === data.id // `.has` checks this
@@ -323,7 +339,7 @@ export class SignalingServer extends SignalingService {
       await this.removeTCPAddress(data.alias);
       await this.removeIPAddress(data.alias);
 
-      this.logger.verbose("Accepting shutdown", data);
+      this.logger.debug("Accepting shutdown", data);
 
       this.clients.forEach(async (client, id) => {
         await this.send(
@@ -331,10 +347,10 @@ export class SignalingServer extends SignalingService {
           new Alias({ id: data.id, alias: data.alias, set: false })
         );
 
-        this.logger.verbose("Sent alias", { id, data });
+        this.logger.debug("Sent alias", { id, data });
       });
     } else {
-      this.logger.verbose(
+      this.logger.debug(
         "Rejecting shutdown, alias not taken or incorrect client ID",
         data
       );
@@ -349,6 +365,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private async handleConnect(data: IConnectData) {
+    this.logger.silly("Handling connect", { data });
+
     const clientAlias = await this.createTCPAddress(data.id);
     const client = this.clients.get(data.id);
 
@@ -356,7 +374,7 @@ export class SignalingServer extends SignalingService {
       !this.aliases.has(data.remoteAlias) ||
       !this.aliases.get(data.remoteAlias)!.accepting // `.has` checks this
     ) {
-      this.logger.verbose("Rejecting connect, remote alias does not exist", {
+      this.logger.debug("Rejecting connect, remote alias does not exist", {
         data,
       });
 
@@ -372,7 +390,7 @@ export class SignalingServer extends SignalingService {
         })
       );
     } else {
-      this.logger.verbose("Accepting connect", {
+      this.logger.debug("Accepting connect", {
         data,
       });
 
@@ -388,7 +406,7 @@ export class SignalingServer extends SignalingService {
 
       await this.send(client, clientAliasMessage);
 
-      this.logger.verbose("Sent alias for connection to client", {
+      this.logger.debug("Sent alias for connection to client", {
         data,
         alias: clientAliasMessage,
       });
@@ -404,7 +422,7 @@ export class SignalingServer extends SignalingService {
 
       await this.send(server, serverAliasMessage);
 
-      this.logger.verbose("Sent alias for connection to server", {
+      this.logger.debug("Sent alias for connection to server", {
         data,
         alias: serverAliasMessage,
       });
@@ -416,7 +434,7 @@ export class SignalingServer extends SignalingService {
 
       await this.send(server, serverAcceptMessage);
 
-      this.logger.verbose("Sent accept to server", {
+      this.logger.debug("Sent accept to server", {
         data,
         accept: serverAcceptMessage,
       });
@@ -430,7 +448,7 @@ export class SignalingServer extends SignalingService {
 
       await this.send(client, serverAliasForClientsMessage);
 
-      this.logger.verbose("Sent alias for server to client", {
+      this.logger.debug("Sent alias for server to client", {
         data,
         alias: serverAliasForClientsMessage,
       });
@@ -441,6 +459,8 @@ export class SignalingServer extends SignalingService {
   private subnetsMutex = new Mutex();
 
   private async createIPAddress(subnet: string) {
+    this.logger.silly("Creating IP address", { subnet });
+
     const release = await this.subnetsMutex.acquire();
 
     try {
@@ -476,6 +496,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private async createTCPAddress(ipAddress: string) {
+    this.logger.silly("Creating TCP address", { ipAddress });
+
     const release = await this.subnetsMutex.acquire();
 
     try {
@@ -512,6 +534,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private async claimTCPAddress(tcpAddress: string) {
+    this.logger.silly("Claiming TCP address", { tcpAddress });
+
     const release = await this.subnetsMutex.acquire();
 
     try {
@@ -542,6 +566,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private async removeIPAddress(ipAddress: string) {
+    this.logger.silly("Removing IP address", { ipAddress });
+
     const release = await this.subnetsMutex.acquire();
 
     try {
@@ -558,6 +584,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private async removeTCPAddress(tcpAddress: string) {
+    this.logger.silly("Removing TCP address", { tcpAddress });
+
     const release = await this.subnetsMutex.acquire();
 
     try {
@@ -578,14 +606,20 @@ export class SignalingServer extends SignalingService {
   }
 
   private toIPAddress(subnet: string, suffix: number) {
+    this.logger.silly("Converting to IP address", { subnet, suffix });
+
     return `${subnet}.${suffix}`;
   }
 
   private toTCPAddress(ipAddress: string, port: number) {
+    this.logger.silly("Converting to TCP address", { ipAddress, port });
+
     return `${ipAddress}:${port}`;
   }
 
   private parseIPAddress(ipAddress: string) {
+    this.logger.silly("Parsing IP address", { ipAddress });
+
     const parts = ipAddress.split(".");
 
     return {
@@ -595,6 +629,8 @@ export class SignalingServer extends SignalingService {
   }
 
   private parseTCPAddress(tcpAddress: string) {
+    this.logger.silly("Parsing TCP address", { tcpAddress });
+
     const parts = tcpAddress.split(":");
 
     return {

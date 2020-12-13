@@ -52,6 +52,8 @@ export class Sockets {
   ) {}
 
   async getImports(): Promise<{ memoryId: string; imports: ISocketImports }> {
+    this.logger.debug("Getting imports");
+
     const memoryId = v4();
 
     return {
@@ -211,6 +213,8 @@ export class Sockets {
   }
 
   private async socket() {
+    this.logger.silly("Handling `socket`");
+
     const fd = this.binds.size + 1;
 
     this.binds.set(fd, "");
@@ -219,6 +223,8 @@ export class Sockets {
   }
 
   private async bind(fd: number, alias: string) {
+    this.logger.silly("Handling `bind`", { fd, alias });
+
     await this.ensureBound(fd);
 
     await this.externalBind(alias);
@@ -227,6 +233,8 @@ export class Sockets {
   }
 
   private async accept(serverFd: number) {
+    this.logger.silly("Handling `accept`", { serverFd });
+
     await this.ensureBound(serverFd);
 
     const clientFd = await this.socket();
@@ -241,6 +249,8 @@ export class Sockets {
   }
 
   private async connect(serverFd: number, alias: string) {
+    this.logger.silly("Handling `connect`", { serverFd, alias });
+
     await this.ensureBound(serverFd);
 
     this.binds.set(serverFd, alias);
@@ -249,28 +259,38 @@ export class Sockets {
   }
 
   private async send(fd: number, msg: Uint8Array) {
+    this.logger.silly("Handling `send`", { fd, msg });
+
     await this.ensureBound(fd);
 
     await this.externalSend(this.binds.get(fd)!, msg); // ensureBound
   }
 
   private async recv(fd: number) {
+    this.logger.silly("Handling `recv`", { fd });
+
     await this.ensureBound(fd);
 
     return this.externalRecv(this.binds.get(fd)!); // ensureBound
   }
 
   private async ensureBound(fd: number) {
+    this.logger.silly("Ensuring bound", { fd });
+
     if (!this.binds.has(fd)) {
       throw new SocketDoesNotExistError();
     }
   }
 
   async setMemory(memoryId: string, memory: Uint8Array) {
+    this.logger.debug("Setting memory", { memoryId });
+
     this.memories.set(memoryId, memory);
   }
 
   private async accessMemory(memoryId: string) {
+    this.logger.silly("Accessing memory", { memoryId });
+
     if (this.memories.has(memoryId)) {
       return new Uint8Array(this.memories.get(memoryId)!.buffer); // Checked by .has & we never push undefined
     } else {

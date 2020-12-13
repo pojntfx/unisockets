@@ -27,6 +27,8 @@ export class Transporter {
   ) {}
 
   async close() {
+    this.logger.debug("Closing transporter");
+
     for (let connection of this.connections) {
       await this.shutdown(connection[0]);
     }
@@ -36,6 +38,8 @@ export class Transporter {
     answererId: string,
     handleCandidate: (candidate: string) => Promise<void>
   ) {
+    this.logger.debug("Getting offer", { answererId });
+
     const connection = new RTCPeerConnection(this.config);
     this.connections.set(answererId, connection);
 
@@ -70,14 +74,14 @@ export class Transporter {
 
     this.queuedMessages.set(answererId, []);
 
-    this.logger.debug("Created channel", {
+    this.logger.verbose("Created channel", {
       newChannels: JSON.stringify(Array.from(this.channels.keys())),
     });
 
     const offer = await connection.createOffer();
     await connection.setLocalDescription(offer);
 
-    this.logger.verbose("Created offer", { offer: offer.sdp });
+    this.logger.debug("Created offer", { offer: offer.sdp });
 
     if (offer.sdp === undefined) {
       connection.close();
@@ -97,7 +101,7 @@ export class Transporter {
     offer: string,
     handleCandidate: (candidate: string) => Promise<void>
   ) {
-    this.logger.verbose("Handling offer", { id, offer });
+    this.logger.debug("Handling offer", { id, offer });
 
     const connection = new RTCPeerConnection(this.config);
     this.connections.set(id, connection);
@@ -118,7 +122,7 @@ export class Transporter {
 
     const answer = await connection.createAnswer();
 
-    this.logger.verbose("Created answer", { offer: offer, answer: answer.sdp });
+    this.logger.debug("Created answer", { offer: offer, answer: answer.sdp });
 
     await connection.setLocalDescription(answer);
 
@@ -162,7 +166,7 @@ export class Transporter {
   }
 
   async handleAnswer(id: string, answer: string) {
-    this.logger.verbose("Handling answer", { id, answer });
+    this.logger.debug("Handling answer", { id, answer });
 
     if (this.connections.has(id)) {
       const connection = this.connections.get(id);
@@ -193,9 +197,9 @@ export class Transporter {
         new RTCIceCandidate(JSON.parse(candidate))
       );
 
-      this.logger.verbose("Added candidate", { id, candidate });
+      this.logger.debug("Added candidate", { id, candidate });
     } else {
-      this.logger.verbose("Queueing candidate", { id, candidate });
+      this.logger.debug("Queueing candidate", { id, candidate });
 
       if (!this.queuedCandidates.has(id)) this.queuedCandidates.set(id, []);
 
@@ -204,8 +208,10 @@ export class Transporter {
   }
 
   async shutdown(id: string) {
+    this.logger.debug("Shutting down", { id });
+
     if (this.connections.has(id)) {
-      this.logger.verbose("Shutting down connection", { id });
+      this.logger.debug("Shutting down connection", { id });
 
       this.connections.get(id)?.close();
 
@@ -229,7 +235,7 @@ export class Transporter {
     }
 
     if (this.queuedCandidates.has(id)) {
-      this.logger.verbose("Removing queued candidates", { id });
+      this.logger.debug("Removing queued candidates", { id });
 
       this.queuedCandidates.delete(id);
 
@@ -241,7 +247,7 @@ export class Transporter {
     }
 
     if (this.queuedMessages.has(id)) {
-      this.logger.verbose("Removing queued messages", { id });
+      this.logger.debug("Removing queued messages", { id });
 
       this.queuedMessages.delete(id);
 
@@ -291,6 +297,11 @@ export class Transporter {
     connectionState: string,
     id: string
   ) {
+    this.logger.silly("Handling connection status change", {
+      connectionState,
+      id,
+    });
+
     if (connectionState === "closed") {
       await this.onConnectionDisconnect(id);
 
@@ -301,9 +312,9 @@ export class Transporter {
   }
 
   private async queueAndEmitMessage(id: string, rawMsg: ArrayBuffer) {
-    const msg = new Uint8Array(rawMsg);
+    this.logger.silly("Queueing message", { id, rawMsg });
 
-    this.logger.debug("Queueing message", { id, msg });
+    const msg = new Uint8Array(rawMsg);
 
     if (this.channels.has(id)) {
       const messages = this.queuedMessages.get(id);
@@ -317,6 +328,8 @@ export class Transporter {
   }
 
   private async addQueuedCandidates(id: string) {
+    this.logger.silly("Queueing candidate", { id });
+
     this.queuedCandidates.get(id)?.forEach(async (candidate) => {
       this.queuedCandidates.set(
         id,
@@ -326,16 +339,20 @@ export class Transporter {
       await this.handleCandidate(id, candidate);
     });
 
-    this.logger.debug("Added queued candidate", {
+    this.logger.silly("Added queued candidate", {
       newQueuedCandidates: JSON.stringify(Array.from(this.queuedCandidates)),
     });
   }
 
   private getMessageKey(id: string) {
+    this.logger.silly("Getting message key", { id });
+
     return `message id=${id}`;
   }
 
   private getChannelKey(id: string) {
+    this.logger.silly("Getting channel key", { id });
+
     return `channel id=${id}`;
   }
 }
