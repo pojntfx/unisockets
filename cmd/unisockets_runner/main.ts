@@ -13,8 +13,8 @@ import { SignalingServer } from "../../pkg/web/signaling/services/signaling-serv
 import { Sockets } from "../../pkg/web/sockets/sockets";
 import { Transporter } from "../../pkg/web/transport/transporter";
 import { getLogger } from "../../pkg/web/utils/logger";
-import Go from "../../vendor/go/wasm_exec.js";
-import TinyGo from "../../vendor/tinygo/wasm_exec.js";
+const Go = require("../../vendor/go/wasm_exec.js");
+const TinyGo = require("../../vendor/tinygo/wasm_exec.js");
 
 const transporterConfig: ExtendedRTCConfiguration = {
   iceServers: [

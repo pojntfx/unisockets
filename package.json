@@ -6,10 +6,12 @@
   "main": "dist/nodeLib/index.js",
   "module": "dist/webLib/index.js",
   "types": "dist/index.d.ts",
+  "binSource": "cmd/unisockets_runner/main.ts",
+  "binMain": "dist/nodeApp/main.js",
   "scripts": {
     "build": "rm -rf dist && yarn build:lib && yarn build:app:node && yarn build:app:web",
     "build:lib": "rollup -c",
-    "build:app:node": "parcel build --target nodeApp cmd/unisockets_runner/main.ts && chmod +x dist/nodeApp/main.js",
+    "build:app:node": "rollup -c && chmod +x dist/nodeApp/main.js && chmod +x dist/nodeApp/main.js",
     "build:app:web": "mkdir -p dist/webApp out && cp -r out dist/webApp && parcel build --target webApp cmd/unisockets_runner_web/index.html",
     "build:diagram": "mkdir -p dist/media && tplant -p tsconfig.json -i 'pkg/**/*.ts*' --output 'dist/media/diagram.svg'",
     "build:protocol": "mkdir -p dist/media && puml generate --svg protocol.puml -o dist/media/sequence.svg",
@@ -59,6 +61,7 @@
     "rollup": "^2.34.2",
     "rollup-plugin-dts": "^2.0.0",
     "rollup-plugin-esbuild": "^2.6.0",
+    "rollup-plugin-hashbang": "^2.2.2",
     "tplant": "^2.3.6",
     "ts-jest": "^26.4.4",
     "ts-node-dev": "^1.0.0",
@@ -81,12 +84,8 @@
     "yargs": "^16.1.0"
   },
   "targets": {
-    "nodeApp": {
-      "engines": {
-        "node": ">=12.x"
-      }
-    },
     "webApp": {
+      "distDir": "dist/webApp",
       "engines": {
         "browsers": ">=5%"
       }
