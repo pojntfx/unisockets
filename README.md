@@ -40,6 +40,8 @@ A public signaling server instance is running on `wss://unisockets.herokuapp.com
 
 Interested in an implementation of the [Go `net` package](https://golang.org/pkg/net/) based on this package, with TinyGo and WASM support? You might be interested in [tinynet](https://github.com/pojntfx/tinynet)!
 
+You want a Kubernetes-style system for WASM, running in the browser and in node? You might be interested in [webnetes](https://github.com/pojntfx/webnetes), which uses unisockets for it's networking layer.
+
 ## Usage
 
 Check out the [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/berkeley_sockets.h) for the C API docs or [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets) for the Go/TinyGo API. Many examples on how to use it (C, TinyGo & Go clients & servers plus an example WebAssembly runner) can also be found in [the `cmd` folder](https://github.com/pojntfx/unisockets/blob/main/cmd). Looking for advice on how to build and run natively or using WASM? Check out the [`Makefile`](https://github.com/pojntfx/unisockets/blob/main/Makefile)!
