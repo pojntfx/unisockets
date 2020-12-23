@@ -3,7 +3,6 @@ all: build
 
 # Build
 build: \
-    build-wasi-sdk \
     build-unisockets-runner \
     build-server-native-posix-c \
     build-server-native-posix-go \
@@ -20,8 +19,6 @@ build: \
     build-client-wasm-wasi-tinygo \
     build-client-wasm-jssi-tinygo
 
-build-wasi-sdk:
-	@docker build -t pojntfx/wasi-sdk -f Dockerfile.wasi-sdk .
 build-unisockets-runner:
 	@docker build -t pojntfx/unisockets-runner -f Dockerfile.unisockets-runner .
 
@@ -31,11 +28,11 @@ build-server-native-posix-go:
 	@docker run -v ${PWD}:/src:z golang sh -c 'cd /src && go build -o out/go/echo_server ./cmd/go_echo_server/main.go'
 build-server-native-posix-tinygo:
 	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -o out/tinygo/echo_server ./cmd/go_echo_server/main.go'
-build-server-wasm-wasi-c: build-wasi-sdk
-	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && mkdir -p out/c && clang -Wl,--allow-undefined -DUNISOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot cmd/c_echo_server/main.c -o out/c/echo_server_original.wasm && wasm-opt --asyncify -O out/c/echo_server_original.wasm -o out/c/echo_server.wasm'
+build-server-wasm-wasi-c:
+	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && mkdir -p out/c && clang -Wl,--allow-undefined -DUNISOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-12.0/share/wasi-sysroot cmd/c_echo_server/main.c -o out/c/echo_server_original.wasm && wasm-opt --asyncify -O out/c/echo_server_original.wasm -o out/c/echo_server.wasm'
 build-server-wasm-jssi-go:
 	@docker run -v ${PWD}:/src:z -e GOOS=js -e GOARCH=wasm golang sh -c 'cd /src && go build -o out/go/echo_server.wasm ./cmd/go_echo_server/main.go'
-build-server-wasm-wasi-tinygo: build-wasi-sdk
+build-server-wasm-wasi-tinygo:
 	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DUNISOCKETS_WITH_CUSTOM_ARPA_INET" -target wasi -o out/tinygo/echo_server_wasi_original.wasm ./cmd/go_echo_server/main.go'
 	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && wasm-opt --asyncify -O out/tinygo/echo_server_wasi_original.wasm -o out/tinygo/echo_server_wasi.wasm'
 build-server-wasm-jssi-tinygo:
@@ -47,11 +44,11 @@ build-client-native-posix-go:
 	@docker run -v ${PWD}:/src:z golang sh -c 'cd /src && go build -o out/go/echo_client ./cmd/go_echo_client/main.go'
 build-client-native-posix-tinygo:
 	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -o out/tinygo/echo_client ./cmd/go_echo_client/main.go'
-build-client-wasm-wasi-c: build-wasi-sdk
-	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && mkdir -p out/c && clang -Wl,--allow-undefined -DUNISOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-11.0/share/wasi-sysroot cmd/c_echo_client/main.c -o out/c/echo_client_original.wasm && wasm-opt --asyncify -O out/c/echo_client_original.wasm -o out/c/echo_client.wasm'
+build-client-wasm-wasi-c:
+	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && mkdir -p out/c && clang -Wl,--allow-undefined -DUNISOCKETS_WITH_ALIAS --sysroot=/opt/wasi-sdk-12.0/share/wasi-sysroot cmd/c_echo_client/main.c -o out/c/echo_client_original.wasm && wasm-opt --asyncify -O out/c/echo_client_original.wasm -o out/c/echo_client.wasm'
 build-client-wasm-jssi-go:
 	@docker run -v ${PWD}:/src:z -e GOOS=js -e GOARCH=wasm golang sh -c 'cd /src && go build -o out/go/echo_client.wasm ./cmd/go_echo_client/main.go'
-build-client-wasm-wasi-tinygo: build-wasi-sdk
+build-client-wasm-wasi-tinygo:
 	@docker run -v ${PWD}:/src:z tinygo/tinygo sh -c 'cd /src && mkdir -p out/tinygo && tinygo build -heap-size 20M -cflags "-DUNISOCKETS_WITH_CUSTOM_ARPA_INET" -target wasi -o out/tinygo/echo_client_wasi_original.wasm ./cmd/go_echo_client/main.go'
 	@docker run -v ${PWD}:/src:z pojntfx/wasi-sdk sh -c 'cd /src && wasm-opt --asyncify -O out/tinygo/echo_client_wasi_original.wasm -o out/tinygo/echo_client_wasi.wasm'
 build-client-wasm-jssi-tinygo:
