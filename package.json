@@ -1,6 +1,6 @@
 {
   "name": "@pojntfx/unisockets",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "description": "A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.",
   "source": "index.ts",
   "main": "dist/nodeLib/index.js",
@@ -35,6 +35,7 @@
     "unisockets_runner": "dist/nodeApp/main.js"
   },
   "files": [
+    "dist/nodeApp",
     "dist/nodeLib",
     "dist/webLib",
     "dist/index.d.ts"
