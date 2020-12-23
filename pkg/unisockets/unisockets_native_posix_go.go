@@ -3,13 +3,13 @@
 package unisockets
 
 /*
-#cgo CFLAGS: -DBERKELEY_SOCKETS_WITH_INVERSE_ALIAS
+#cgo CFLAGS: -DUNISOCKETS_WITH_INVERSE_ALIAS
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "berkeley_sockets.h"
+#include "unisockets.h"
 */
 import "C"
 import (
