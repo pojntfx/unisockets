@@ -24,7 +24,7 @@ bc ->> ss: Accepting(id: 127.0.0.1, alias: 127.0.0.1:1234)
 e2 ->> cc: Opens client
 
 cc ->> ss: Knock(subnet: 127.0.0)
-cc -->> ss: Acknowledgement(id: 127.0.0.2, rejected: false)
+ss -->> cc: Acknowledgement(id: 127.0.0.2, rejected: false)
 
 ss ->> bc: Greeting(offererId: 127.0.0.1, answererId: 127.0.0.2)
 bc -->> ss: Offer(offererId: 127.0.0.1, answererId: 127.0.0.2, offer: o1)
