@@ -49,11 +49,39 @@ export class SignalingServer extends SignalingService {
     );
 
     server.on("connection", async (client) => {
+      (client as any).isAlive = true;
+
+      client.on("pong", function () {
+        (this as any).isAlive = true;
+      });
+
       client.on(
         "message",
         async (operation) =>
           await this.handleOperation(await this.receive(operation), client)
       );
+    });
+
+    const interval = setInterval(
+      () =>
+        server.clients.forEach((client) => {
+          if ((client as any).isAlive === false) {
+            this.logger.verbose("Client disconnected");
+
+            return client.terminate();
+          }
+
+          (client as any).isAlive = false;
+
+          this.logger.debug("Pinging client");
+
+          client.ping(() => {});
+        }),
+      30000
+    );
+
+    server.on("close", function close() {
+      clearInterval(interval);
     });
 
     this.logger.verbose("Listening", {
