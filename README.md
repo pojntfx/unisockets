@@ -26,7 +26,7 @@ The system is made up of the following components:
 
 These components have no hard dependencies on one another, and can be used independendly.
 
-Additionally, a [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/berkeley_sockets.h) for easy usage and Go/TinyGo bindings (see [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets/pkg/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets/pkg/unisockets)) have been created.
+Additionally, a [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/unisockets.h) for easy usage and Go/TinyGo bindings (see [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets/pkg/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets/pkg/unisockets)) have been created.
 
 ### Signaling Protocol
 
@@ -44,7 +44,7 @@ You want a Kubernetes-style system for WASM, running in the browser and in node?
 
 ## Usage
 
-Check out the [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/berkeley_sockets.h) for the C API docs or [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets) for the Go/TinyGo API. Many examples on how to use it (C, TinyGo & Go clients & servers plus an example WebAssembly runner) can also be found in [the `cmd` folder](https://github.com/pojntfx/unisockets/blob/main/cmd). Looking for advice on how to build and run natively or using WASM? Check out the [`Makefile`](https://github.com/pojntfx/unisockets/blob/main/Makefile)!
+Check out the [universal C/C++ header](https://github.com/pojntfx/unisockets/blob/main/cmd/c_echo_client/unisockets.h) for the C API docs or [![PkgGoDev](https://pkg.go.dev/badge/github.com/pojntfx/unisockets)](https://pkg.go.dev/github.com/pojntfx/unisockets) for the Go/TinyGo API. Many examples on how to use it (C, TinyGo & Go clients & servers plus an example WebAssembly runner) can also be found in [the `cmd` folder](https://github.com/pojntfx/unisockets/blob/main/cmd). Looking for advice on how to build and run natively or using WASM? Check out the [`Makefile`](https://github.com/pojntfx/unisockets/blob/main/Makefile)!
 
 ## License
 

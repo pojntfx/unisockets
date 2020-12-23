@@ -7,31 +7,31 @@ import { getLogger } from "../utils/logger";
 
 const AF_INET = 2;
 
-// Matches pkg/unisockets/berkeley_sockets.h
+// Matches pkg/unisockets/unisockets.h
 interface ISocketImports {
-  berkeley_sockets_socket: () => Promise<number>;
-  berkeley_sockets_bind: (
+  unisockets_socket: () => Promise<number>;
+  unisockets_bind: (
     fd: number,
     addressPointer: number,
     addressLength: number
   ) => Promise<number>;
-  berkeley_sockets_listen: () => Promise<number>;
-  berkeley_sockets_accept: (
+  unisockets_listen: () => Promise<number>;
+  unisockets_accept: (
     fd: number,
     addressPointer: number,
     addressLengthPointer: number
   ) => Promise<number>;
-  berkeley_sockets_connect: (
+  unisockets_connect: (
     fd: number,
     addressPointer: number,
     addressLength: number
   ) => Promise<number>;
-  berkeley_sockets_send: (
+  unisockets_send: (
     fd: number,
     messagePointer: number,
     messagePointerLength: number
   ) => Promise<number>;
-  berkeley_sockets_recv: (
+  unisockets_recv: (
     fd: number,
     messagePointer: number,
     messagePointerLength: number
@@ -59,10 +59,10 @@ export class Sockets {
     return {
       memoryId,
       imports: {
-        berkeley_sockets_socket: async () => {
+        unisockets_socket: async () => {
           return await this.socket();
         },
-        berkeley_sockets_bind: async (
+        unisockets_bind: async (
           fd: number,
           addressPointer: number,
           addressLength: number
@@ -90,10 +90,10 @@ export class Sockets {
             return -1;
           }
         },
-        berkeley_sockets_listen: async () => {
+        unisockets_listen: async () => {
           return 0;
         },
-        berkeley_sockets_accept: async (
+        unisockets_accept: async (
           fd: number,
           addressPointer: number,
           addressLengthPointer: number
@@ -134,7 +134,7 @@ export class Sockets {
             return -1;
           }
         },
-        berkeley_sockets_connect: async (
+        unisockets_connect: async (
           fd: number,
           addressPointer: number,
           addressLength: number
@@ -162,7 +162,7 @@ export class Sockets {
             return -1;
           }
         },
-        berkeley_sockets_send: async (
+        unisockets_send: async (
           fd: number,
           messagePointer: number,
           messagePointerLength: number
@@ -184,7 +184,7 @@ export class Sockets {
             return -1;
           }
         },
-        berkeley_sockets_recv: async (
+        unisockets_recv: async (
           fd: number,
           messagePointer: number,
           messagePointerLength: number
