@@ -1,3 +1,3 @@
-module github.com/pojntfx/unisockets
+module github.com/alphahorizonio/unisockets
 
 go 1.15
