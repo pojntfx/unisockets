@@ -108,8 +108,9 @@ export class SignalingServer extends SignalingService {
     if (this.clients.has(id)) {
       const client = this.clients.get(id)!; // `.has` checks this
 
-      client.on("close", () => {
+      client.on("close", async () => {
         this.clients.delete(id);
+        await this.removeIPAddress(id);
 
         this.aliases.forEach(async ({ id: clientId }, alias) => {
           if (clientId === id) {
