@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pojntfx/unisockets/pkg/unisockets"
+	"github.com/alphahorizonio/unisockets/pkg/unisockets"
 )
 
 var (

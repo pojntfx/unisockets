@@ -60,7 +60,7 @@ const {
 
   signalingServerConnectAddress: {
     description: "Signaling server connect address",
-    default: "wss://unisockets.herokuapp.com",
+    default: "wss://signaler.webnetes.dev",
   },
   reconnectTimeout: {
     description: "Reconnect timeout in milliseconds",
