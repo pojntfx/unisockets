@@ -1,0 +1,483 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>@alphahorizonio/unisockets</title>
+	<meta name="description" content="Documentation for @alphahorizonio/unisockets">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">@alphahorizonio/unisockets</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+							<input type="checkbox" id="tsd-filter-only-exported" />
+							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1>@alphahorizonio/unisockets</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<a href="#unisockets" id="unisockets" style="color: inherit; text-decoration: none;">
+					<h1>unisockets</h1>
+				</a>
+				<p>A universal Berkeley sockets implementation for both WebAssembly (based on WebRTC) and native platforms with bindings for C, Go and TinyGo.</p>
+				<p><img src="https://github.com/alphahorizonio/unisockets/workflows/Yarn%20CI/badge.svg" alt="Yarn CI">
+					<img src="https://github.com/alphahorizonio/unisockets/workflows/make%20CI/badge.svg" alt="make CI">
+					<img src="https://github.com/alphahorizonio/unisockets/workflows/Mirror/badge.svg" alt="Mirror">
+					<a href="https://alphahorizonio.github.io/unisockets/"><img src="https://img.shields.io/badge/TypeScript-Documentation-informational" alt="TypeDoc"></a>
+					<a href="https://pkg.go.dev/github.com/alphahorizonio/unisockets"><img src="https://pkg.go.dev/badge/github.com/alphahorizonio/unisockets" alt="PkgGoDev"></a>
+					<a href="https://www.npmjs.com/package/@alphahorizonio/unisockets"><img src="https://img.shields.io/npm/v/@alphahorizonio/unisockets" alt="npm"></a>
+					<a href="https://unisockets.vercel.app/"><img src="https://img.shields.io/badge/Minimal%20Demo-unisockets.vercel.app-blueviolet" alt="Minimal Demo"></a>
+					<a href="https://lite.webnetes.dev/"><img src="https://img.shields.io/badge/Lite%20(webnetes)%20Demo-lite.webnetes.dev-blueviolet" alt="Lite (webnetes) Demo"></a>
+					<a href="https://webnetes.dev/"><img src="https://img.shields.io/badge/Full%20(webnetes)%20Demo-webnetes.dev-blueviolet" alt="Full (webnetes) Demo"></a>
+				<a href="https://webnetes.dev/"><img src="https://img.shields.io/badge/Part%20of-webnetes-black" alt="Part of webnetes"></a></p>
+				<a href="#overview" id="overview" style="color: inherit; text-decoration: none;">
+					<h2>Overview</h2>
+				</a>
+				<p>unisockets implements the <a href="https://en.wikipedia.org/wiki/Berkeley_sockets">Berkeley sockets API</a>. On a native environment like Linux, it falls back to the native Berkeley sockets API; on WASM it uses <a href="https://webrtc.org/">WebRTC</a> for fast peer-to-peer communication instead of the (non-available) native API. This allows you to &quot;just recompile&quot; an existing socket server/client (such as a web server etc.) and run it natively, in a WebAssembly runtime or in the browser, without the need for a <a href="https://emscripten.org/docs/porting/networking.html">WebSocket proxy like in emscripen</a> or some other proxy mechanism. You&#39;ve heard that right, this library allows you to <code>bind</code> in the browser!</p>
+				<a href="#components" id="components" style="color: inherit; text-decoration: none;">
+					<h3>Components</h3>
+				</a>
+				<p><a href="https://alphahorizonio.github.io/unisockets/media/diagram.svg"><img src="https://alphahorizonio.github.io/unisockets/media/diagram.svg" alt="UML Diagram"></a></p>
+				<p>The system is made up of the following components:</p>
+				<ul>
+					<li><strong>Signaling</strong>: A WebRTC signaling server (with two implementations), client and protocol has been implemented to allow for nodes to discover each other and exchange candidates, but is not involved in any actual connections. When compiling natively, it is not required.</li>
+					<li><strong>Transport</strong>: A minimal wrapper around the WebRTC API. When compiling to WASM, this component manages all actual data transfers and handles incoming/outgoing peer to peer connections. When compiling natively, it is not required.</li>
+					<li><strong>Sockets</strong>: A set of WebAssembly imports that satisfy the basic API of the Berkeley sockets, such as <code>socket</code>, <code>bind</code>, <code>listen</code>, <code>accept</code>, <code>connect</code>, <code>send</code>, <code>recv</code> etc. When compiling natively, it falls back to the native implementation.</li>
+				</ul>
+				<p>These components have no hard dependencies on one another, and can be used independendly.</p>
+				<p>Additionally, a <a href="https://github.com/alphahorizonio/unisockets/blob/main/cmd/c_echo_client/unisockets.h">universal C/C++ header</a> for easy usage and Go/TinyGo bindings (see <a href="https://pkg.go.dev/github.com/alphahorizonio/unisockets/pkg/unisockets"><img src="https://pkg.go.dev/badge/github.com/alphahorizonio/unisockets/pkg/unisockets" alt="PkgGoDev"></a>) have been created.</p>
+				<a href="#signaling-protocol" id="signaling-protocol" style="color: inherit; text-decoration: none;">
+					<h3>Signaling Protocol</h3>
+				</a>
+				<p>The signaling components use the following protocol:</p>
+				<p><a href="https://alphahorizonio.github.io/unisockets/media/sequence.svg"><img src="https://alphahorizonio.github.io/unisockets/media/sequence.svg" alt="Sequence Diagram"></a></p>
+				<p>There are two implementations of the signaling server. The TypeScript version is maintained is this repo, the Java version can be found in <a href="https://github.com/alphahorizonio/junisockets">junisockets</a>.</p>
+				<p>Public signaling server instances:</p>
+				<table>
+					<thead>
+						<tr>
+							<th>Implementation</th>
+							<th>URL</th>
+						</tr>
+					</thead>
+					<tbody><tr>
+							<td>TypeScript</td>
+							<td><code>wss://signaler.webnetes.dev</code></td>
+						</tr>
+						<tr>
+							<td>Java</td>
+							<td><code>wss://jsignaler.webnetes.dev</code></td>
+						</tr>
+				</tbody></table>
+				<a href="#further-resources" id="further-resources" style="color: inherit; text-decoration: none;">
+					<h3>Further Resources</h3>
+				</a>
+				<p>Interested in an implementation of the <a href="https://golang.org/pkg/net/">Go <code>net</code> package</a> based on this package, with TinyGo and WASM support? You might be interested in <a href="https://github.com/alphahorizonio/tinynet">tinynet</a>!</p>
+				<p>You want a Kubernetes-style system for WASM, running in the browser and in node? You might be interested in <a href="https://github.com/alphahorizonio/webnetes">webnetes</a>, which uses unisockets for it&#39;s networking layer.</p>
+				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+					<h2>Usage</h2>
+				</a>
+				<p>Check out the <a href="https://github.com/alphahorizonio/unisockets/blob/main/cmd/c_echo_client/unisockets.h">universal C/C++ header</a> for the C API docs or <a href="https://pkg.go.dev/github.com/alphahorizonio/unisockets"><img src="https://pkg.go.dev/badge/github.com/alphahorizonio/unisockets" alt="PkgGoDev"></a> for the Go/TinyGo API. Many examples on how to use it (C, TinyGo &amp; Go clients &amp; servers plus an example WebAssembly runner) can also be found in <a href="https://github.com/alphahorizonio/unisockets/blob/main/cmd">the <code>cmd</code> folder</a>. Looking for advice on how to build and run natively or using WASM? Check out the <a href="https://github.com/alphahorizonio/unisockets/blob/main/Makefile"><code>Makefile</code></a>!</p>
+				<a href="#license" id="license" style="color: inherit; text-decoration: none;">
+					<h2>License</h2>
+				</a>
+				<p>unisockets (c) 2021 Felicitas Pojtinger and contributors</p>
+				<p>SPDX-License-Identifier: AGPL-3.0</p>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-enum">
+						<a href="enums/esignaling_opcodes.html" class="tsd-kind-icon">ESIGNALING_<wbr>OPCODES</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/accept.html" class="tsd-kind-icon">Accept</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/accepting.html" class="tsd-kind-icon">Accepting</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/acknowledgement.html" class="tsd-kind-icon">Acknowledgement</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/alias.html" class="tsd-kind-icon">Alias</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/aliasdoesnotexisterror.html" class="tsd-kind-icon">Alias<wbr>Does<wbr>Not<wbr>Exist<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/answer.html" class="tsd-kind-icon">Answer</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/bind.html" class="tsd-kind-icon">Bind</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/bindrejectederror.html" class="tsd-kind-icon">Bind<wbr>Rejected<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/candidate.html" class="tsd-kind-icon">Candidate</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/channeldoesnotexisterror.html" class="tsd-kind-icon">Channel<wbr>Does<wbr>Not<wbr>Exist<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/clientclosederror.html" class="tsd-kind-icon">Client<wbr>Closed<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/clientdoesnotexisterror.html" class="tsd-kind-icon">Client<wbr>Does<wbr>Not<wbr>Exist<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/connect.html" class="tsd-kind-icon">Connect</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/connectiondoesnotexisterror.html" class="tsd-kind-icon">Connection<wbr>Does<wbr>Not<wbr>Exist<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/connectionrejectederror.html" class="tsd-kind-icon">Connection<wbr>Rejected<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/goodbye.html" class="tsd-kind-icon">Goodbye</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/greeting.html" class="tsd-kind-icon">Greeting</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/knock.html" class="tsd-kind-icon">Knock</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/malias.html" class="tsd-kind-icon">MAlias</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/mmember.html" class="tsd-kind-icon">MMember</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/memorydoesnotexisterror.html" class="tsd-kind-icon">Memory<wbr>Does<wbr>Not<wbr>Exist<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/offer.html" class="tsd-kind-icon">Offer</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/portalreadyallocatederror.html" class="tsd-kind-icon">Port<wbr>Already<wbr>Allocated<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/sdpinvaliderror.html" class="tsd-kind-icon">SDPInvalid<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/shutdown.html" class="tsd-kind-icon">Shutdown</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/shutdownrejectederror.html" class="tsd-kind-icon">Shutdown<wbr>Rejected<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/signalingclient.html" class="tsd-kind-icon">Signaling<wbr>Client</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/signalingserver.html" class="tsd-kind-icon">Signaling<wbr>Server</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/signalingservice.html" class="tsd-kind-icon">Signaling<wbr>Service</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/socketdoesnotexisterror.html" class="tsd-kind-icon">Socket<wbr>Does<wbr>Not<wbr>Exist<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/sockets.html" class="tsd-kind-icon">Sockets</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/subnetdoesnotexisterror.html" class="tsd-kind-icon">Subnet<wbr>Does<wbr>Not<wbr>Exist<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/suffixdoesnotexisterror.html" class="tsd-kind-icon">Suffix<wbr>Does<wbr>Not<wbr>Exist<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/transporter.html" class="tsd-kind-icon">Transporter</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/unimplementedoperationerror.html" class="tsd-kind-icon">Unimplemented<wbr>Operation<wbr>Error</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iacceptdata.html" class="tsd-kind-icon">IAccept<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iacceptingdata.html" class="tsd-kind-icon">IAccepting<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iacknowledgementdata.html" class="tsd-kind-icon">IAcknowledgement<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ialiasdata.html" class="tsd-kind-icon">IAlias<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ianswerdata.html" class="tsd-kind-icon">IAnswer<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ibinddata.html" class="tsd-kind-icon">IBind<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/icandidatedata.html" class="tsd-kind-icon">ICandidate<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iconnectdata.html" class="tsd-kind-icon">IConnect<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/igoodbyedata.html" class="tsd-kind-icon">IGoodbye<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/igreetingdata.html" class="tsd-kind-icon">IGreeting<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iknockdata.html" class="tsd-kind-icon">IKnock<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/iofferdata.html" class="tsd-kind-icon">IOffer<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ishutdowndata.html" class="tsd-kind-icon">IShutdown<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-has-type-parameter">
+						<a href="interfaces/isignalingoperation.html" class="tsd-kind-icon">ISignaling<wbr>Operation</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/isocketimports.html" class="tsd-kind-icon">ISocket<wbr>Imports</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
+						<a href="globals.html#tsignalingdata" class="tsd-kind-icon">TSignaling<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#af_inet" class="tsd-kind-icon">AF_<wbr>INET</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#go" class="tsd-kind-icon">Go</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#tinygo" class="tsd-kind-icon">Tiny<wbr>Go</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#aliases" class="tsd-kind-icon">aliases</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#binarypath" class="tsd-kind-icon">binary<wbr>Path</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#logger" class="tsd-kind-icon">logger</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#ready" class="tsd-kind-icon">ready</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#reconnecttimeout" class="tsd-kind-icon">reconnect<wbr>Timeout</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#runbinary" class="tsd-kind-icon">run<wbr>Binary</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#runsignalingserver" class="tsd-kind-icon">run<wbr>Signaling<wbr>Server</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#signalingclient" class="tsd-kind-icon">signaling<wbr>Client</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#signalingserverconnectaddress" class="tsd-kind-icon">signaling<wbr>Server<wbr>Connect<wbr>Address</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#signalingserverlistenaddress" class="tsd-kind-icon">signaling<wbr>Server<wbr>Listen<wbr>Address</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#sockets" class="tsd-kind-icon">sockets</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#subnetprefix" class="tsd-kind-icon">subnet<wbr>Prefix</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#transporter" class="tsd-kind-icon">transporter</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#urlparams" class="tsd-kind-icon">url<wbr>Params</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#usec" class="tsd-kind-icon">useC</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#usego" class="tsd-kind-icon">use<wbr>Go</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#usejssi" class="tsd-kind-icon">useJSSI</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#useserverbinary" class="tsd-kind-icon">use<wbr>Server<wbr>Binary</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#usetinygo" class="tsd-kind-icon">use<wbr>Tiny<wbr>Go</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="globals.html#usewasi" class="tsd-kind-icon">useWASI</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#bundle" class="tsd-kind-icon">bundle</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#bundlebin" class="tsd-kind-icon">bundle<wbr>Bin</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#getasbinary" class="tsd-kind-icon">get<wbr>AsBinary</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#getlogger" class="tsd-kind-icon">get<wbr>Logger</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#getoffer" class="tsd-kind-icon">get<wbr>Offer</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleacknowledgement" class="tsd-kind-icon">handle<wbr>Acknowledgement</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handlealias" class="tsd-kind-icon">handle<wbr>Alias</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleanswer" class="tsd-kind-icon">handle<wbr>Answer</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handlecandidate" class="tsd-kind-icon">handle<wbr>Candidate</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleconnect" class="tsd-kind-icon">handle<wbr>Connect</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handledisconnect" class="tsd-kind-icon">handle<wbr>Disconnect</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleexternalaccept" class="tsd-kind-icon">handle<wbr>External<wbr>Accept</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleexternalbind" class="tsd-kind-icon">handle<wbr>External<wbr>Bind</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleexternalconnect" class="tsd-kind-icon">handle<wbr>External<wbr>Connect</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleexternalrecv" class="tsd-kind-icon">handle<wbr>External<wbr>Recv</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleexternalsend" class="tsd-kind-icon">handle<wbr>External<wbr>Send</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handlegoodbye" class="tsd-kind-icon">handle<wbr>Goodbye</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handleoffer" class="tsd-kind-icon">handle<wbr>Offer</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handletransporterchannelclose" class="tsd-kind-icon">handle<wbr>Transporter<wbr>Channel<wbr>Close</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handletransporterchannelopen" class="tsd-kind-icon">handle<wbr>Transporter<wbr>Channel<wbr>Open</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handletransporterconnectionconnect" class="tsd-kind-icon">handle<wbr>Transporter<wbr>Connection<wbr>Connect</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#handletransporterconnectiondisconnect" class="tsd-kind-icon">handle<wbr>Transporter<wbr>Connection<wbr>Disconnect</a>
+					</li>
+					<li class=" tsd-kind-function">
+						<a href="globals.html#htons" class="tsd-kind-icon">htons</a>
+					</li>
+					<li class=" tsd-kind-object-literal">
+						<a href="globals.html#transporterconfig" class="tsd-kind-icon">transporter<wbr>Config</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
