@@ -8,7 +8,10 @@ A universal Berkeley sockets implementation for both WebAssembly (based on WebRT
 [![TypeDoc](https://img.shields.io/badge/TypeScript-Documentation-informational)](https://alphahorizonio.github.io/unisockets/)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/alphahorizonio/unisockets)](https://pkg.go.dev/github.com/alphahorizonio/unisockets)
 [![npm](https://img.shields.io/npm/v/@alphahorizonio/unisockets)](https://www.npmjs.com/package/@alphahorizonio/unisockets)
-[![Demo](https://img.shields.io/badge/Demo-unisockets.netlify.app-blueviolet)](https://unisockets.netlify.app/)
+[![Minimal Demo](https://img.shields.io/badge/Minimal%20Demo-unisockets.vercel.app-blueviolet)](https://unisockets.vercel.app/)
+[![Lite (webnetes) Demo](<https://img.shields.io/badge/Lite%20(webnetes)%20Demo-lite.webnetes.dev-blueviolet>)](https://lite.webnetes.dev/)
+[![Full (webnetes) Demo](<https://img.shields.io/badge/Full%20(webnetes)%20Demo-webnetes.dev-blueviolet>)](https://webnetes.dev/)
+[![Part of webnetes](https://img.shields.io/badge/Part%20of-webnetes-black)](https://webnetes.dev/)
 
 ## Overview
 
@@ -20,7 +23,7 @@ unisockets implements the [Berkeley sockets API](https://en.wikipedia.org/wiki/B
 
 The system is made up of the following components:
 
-- **Signaling**: A WebRTC signaling server, client and protocol has been implemented to allow for nodes to discover each other and exchange candidates, but is not involved in any actual connections. When compiling natively, it is not required.
+- **Signaling**: A WebRTC signaling server (with two implementations), client and protocol has been implemented to allow for nodes to discover each other and exchange candidates, but is not involved in any actual connections. When compiling natively, it is not required.
 - **Transport**: A minimal wrapper around the WebRTC API. When compiling to WASM, this component manages all actual data transfers and handles incoming/outgoing peer to peer connections. When compiling natively, it is not required.
 - **Sockets**: A set of WebAssembly imports that satisfy the basic API of the Berkeley sockets, such as `socket`, `bind`, `listen`, `accept`, `connect`, `send`, `recv` etc. When compiling natively, it falls back to the native implementation.
 
@@ -34,7 +37,14 @@ The signaling components use the following protocol:
 
 [![Sequence Diagram](https://alphahorizonio.github.io/unisockets/media/sequence.svg)](https://alphahorizonio.github.io/unisockets/media/sequence.svg)
 
-A public signaling server instance is running on `wss://signaler.webnetes.dev` and used in the demo.
+There are two implementations of the signaling server. The TypeScript version is maintained is this repo, the Java version can be found in [junisockets](https://github.com/alphahorizonio/junisockets).
+
+Public signaling server instances:
+
+| Implementation | URL                            |
+| -------------- | ------------------------------ |
+| TypeScript     | `wss://signaler.webnetes.dev`  |
+| Java           | `wss://jsignaler.webnetes.dev` |
 
 ### Further Resources
 
