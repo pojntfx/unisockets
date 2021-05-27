@@ -15,7 +15,7 @@ A universal Berkeley sockets implementation for both WebAssembly (based on WebRT
 
 ## Overview
 
-unisockets implements the [Berkeley sockets API](https://en.wikipedia.org/wiki/Berkeley_sockets). On a native environment like Linux, it falls back to the native Berkeley sockets API; on WASM it uses [WebRTC](https://webrtc.org/) for fast peer-to-peer communication instead of the (non-available) native API. This allows you to "just recompile" an existing socket server/client (such as a web server etc.) and run it natively, in a WebAssembly runtime or in the browser, without the need for a [WebSocket proxy like in emscripen](https://emscripten.org/docs/porting/networking.html) or some other proxy mechanism. You've heard that right, this library allows you to `bind` in the browser!
+unisockets implements the [Berkeley sockets API](https://en.wikipedia.org/wiki/Berkeley_sockets). On a native environment like Linux, it falls back to the native Berkeley sockets API; on WASM it uses [WebRTC](https://webrtc.org/) for fast peer-to-peer communication instead of the (non-available) native API. This allows you to "just recompile" an existing socket server/client (such as a web server etc.) and run it natively, in a WebAssembly runtime or in the browser, without the need for a [WebSocket proxy like in emscripten](https://emscripten.org/docs/porting/networking.html) or some other proxy mechanism. You've heard that right, this library allows you to `bind` in the browser!
 
 ### Components
 
